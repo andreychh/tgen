@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+version: '2'
+linters:
+  default: none
+  enable:
+    # all
+    - asciicheck
+    - bidichk
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exhaustruct
+    - exptostd
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - funlen
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - gocritic
+    - gocyclo
+    - godoclint
+    - godot
+    - gomoddirectives
+    - goprintffuncname
+    - gosec
+    - govet
+    - iface
+    - inamedparam
+    - iotamixing
+    - ireturn
+    - maintidx
+    - makezero
+    - mirror
+    - modernize
+    - musttag
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nolintlint
+    - perfsprint
+    - recvcheck
+    - staticcheck
+    - testpackage
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    # encoding/json
+    - errchkjson
+  settings:
+    embeddedstructfieldcheck:
+      forbid-mutex: true
+    gocognit:
+      min-complexity: 15
+    gocyclo:
+      min-complexity: 15
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    gocritic:
+      enable-all: true
+      disabled-checks:
+        - builtinShadow
+    godoclint:
+      default: all
+    nolintlint:
+      require-specific: true
+formatters:
+  enable:
+    - gofumpt
+    - golines
+  settings:
+    gofumpt:
+      extra-rules: true

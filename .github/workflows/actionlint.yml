@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+name: actionlint
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  actionlint:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - name: Download actionlint
+        id: download-actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        shell: bash
+      - name: Check workflow files
+        run: ${{ steps.download-actionlint.outputs.executable }} -color
+        shell: bash

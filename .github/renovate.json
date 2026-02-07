@@ -1,0 +1,62 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "extends": [
+        "helpers:pinGitHubActionDigests"
+      ],
+      "extractVersion": "^(?<version>v?\\d+\\.\\d+\\.\\d+)$",
+      "versioning": "regex:^v?(?<major>\\d+)(\\.(?<minor>\\d+)\\.(?<patch>\\d+))?$"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.*\\.yml$/"
+      ],
+      "matchStrings": [
+        "uses: golangci/golangci-lint-action@.*\\n\\s+with:\\n\\s+version: (?<currentValue>.*)"
+      ],
+      "depNameTemplate": "golangci/golangci-lint",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.*\\.yml$/"
+      ],
+      "matchStrings": [
+        "uses: goreleaser/goreleaser-action@.*\\n\\s+with:\\n\\s+version: (?<currentValue>.*)"
+      ],
+      "depNameTemplate": "goreleaser/goreleaser",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.*\\.yml$/"
+      ],
+      "matchStrings": [
+        "uses: go-task/setup-task@.*\\n\\s+with:\\n\\s+version: (?<currentValue>.*)"
+      ],
+      "depNameTemplate": "go-task/task",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.*\\.yml$/"
+      ],
+      "matchStrings": [
+        "go install\\s+(?<depName>[^@\\s]+)@(?<currentValue>v?[0-9][^\\s]*)"
+      ],
+      "datasourceTemplate": "go",
+      "versioningTemplate": "semver"
+    }
+  ]
+}

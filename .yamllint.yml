@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+# yaml-language-server: $schema=https://www.schemastore.org/yamllint.json
+extends: default
+rules:
+  document-start: disable
+  line-length: disable
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+    check-multi-line-strings: false
+  brackets:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+  empty-lines:
+    max: 0
