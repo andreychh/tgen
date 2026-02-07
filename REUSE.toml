@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://reuse.software/reuse-toml-v1.schema.json
+version = 1
+
+[[annotations]]
+path = [
+    "**/*.json",
+    "**/.gitignore",
+    "go.sum",
+]
+SPDX-FileCopyrightText = "2026 Andrey Chernykh"
+SPDX-License-Identifier = "MIT"
