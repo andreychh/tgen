@@ -8,13 +8,17 @@ import "iter"
 
 // Selection represents a set of HTML nodes.
 //
-// For all text extraction methods (Text, Attr) whitespace normalization MUST be
-// performed: trimming leading/trailing spaces and collapsing internal
+// For all text extraction methods (e.g. Text, Attr) whitespace normalization
+// MUST be performed: trimming leading/trailing spaces and collapsing internal
 // whitespace sequences to a single space.
 //
 // Methods return a new Selection, leaving the original unmodified.
 type Selection interface {
-	// Text returns the combined text content of the nodes.
+	// Text returns the combined text content of the nodes and their descendants.
+	//
+	// Note: The text is concatenated directly without any separators (spaces or
+	// newlines) between elements. For example, "<li>A</li><li>B</li>" results in
+	// "AB".
 	Text() string
 
 	// Attr returns the attribute value of the first node in the set. The boolean
@@ -42,8 +46,10 @@ type Selection interface {
 	// IsEmpty reports whether the set contains no nodes.
 	IsEmpty() bool
 
-	// At returns a new Selection containing the node at the specified index.
-	At(i int) Selection
+	// At returns a new Selection containing the node at the specified index. It
+	// returns an empty selection if the index is negative or greater than the
+	// number of elements.
+	At(index int) Selection
 
 	// All returns an iterator over the nodes in the set.
 	All() iter.Seq2[int, Selection]

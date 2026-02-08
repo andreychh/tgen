@@ -78,6 +78,12 @@ linters:
       default: all
     nolintlint:
       require-specific: true
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - godoclint
+        text: "symbol should have a godoc"
 formatters:
   enable:
     - gofumpt

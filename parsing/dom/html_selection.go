@@ -77,8 +77,12 @@ func (s HTMLSelection) IsEmpty() bool {
 	return s.Length() == 0
 }
 
-// At returns the element at the specified index.
+// At returns the element at the specified index. Unlike jQuery/goquery,
+// negative indices are not supported and will return an empty selection.
 func (s HTMLSelection) At(index int) Selection {
+	if index < 0 {
+		return NewHTMLSelection(s.inner.Slice(0, 0))
+	}
 	return NewHTMLSelection(s.inner.Eq(index))
 }
 
