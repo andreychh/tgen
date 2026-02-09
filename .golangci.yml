@@ -83,7 +83,11 @@ linters:
       - path: _test\.go
         linters:
           - godoclint
-        text: "symbol should have a godoc"
+        text: 'symbol should have a godoc'
+      - path: _test\.go
+        linters:
+          - exhaustruct
+        text: 'is missing field'
 formatters:
   enable:
     - gofumpt
