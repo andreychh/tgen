@@ -10,6 +10,7 @@
 package parsing
 
 import (
+	"iter"
 	"regexp"
 )
 
@@ -22,20 +23,34 @@ var (
 	nameRegex = regexp.MustCompile(`^[A-Z][a-zA-Z0-9]+$`)
 )
 
+// Union represents a polymorphic type definition (Sum Type) where a value can
+// be one of several distinct types.
+//
+// Example: In the Telegram Bot API, "MaybeInaccessibleMessage" is a union of
+// "Message" and "InaccessibleMessage".
+type Union interface {
+	// ID returns the unique reference identifier of the union definition (e.g.
+	// "#maybeinaccessiblemessage").
+	ID() (string, error)
+
+	// Name returns the type name of the union (e.g. "MaybeInaccessibleMessage").
+	Name() (string, error)
+
+	// Description returns the documentation text associated with the union.
+	Description() (string, error)
+
+	// Variants returns an iterator over the possible types that form this union.
+	Variants() iter.Seq[Variant]
+}
+
 // Variant represents a single option within a Union type definition.
 //
 // Example: In the context of Telegram Bot API, the "MaybeInaccessibleMessage"
 // union contains two variants: "Message" and "InaccessibleMessage".
 type Variant interface {
-	// ID returns the unique reference identifier of the variant.
-	//
-	// In HTML documentation, this typically corresponds to the anchor href (e.g.,
-	// "#message").
+	// ID returns the unique reference identifier of the variant (e.g. "#message").
 	ID() (string, error)
 
-	// Name returns the type name of the variant.
-	//
-	// Implementations MUST perform whitespace normalization: trimming leading and
-	// trailing spaces to ensure the returned string is a valid type identifier.
+	// Name returns the type name of the variant (e.g. "Message").
 	Name() (string, error)
 }

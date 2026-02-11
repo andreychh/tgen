@@ -55,7 +55,7 @@ func (s HTMLSelection) Filter(selector string) Selection {
 func (s HTMLSelection) FilterFunc(f func(Selection) bool) Selection {
 	return NewHTMLSelection(
 		s.inner.FilterFunction(
-			func(i int, gs *goquery.Selection) bool {
+			func(_ int, gs *goquery.Selection) bool {
 				return f(NewHTMLSelection(gs))
 			},
 		),
