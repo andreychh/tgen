@@ -77,7 +77,7 @@ func TestRawVariant_Name(t *testing.T) {
 			wantName: "Message",
 		},
 		{
-			name:     "returns valid name with whitespace (normalized by dom)",
+			name:     "returns valid name with whitespace (trimmed)",
 			html:     `<li>   User   </li>`,
 			wantName: "User",
 		},

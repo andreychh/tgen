@@ -301,12 +301,7 @@ func TestHTMLSelection_Find(t *testing.T) {
 			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
 			require.NoError(t, err, "HTML fixture does not parse correctly")
 			got := dom.NewHTMLSelection(doc.Selection).Find("#scope").Find(tt.selector)
-			assert.Equal(
-				t,
-				tt.wantText,
-				got.Text(),
-				"found elements do not match expectation",
-			)
+			assert.Equal(t, tt.wantText, got.Text(), "found elements do not match expectation")
 		})
 	}
 }
@@ -451,12 +446,7 @@ func TestHTMLSelection_NextUntil(t *testing.T) {
 			got := dom.NewHTMLSelection(doc.Selection).
 				Find(tt.startSelector).
 				NextUntil(tt.untilSelector)
-			assert.Equal(
-				t,
-				tt.wantText,
-				got.Text(),
-				"siblings text does not match expectation",
-			)
+			assert.Equal(t, tt.wantText, got.Text(), "siblings text does not match expectation")
 		})
 	}
 }
@@ -498,12 +488,7 @@ func TestHTMLSelection_Text(t *testing.T) {
 			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
 			require.NoError(t, err, "HTML fixture does not parse correctly")
 			got := dom.NewHTMLSelection(doc.Selection).Find(tt.selector).Text()
-			assert.Equal(
-				t,
-				tt.wantText,
-				got,
-				"extracted text does not match expectation",
-			)
+			assert.Equal(t, tt.wantText, got, "extracted text does not match expectation")
 		})
 	}
 }
