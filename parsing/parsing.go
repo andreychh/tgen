@@ -4,7 +4,7 @@
 // Package parsing provides the core logic for extracting structured API
 // definitions from the Telegram Bot API HTML documentation.
 //
-// It defines the domain models (Definition, Union, Variant) and their
+// It defines the domain models (e.g. Document, Union, Variant) and their
 // HTML-based implementations, serving as the data source for the code
 // generator.
 package parsing
@@ -22,6 +22,12 @@ var (
 	// nameRegex matches valid type names in PascalCase (e.g., "Message", "User").
 	nameRegex = regexp.MustCompile(`^[A-Z][a-zA-Z0-9]+$`)
 )
+
+// Document represents the Telegram API specification.
+type Document interface {
+	// Unions returns a sequence of all Union types found in the specification.
+	Unions() iter.Seq[Union]
+}
 
 // Union represents a polymorphic type definition (Sum Type) where a value can
 // be one of several distinct types.
