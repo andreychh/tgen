@@ -23,9 +23,9 @@ var (
 	nameRegex = regexp.MustCompile(`^[A-Z][a-zA-Z0-9]+$`)
 )
 
-// Document represents the Telegram API specification.
-type Document interface {
-	// Unions returns a sequence of all Union types found in the specification.
+// Specification represents the contract of the Telegram Bot API.
+type Specification interface {
+	// Unions returns a sequence of all Union types found in the API.
 	Unions() iter.Seq[Union]
 }
 

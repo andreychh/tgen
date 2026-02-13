@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Andrey Chernykh
+// SPDX-License-Identifier: MIT
+
 package parsing
 
 import (
@@ -12,33 +15,34 @@ import (
 type DefinitionKind string
 
 const (
-	// KindUnknown represents a non-API or unidentified section.
+	// KindUnknown represents an unidentified or irrelevant documentation section.
 	KindUnknown DefinitionKind = "unknown"
 
-	// KindType represents a standard data object.
+	// KindType indicates that the definition is a Type.
 	KindType DefinitionKind = "type"
 
-	// KindMethod represents an API endpoint.
+	// KindMethod indicates that the definition is a Method.
 	KindMethod DefinitionKind = "method"
 
-	// KindUnion represents a sum-type interface.
+	// KindUnion indicates that the definition is a Union.
 	KindUnion DefinitionKind = "union"
 )
 
 // Anchor represents a starting point of an API definition within the document.
 //
-// It acts as a semantic marker used to identify the kind of entity (e.g. Method
-// or Type) before full parsing occurs.
+// It wraps an <h4> header element and acts as a semantic marker to identify the
+// kind of definition (e.g. [Method], [Type] or [Union]) before full
+// parsing occurs.
 type Anchor struct {
 	selection dom.Selection
 }
 
-// NewAnchor wraps a DOM selection to provide identification logic.
-func NewAnchor(s dom.Selection) Anchor {
-	return Anchor{selection: s}
+// NewAnchor creates a new Anchor instance from the provided <h4> DOM selection.
+func NewAnchor(h4 dom.Selection) Anchor {
+	return Anchor{selection: h4}
 }
 
-// Kind identifies whether the anchor points to a Method, Type, or Union.
+// Kind reports the category of the API definition pointed to by the anchor.
 func (a Anchor) Kind() DefinitionKind {
 	id, exists := a.selection.Find("a.anchor").Attr("href")
 	if !exists || strings.Contains(id, "-") {
