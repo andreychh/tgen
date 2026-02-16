@@ -3,7 +3,7 @@
 
 module github.com/andreychh/tgen
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.11.0
