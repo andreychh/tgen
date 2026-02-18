@@ -9,14 +9,19 @@ import (
 	"path/filepath"
 )
 
+// Fileset represents a collection of [Artifacts] ready to be materialized onto
+// the file system.
 type Fileset struct {
 	artifacts Artifacts
 }
 
+// NewFileset returns a [Fileset] containing the provided [Artifacts].
 func NewFileset(a Artifacts) Fileset {
 	return Fileset{artifacts: a}
 }
 
+// Emit writes all artifacts in the [Fileset] to the specified output directory.
+// It creates the directory and any necessary parents if they do not exist.
 func (f Fileset) Emit(path string) error {
 	err := os.MkdirAll(path, 0o750)
 	if err != nil {
@@ -31,6 +36,8 @@ func (f Fileset) Emit(path string) error {
 	return nil
 }
 
+// renderFile creates and safely opens a target file, delegating the actual
+// content generation to the provided [View].
 func (f Fileset) renderFile(path string, v View) error {
 	file, err := os.Create(filepath.Clean(path))
 	if err != nil {
