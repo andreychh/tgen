@@ -1,7 +1,8 @@
-{{/*SPDX-FileCopyrightText: 2025-2026 Andrey Chernykh*/}}
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "union"}} {{/*gotype: github.com/andreychh/tgen/parsing.Union*/}}
+// {{.Description}}
 type {{.Name}} struct {
 {{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
     {{.Name}} *{{.Name}}
@@ -9,37 +10,37 @@ type {{.Name}} struct {
 }
 
 func (u {{.Name}}) MarshalJSON() ([]byte, error) {
-var fields []string
+    var fields []string
 {{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
     if u.{{.Name}} != nil {
-    fields = append(fields, "{{.Name}}")
+        fields = append(fields, "{{.Name}}")
     }
 {{- end}}
-if len(fields) == 0 {
-return nil, errors.New("{{.Name}}: no fields set (expected exactly one)")
-}
-if len(fields) > 1 {
-return nil, fmt.Errorf("{{.Name}}: multiple fields set (%s)", strings.Join(fields, ", "))
-}
+    if len(fields) == 0 {
+        return nil, errors.New("{{.Name}}: no fields set (expected exactly one)")
+    }
+    if len(fields) > 1 {
+        return nil, fmt.Errorf("{{.Name}}: multiple fields set (%s)", strings.Join(fields, ", "))
+    }
 {{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
     if u.{{.Name}} != nil {
-    return json.Marshal(u.{{.Name}})
+        return json.Marshal(u.{{.Name}})
     }
 {{- end}}
-return nil, errors.New("{{.Name}}: internal error")
+    return nil, errors.New("{{.Name}}: internal error")
 }
 
 func (u *{{.Name}}) UnmarshalJSON(data []byte) error {
-var decoder *json.Decoder
+    var decoder *json.Decoder
 {{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
     var value{{.Name}} {{.Name}}
     decoder = json.NewDecoder(bytes.NewReader(data))
     decoder.DisallowUnknownFields()
     if decoder.Decode(&value{{.Name}}) == nil {
-    u.{{.Name}} = &value{{.Name}}
-    return nil
+        u.{{.Name}} = &value{{.Name}}
+        return nil
     }
 {{- end}}
-return fmt.Errorf("{{.Name}}: unexpected value %.50q", string(data))
+    return fmt.Errorf("{{.Name}}: unexpected value %.50q", string(data))
 }
 {{- end -}}

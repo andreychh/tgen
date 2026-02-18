@@ -96,6 +96,9 @@ linters:
         linters:
           - funlen
         text: 'is too long'
+      - path: _test\.go
+        linters:
+          - gosec
 formatters:
   enable:
     - gofumpt
