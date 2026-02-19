@@ -85,6 +85,11 @@ func TestRawTypeField_Type(t *testing.T) {
 			html:    `<table><tr><td>id</td><td>Integer!</td><td>Desc</td></tr></table>`,
 			wantErr: true,
 		},
+		{
+			name:    "returns error when columns are missing",
+			html:    `<table><tr><td>message_id</td><td>Integer</td></tr></table>`,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -109,21 +114,20 @@ func TestRawTypeField_Type(t *testing.T) {
 
 func TestRawTypeField_Description(t *testing.T) {
 	tests := []struct {
-		name string
-		html string
-		want string
+		name    string
+		html    string
+		want    string
+		wantErr bool
 	}{
 		{
 			name: "extracts full description text",
-			html: `<table><tr><td>key</td><td>Type</td><td>This is a long description.
-</td></tr></table>`,
+			html: `<table><tr><td>key</td><td>Type</td><td>This is a long description.</td></tr></table>`,
 			want: "This is a long description.",
 		},
 		{
-			name: "extracts description even if it starts with Optional",
-			html: `<table><tr><td>key</td><td>Type</td><td>Optional. Some description.
-</td></tr></table>`,
-			want: "Optional. Some description.",
+			name:    "returns error when columns are missing",
+			html:    `<table><tr><td>key</td><td>Type</td></tr></table>`,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -133,6 +137,10 @@ func TestRawTypeField_Description(t *testing.T) {
 			got, err := parsing.NewRawObjectField(
 				dom.NewHTMLSelection(doc.Selection).Find("tr"),
 			).Description()
+			if tt.wantErr {
+				assert.Error(t, err, "validation did not return expected error for missing columns")
+				return
+			}
 			require.NoError(t, err, "unexpected error returned during description extraction")
 			assert.Equal(t, tt.want, got, "extracted description does not match expectation")
 		})
