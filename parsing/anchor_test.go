@@ -30,13 +30,13 @@ func TestAnchor_Kind(t *testing.T) {
 			want: parsing.KindMethod,
 		},
 		{
-			name: "identifies a type by an uppercase header and a table",
+			name: "identifies an object by an uppercase header and a table",
 			html: `
 				<h4><a class="anchor" href="#user"></a>User</h4>
 				<p>This object represents a Telegram user or bot.</p>
 				<table><tr><td>id</td></tr></table>
 			`,
-			want: parsing.KindType,
+			want: parsing.KindObject,
 		},
 		{
 			name: "identifies a union by an uppercase header and a list without a table",
@@ -83,7 +83,7 @@ func TestAnchor_Kind(t *testing.T) {
 				<h4><a class="anchor" href="#chat"></a>Chat</h4>
 				<ul><li>Wrong list belonging to Chat</li></ul>
 			`,
-			want: parsing.KindType,
+			want: parsing.KindObject,
 		},
 	}
 	for _, tt := range tests {

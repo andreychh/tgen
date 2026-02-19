@@ -88,7 +88,7 @@ func TestRawVariant_Name(t *testing.T) {
 		},
 		{
 			name:    "returns error for invalid characters (underscore)",
-			html:    `<li>Message_Type</li>`,
+			html:    `<li>Message_Object</li>`,
 			wantErr: true,
 		},
 		{

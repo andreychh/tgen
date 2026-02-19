@@ -29,7 +29,7 @@ func TestRawSpecification_Unions(t *testing.T) {
 				<table><tr><td>offset</td></tr></table>
 
 				<h4><a class="anchor" href="#user"></a>User</h4>
-				<p>Type desc</p>
+				<p>Object desc</p>
 				<table><tr><td>id</td></tr></table>
 
 				<h4><a class="anchor" href="#maybeinaccessiblemessage"></a>MaybeInaccessibleMessage</h4>
