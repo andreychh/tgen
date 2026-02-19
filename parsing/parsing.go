@@ -37,6 +37,27 @@ type Specification interface {
 	Unions() iter.Seq[Union]
 }
 
+// Object represents a standard object definition in the Telegram Bot API. It
+// defines the structure of the data payloads sent to and received from the
+// Telegram.
+//
+// Example: In the Telegram Bot API, "Message" and "User" are objects.
+type Object interface {
+	// ID returns the unique reference identifier of the object definition (e.g.,
+	// "#message").
+	ID() (string, error)
+
+	// Name returns the name of the object, formatted to match a specific code
+	// convention (e.g., "Message").
+	Name() (string, error)
+
+	// Description returns the documentation text describing the object.
+	Description() (string, error)
+
+	// Fields returns an iterator over the properties that belong to this object.
+	Fields() iter.Seq[Field]
+}
+
 // Field represents a single property within an Object definition.
 type Field interface {
 	// Name returns the name of the field, formatted to match a specific code
