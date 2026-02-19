@@ -23,27 +23,27 @@ func TestRawUnion_ID(t *testing.T) {
 	}{
 		{
 			name:   "returns valid ID from anchor",
-			html:   `<h4><a class="anchor" href="#uniontype"></a>UnionType</h4>`,
-			wantID: "#uniontype",
+			html:   `<h4><a class="anchor" href="#unionobject"></a>UnionObject</h4>`,
+			wantID: "#unionobject",
 		},
 		{
 			name:   "returns valid ID with whitespace (trimmed)",
-			html:   `<h4><a class="anchor" href="  #uniontype  "></a>UnionType</h4>`,
-			wantID: "#uniontype",
+			html:   `<h4><a class="anchor" href="  #unionobject  "></a>UnionObject</h4>`,
+			wantID: "#unionobject",
 		},
 		{
 			name:    "returns error when anchor is missing",
-			html:    `<h4>UnionType</h4>`,
+			html:    `<h4>UnionObject</h4>`,
 			wantErr: true,
 		},
 		{
 			name:    "returns error when href is missing",
-			html:    `<h4><a class="anchor"></a>UnionType</h4>`,
+			html:    `<h4><a class="anchor"></a>UnionObject</h4>`,
 			wantErr: true,
 		},
 		{
 			name:    "returns error when format is invalid (no hash)",
-			html:    `<h4><a class="anchor" href="uniontype"></a>UnionType</h4>`,
+			html:    `<h4><a class="anchor" href="unionobject"></a>UnionObject</h4>`,
 			wantErr: true,
 		},
 	}
@@ -73,22 +73,22 @@ func TestRawUnion_Name(t *testing.T) {
 	}{
 		{
 			name:     "returns valid PascalCase name",
-			html:     `<h4><a class="anchor" href="#union"></a>UnionType</h4>`,
-			wantName: "UnionType",
+			html:     `<h4><a class="anchor" href="#union"></a>UnionObject</h4>`,
+			wantName: "UnionObject",
 		},
 		{
 			name:     "returns normalized name (whitespace removal)",
-			html:     `<h4>   UnionType   </h4>`,
-			wantName: "UnionType",
+			html:     `<h4>   UnionObject   </h4>`,
+			wantName: "UnionObject",
 		},
 		{
 			name:    "returns error for invalid casing (camelCase)",
-			html:    `<h4>unionType</h4>`,
+			html:    `<h4>unionObject</h4>`,
 			wantErr: true,
 		},
 		{
 			name:    "returns error for invalid characters",
-			html:    `<h4>Union_Type</h4>`,
+			html:    `<h4>Union_Object</h4>`,
 			wantErr: true,
 		},
 	}

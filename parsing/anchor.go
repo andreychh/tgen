@@ -18,8 +18,8 @@ const (
 	// KindUnknown represents an unidentified or irrelevant documentation section.
 	KindUnknown DefinitionKind = "unknown"
 
-	// KindType indicates that the definition is a Type.
-	KindType DefinitionKind = "type"
+	// KindObject indicates that the definition is an Object.
+	KindObject DefinitionKind = "object"
 
 	// KindMethod indicates that the definition is a Method.
 	KindMethod DefinitionKind = "method"
@@ -31,8 +31,8 @@ const (
 // Anchor represents a starting point of an API definition within the document.
 //
 // It wraps an <h4> header element and acts as a semantic marker to identify the
-// kind of definition (e.g. [Method], [Type] or [Union]) before full
-// parsing occurs.
+// kind of definition (e.g., [Method], [Object] or [Union]) before full parsing
+// occurs.
 type Anchor struct {
 	selection dom.Selection
 }
@@ -56,7 +56,7 @@ func (a Anchor) Kind() DefinitionKind {
 	case unicode.IsLower(first):
 		return KindMethod
 	case unicode.IsUpper(first) && hasTable:
-		return KindType
+		return KindObject
 	case unicode.IsUpper(first) && !hasTable && hasList:
 		return KindUnion
 	}

@@ -8,7 +8,7 @@ import "iter"
 
 // Selection represents a set of HTML nodes.
 //
-// For all text extraction methods (e.g. Text, Attr) whitespace normalization
+// For all text extraction methods (e.g., Text, Attr) whitespace normalization
 // MUST be performed: trimming leading/trailing spaces and collapsing internal
 // whitespace sequences to a single space.
 //

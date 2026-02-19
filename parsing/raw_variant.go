@@ -14,7 +14,7 @@ import (
 // RawVariant implements Variant by wrapping an <li> element.
 //
 // It expects the selection to point to a list item containing an anchor link to
-// the type definition.
+// the object definition.
 type RawVariant struct {
 	selection dom.Selection
 	idRegex   *regexp.Regexp

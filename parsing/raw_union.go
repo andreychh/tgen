@@ -78,7 +78,7 @@ func (u RawUnion) Description() (string, error) {
 	return strings.Join(parts, " "), nil
 }
 
-// Variants returns an iterator over the possible types (variants) of this
+// Variants returns an iterator over the possible objects (variants) of this
 // union.
 //
 // It searches for the first <ul> list in the section and iterates over its <li>
