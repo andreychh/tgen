@@ -24,7 +24,7 @@ var (
 	nameRegex = regexp.MustCompile(`^[A-Z][a-zA-Z0-9]+$`)
 
 	// jsonKeyRegex matches valid JSON property keys (e.g., "message_id").
-	jsonKeyRegex = regexp.MustCompile(`^[a-z_]+$`)
+	jsonKeyRegex = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 	// typeRegex matches valid Field types, which can include basic types (e.g.,
 	// "Integer", "String") or array types (e.g., "Array of Integer").

@@ -36,6 +36,11 @@ func TestRawTypeField_JSONKey(t *testing.T) {
 			html:    `<table><tr><td>message_id</td><td>Integer</td></tr></table>`,
 			wantErr: true,
 		},
+		{
+			name: "extracts valid key containing numbers",
+			html: `<table><tr><td>mpeg4_url</td><td>String</td><td>A valid URL for the MPEG4 file</td></tr></table>`,
+			want: "mpeg4_url",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -25,6 +25,8 @@ func PrepareTemplate() *template.Template {
 	return template.Must(
 		template.New("").Option("missingkey=error").Funcs(
 			template.FuncMap{
+				"objects":  slices.Collect[parsing.Object],
+				"fields":   slices.Collect[parsing.Field],
 				"unions":   slices.Collect[parsing.Union],
 				"variants": slices.Collect[parsing.Variant],
 			},
