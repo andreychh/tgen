@@ -1,0 +1,12 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "object" -}} {{/*gotype: github.com/andreychh/tgen/parsing.Object*/}}
+// {.Name} {{.Description}}
+type {{.Name}} struct {
+{{- range .Fields | fields }} {{/*gotype: github.com/andreychh/tgen/parsing.Field*/}}
+    // {{.Description}}
+    {{.Name}} {{if .IsOptional}}*{{end}}{{.Type}} `json:"{{.JSONKey}}{{if .IsOptional}},omitempty{{end}}"`
+{{- end}}
+}
+{{- end -}}

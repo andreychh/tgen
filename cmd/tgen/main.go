@@ -29,7 +29,8 @@ func main() {
 	spec := parsing.NewRawSpecification(sel)
 	tmpl := golang.PrepareTemplate()
 	fileset := rendering.NewFileset(rendering.Artifacts{
-		"unions.go": golang.NewUnionsView(tmpl, spec),
+		"unions.go":  golang.NewUnionsView(tmpl, spec),
+		"objects.go": golang.NewObjectsView(tmpl, spec),
 	})
 	err = fileset.Emit("api")
 	if err != nil {
