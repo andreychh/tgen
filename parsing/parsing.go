@@ -35,6 +35,9 @@ var (
 type Specification interface {
 	// Unions returns a sequence of all union definitions found in the API.
 	Unions() iter.Seq[Union]
+
+	// Objects returns a sequence of all object definitions found in the API.
+	Objects() iter.Seq[Object]
 }
 
 // Object represents a standard object definition in the Telegram Bot API. It
