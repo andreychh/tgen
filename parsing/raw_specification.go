@@ -42,3 +42,20 @@ func (s RawSpecification) Unions() iter.Seq[Union] {
 		}
 	}
 }
+
+// Objects returns an iterator over all standard object defined in the
+// specification.
+func (s RawSpecification) Objects() iter.Seq[Object] {
+	return func(yield func(Object) bool) {
+		seq := s.selection.Find("h4").FilterFunc(
+			func(s dom.Selection) bool {
+				return NewAnchor(s).Kind() == KindObject
+			},
+		).All()
+		for _, h4 := range seq {
+			if !yield(NewRawObject(h4)) {
+				break
+			}
+		}
+	}
+}
