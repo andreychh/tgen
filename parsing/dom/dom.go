@@ -37,6 +37,10 @@ type Selection interface {
 	// FilterFunc reduces the set to nodes satisfying the predicate f.
 	FilterFunc(f func(Selection) bool) Selection
 
+	// NextAllFiltered returns all following siblings of each element in the set
+	// that match the given selector.
+	NextAllFiltered(selector string) Selection
+
 	// NextUntil returns following siblings up to (but not including) the selector.
 	NextUntil(selector string) Selection
 
