@@ -28,6 +28,7 @@ func NewRawSpecification(root dom.Selection) RawSpecification {
 
 // Unions returns an iterator over all polymorphic sum-types (Union) defined in
 // the specification.
+// TODO: consider using `div#dev_page_content h4` selector.
 func (s RawSpecification) Unions() iter.Seq[Union] {
 	return func(yield func(Union) bool) {
 		seq := s.selection.Find("h4").FilterFunc(
@@ -45,6 +46,7 @@ func (s RawSpecification) Unions() iter.Seq[Union] {
 
 // Objects returns an iterator over all standard object defined in the
 // specification.
+// TODO: consider using `div#dev_page_content h4` selector.
 func (s RawSpecification) Objects() iter.Seq[Object] {
 	return func(yield func(Object) bool) {
 		seq := s.selection.Find("h4").FilterFunc(

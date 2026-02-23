@@ -12,6 +12,7 @@ package parsing
 import (
 	"iter"
 	"regexp"
+	"time"
 )
 
 var (
@@ -29,6 +30,14 @@ var (
 	// typeRegex matches valid Field types, which can include basic types (e.g.,
 	// "Integer", "String") or array types (e.g., "Array of Integer").
 	typeRegex = regexp.MustCompile(`^[a-zA-Z0-9 ]+$`)
+
+	// versionRegex matches the API version declaration in the documentation text
+	// (e.g., "Bot API 8.3").
+	versionRegex = regexp.MustCompile(`Bot API (\d+\.\d+)`)
+
+	// releaseIDRegex matches valid anchor identifiers for release sections (e.g.,
+	// "#february-9-2026").
+	releaseIDRegex = regexp.MustCompile(`^#[a-z]+-\d+-\d+$`)
 )
 
 // Specification represents the contract of the Telegram Bot API.
@@ -38,6 +47,19 @@ type Specification interface {
 
 	// Objects returns a sequence of all object definitions found in the API.
 	Objects() iter.Seq[Object]
+}
+
+// Release represents the versioning and metadata of the parsed API.
+type Release interface {
+	// ID returns the unique identifier (anchor) of the release section in the HTML
+	// (e.g., "#february-9-2026").
+	ID() (string, error)
+
+	// Version returns the API version identifier (e.g., "9.4").
+	Version() (string, error)
+
+	// Date parses and returns the release date specified in the API.
+	Date() (time.Time, error)
 }
 
 // Object represents a standard object definition in the Telegram Bot API. It
