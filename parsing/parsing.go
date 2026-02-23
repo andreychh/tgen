@@ -47,6 +47,9 @@ type Specification interface {
 
 	// Objects returns a sequence of all object definitions found in the API.
 	Objects() iter.Seq[Object]
+
+	// Release returns the versioning and metadata information about the API.
+	Release() (Release, error)
 }
 
 // Release represents the versioning and metadata of the parsed API.
