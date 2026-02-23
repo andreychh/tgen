@@ -409,6 +409,60 @@ func TestHTMLSelection_Length(t *testing.T) {
 	}
 }
 
+func TestHTMLSelection_NextAllFiltered(t *testing.T) {
+	tests := []struct {
+		name           string
+		html           string
+		startSelector  string
+		filterSelector string
+		wantText       string
+	}{
+		{
+			name:           "selects following siblings matching the selector",
+			html:           `<div id="root"><h4 id="start">Start</h4><p class="match">One</p><span>Skip</span><p class="match">Two</p></div>`,
+			startSelector:  "#start",
+			filterSelector: "p.match",
+			wantText:       "OneTwo",
+		},
+		{
+			name:           "does not include preceding siblings",
+			html:           `<div id="root"><p class="match">Before</p><h4 id="start">Start</h4><p class="match">After</p></div>`,
+			startSelector:  "#start",
+			filterSelector: "p.match",
+			wantText:       "After",
+		},
+		{
+			name:           "returns empty selection if no following siblings match",
+			html:           `<div id="root"><h4 id="start">Start</h4><span>Skip</span><div>Ignore</div></div>`,
+			startSelector:  "#start",
+			filterSelector: "p",
+			wantText:       "",
+		},
+		{
+			name:           "returns empty selection if start selection is empty",
+			html:           `<div id="root"><p class="match">Orphan</p></div>`,
+			startSelector:  "#missing",
+			filterSelector: "p.match",
+			wantText:       "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
+			require.NoError(t, err, "HTML fixture does not parse correctly")
+			got := dom.NewHTMLSelection(doc.Selection).
+				Find(tt.startSelector).
+				NextAllFiltered(tt.filterSelector)
+			assert.Equal(
+				t,
+				tt.wantText,
+				got.Text(),
+				"filtered following siblings text does not match expectation",
+			)
+		})
+	}
+}
+
 func TestHTMLSelection_NextUntil(t *testing.T) {
 	tests := []struct {
 		name          string

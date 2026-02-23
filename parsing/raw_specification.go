@@ -4,6 +4,7 @@
 package parsing
 
 import (
+	"errors"
 	"iter"
 
 	"github.com/andreychh/tgen/parsing/dom"
@@ -28,6 +29,8 @@ func NewRawSpecification(root dom.Selection) RawSpecification {
 
 // Unions returns an iterator over all polymorphic sum-types (Union) defined in
 // the specification.
+//
+// TODO: Consider using `div#dev_page_content h4` selector.
 func (s RawSpecification) Unions() iter.Seq[Union] {
 	return func(yield func(Union) bool) {
 		seq := s.selection.Find("h4").FilterFunc(
@@ -45,6 +48,8 @@ func (s RawSpecification) Unions() iter.Seq[Union] {
 
 // Objects returns an iterator over all standard object defined in the
 // specification.
+//
+// TODO: Consider using `div#dev_page_content h4` selector.
 func (s RawSpecification) Objects() iter.Seq[Object] {
 	return func(yield func(Object) bool) {
 		seq := s.selection.Find("h4").FilterFunc(
@@ -58,4 +63,16 @@ func (s RawSpecification) Objects() iter.Seq[Object] {
 			}
 		}
 	}
+}
+
+// Release returns the versioning and metadata information about the
+// specification.
+//
+//nolint:ireturn // Required to satisfy the Specification interface contract.
+func (s RawSpecification) Release() (Release, error) {
+	h4 := s.selection.Find("div#dev_page_content h4").First()
+	if h4.IsEmpty() {
+		return nil, errors.New("release header (first h4) not found in the document")
+	}
+	return NewRawRelease(h4), nil
 }

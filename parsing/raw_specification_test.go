@@ -224,3 +224,59 @@ func TestRawSpecification_Objects(t *testing.T) {
 		})
 	}
 }
+
+func TestRawSpecification_Release(t *testing.T) {
+	tests := []struct {
+		name    string
+		html    string
+		wantErr bool
+	}{
+		{
+			name: "returns Release when header is found inside content div",
+			html: `
+				<div id="dev_page_content">
+					<h4><a class="anchor" href="#february-9-2026"></a>February 9, 2026</h4>
+					<p><strong>Bot API 9.4</strong></p>
+				</div>
+			`,
+			wantErr: false,
+		},
+		{
+			name: "returns error when dev_page_content wrapper is missing",
+			html: `
+				<div>
+					<h4><a class="anchor" href="#february-9-2026"></a>February 9, 2026</h4>
+					<p><strong>Bot API 9.4</strong></p>
+				</div>
+			`,
+			wantErr: true,
+		},
+		{
+			name: "returns error when h4 is missing inside content div",
+			html: `
+				<div id="dev_page_content">
+					<p>No header here</p>
+				</div>
+			`,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tt.html))
+			require.NoError(t, err, "HTML fixture does not parse correctly")
+			got, err := parsing.NewRawSpecification(
+				dom.NewHTMLSelection(doc.Selection),
+			).Release()
+			if tt.wantErr {
+				assert.Error(t, err, "expected error when release header is missing")
+				return
+			}
+			require.NoError(t, err, "unexpected error returned from Release()")
+			assert.NotNil(t, got, "expected valid Release interface")
+			id, err := got.ID()
+			require.NoError(t, err, "returned Release should be able to extract ID")
+			assert.Equal(t, "#february-9-2026", id, "extracted ID does not match expectation")
+		})
+	}
+}

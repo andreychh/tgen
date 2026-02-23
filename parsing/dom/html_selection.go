@@ -62,6 +62,11 @@ func (s HTMLSelection) FilterFunc(f func(Selection) bool) Selection {
 	)
 }
 
+// NextAllFiltered returns all following siblings matching the selector.
+func (s HTMLSelection) NextAllFiltered(selector string) Selection {
+	return NewHTMLSelection(s.inner.NextAllFiltered(selector))
+}
+
 // NextUntil gets following siblings up to but not including the selector.
 func (s HTMLSelection) NextUntil(selector string) Selection {
 	return NewHTMLSelection(s.inner.NextUntil(selector))
