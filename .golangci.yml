@@ -78,6 +78,9 @@ linters:
       default: all
     nolintlint:
       require-specific: true
+    exhaustruct:
+      exclude:
+        - '^github\.com/urfave/cli/v3\..*$'
   exclusions:
     rules:
       - path: _test\.go
