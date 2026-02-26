@@ -149,7 +149,8 @@ func TestRawSpecification_Objects(t *testing.T) {
 			limit:     -1,
 			wantNames: []string{"Game", "User"},
 		},
-		// TODO: Fix placeholder object parsing.
+		// TODO #39: Fix placeholder object parsing.
+		//
 		// The parser currently fails to extract objects like CallbackGame because they
 		// lack an associated <table>. We need to support objects that only have a
 		// description.

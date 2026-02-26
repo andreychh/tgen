@@ -27,7 +27,7 @@ func NewGo() *cli.Command {
 				Name:    "spec",
 				Aliases: []string{"s"},
 				Usage:   "Path to the local api.html file",
-				// TODO: use "https://core.telegram.org/bots/api" as the default value.
+				// TODO #39: Use `https://core.telegram.org/bots/api` as the default value.
 				Value: ".notes/api/api.html",
 			},
 			&cli.StringFlag{
@@ -36,7 +36,8 @@ func NewGo() *cli.Command {
 				Usage:   "Output directory for generated files",
 				Value:   "api",
 			},
-			// TODO: add an option to specify the Go package name.
+			// TODO #39: Add an option to specify the Go package name.
+			//
 			// &cli.StringFlag{
 			//     Name:    "package",
 			//     Aliases: []string{"p"},
