@@ -15,26 +15,37 @@ tasks:
       - lint:md
       - lint:reuse
       - lint:typos
+      - lint:pdd
 
   lint:go:
     desc: Check Go code quality
-    cmd: golangci-lint run ./...
+    cmds:
+      - golangci-lint run ./...
 
   lint:yml:
     desc: Validate YAML syntax
-    cmd: yamllint --strict .
+    cmds:
+      - yamllint --strict .
 
   lint:md:
     desc: Check Markdown formatting
-    cmd: markdownlint-cli2 **/*.md
+    cmds:
+      - markdownlint-cli2 **/*.md
 
   lint:reuse:
     desc: Verify license compliance
-    cmd: reuse lint
+    cmds:
+      - reuse lint
 
   lint:typos:
     desc: Check for common misspellings
-    cmd: typos
+    cmds:
+      - typos
+
+  lint:pdd:
+    desc: Validate PDD puzzle format
+    cmds:
+      - pdd --skip-gitignore --verbose --file /dev/null
 
   test:
     desc: Run unit tests with race detector

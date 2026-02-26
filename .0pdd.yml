@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+threshold: 10
+tags:
+  - pdd
+format:
+  - short-title
+alerts:
+  github:
+    - andreychh
