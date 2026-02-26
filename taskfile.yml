@@ -76,7 +76,6 @@ tasks:
       - sh: 'git fetch --tags && [ $(git rev-parse HEAD) = $(git rev-parse @{u}) ]'
         msg: "Not synced with origin"
     deps:
-      - build
       - test
     prompt: "This will release {{.NEXT}}. Continue?"
     cmds:
