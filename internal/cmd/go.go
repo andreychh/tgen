@@ -4,15 +4,17 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/parsing"
 	"github.com/andreychh/tgen/parsing/dom"
 	"github.com/andreychh/tgen/rendering"
 	"github.com/andreychh/tgen/rendering/golang"
+	"github.com/andreychh/tgen/source"
 	"github.com/spf13/cobra"
 )
 
@@ -42,15 +44,17 @@ func NewGo() *cobra.Command {
 }
 
 func goAction(cmd *cobra.Command, _ []string) error {
-	path := filepath.Clean(cmd.Flag("spec").Value.String())
-	file, err := os.Open(path)
+	location := filepath.Clean(cmd.Flag("spec").Value.String())
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	reader, err := source.NewLocationSource(location).Open(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to open HTML file (%s): %w", path, err)
+		return fmt.Errorf("opening source %q: %w", location, err)
 	}
-	defer func() { _ = file.Close() }()
-	doc, err := goquery.NewDocumentFromReader(file)
+	defer func() { _ = reader.Close() }()
+	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		return fmt.Errorf("failed to parse HTML file: %w", err)
+		return fmt.Errorf("parsing HTML from %q: %w", location, err)
 	}
 	sel := dom.NewHTMLSelection(doc.Selection)
 	spec := parsing.NewRawSpecification(sel)
@@ -62,7 +66,7 @@ func goAction(cmd *cobra.Command, _ []string) error {
 	out := filepath.Clean(cmd.Flag("out").Value.String())
 	err = fileset.Emit(out)
 	if err != nil {
-		return fmt.Errorf("failed to emit files to directory '%s': %w", out, err)
+		return fmt.Errorf("generating files in directory %q: %w", out, err)
 	}
 	return nil
 }
