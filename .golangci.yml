@@ -80,7 +80,7 @@ linters:
       require-specific: true
     exhaustruct:
       exclude:
-        - '^github\.com/urfave/cli/v3\..*$'
+        - '^github\.com/spf13/cobra\..*$'
   exclusions:
     rules:
       - path: _test\.go
