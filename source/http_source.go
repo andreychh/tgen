@@ -28,12 +28,20 @@ func NewHTTPSource(url string, client HTTPClient) HTTPSource {
 
 // NewDefaultHTTPSource creates an HTTPSource using the default [http.Client].
 func NewDefaultHTTPSource(url string) HTTPSource {
-	return NewHTTPSource(url, &http.Client{})
+	return NewHTTPSource(
+		url,
+		&http.Client{
+			Transport:     nil,
+			CheckRedirect: nil,
+			Jar:           nil,
+			Timeout:       0,
+		},
+	)
 }
 
 // Open executes a GET request and returns the response body.
 func (s HTTPSource) Open(ctx context.Context) (io.ReadCloser, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("creating request for %q: %w", s.url, err)
 	}
