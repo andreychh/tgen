@@ -5,16 +5,14 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/andreychh/tgen/internal/cmd"
 )
 
 func main() {
-	err := cmd.NewRoot().Run(context.Background(), os.Args)
+	err := cmd.NewRoot().Execute()
 	if err != nil {
-		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
 }
