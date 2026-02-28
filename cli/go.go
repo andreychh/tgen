@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package cmd
+package cli
 
 import (
 	"context"
@@ -17,10 +17,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewGo returns the "go" subcommand.
+// NewGoCommand returns the "go" subcommand.
 //
 // TODO #43: Add an option to specify the Go package name.
-func NewGo() *cobra.Command {
+func NewGoCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "go",
 		Short: "Generate Go structures and methods",

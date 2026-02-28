@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package cmd
+package cli
 
 import "github.com/spf13/cobra"
 
-// NewRoot returns the primary application command ("tgen").
-func NewRoot() *cobra.Command {
+// NewRootCommand returns the primary application command ("tgen").
+func NewRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tgen",
 		Short: "Telegram Bot API code generator",
 	}
-	cmd.AddCommand(NewGo())
+	cmd.AddCommand(NewGoCommand())
 	return cmd
 }
