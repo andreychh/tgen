@@ -6,7 +6,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -20,7 +19,6 @@ import (
 
 // NewGo returns the "go" subcommand.
 //
-// TODO #43: Change `spec` default value to Telegram Bot API URL.
 // TODO #43: Add an option to specify the Go package name.
 func NewGo() *cobra.Command {
 	cmd := &cobra.Command{
@@ -31,7 +29,7 @@ func NewGo() *cobra.Command {
 	cmd.Flags().StringP(
 		"spec",
 		"s",
-		".notes/api/api.html",
+		"https://core.telegram.org/bots/api",
 		"Path to the local api.html file",
 	)
 	cmd.Flags().StringP(
@@ -44,7 +42,7 @@ func NewGo() *cobra.Command {
 }
 
 func goAction(cmd *cobra.Command, _ []string) error {
-	location := filepath.Clean(cmd.Flag("spec").Value.String())
+	location := cmd.Flag("spec").Value.String()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	reader, err := source.NewLocationSource(location).Open(ctx)
@@ -63,7 +61,7 @@ func goAction(cmd *cobra.Command, _ []string) error {
 		"unions.go":  golang.NewUnionsView(tmpl, spec),
 		"objects.go": golang.NewObjectsView(tmpl, spec),
 	})
-	out := filepath.Clean(cmd.Flag("out").Value.String())
+	out := cmd.Flag("out").Value.String()
 	err = fileset.Emit(out)
 	if err != nil {
 		return fmt.Errorf("generating files in directory %q: %w", out, err)
