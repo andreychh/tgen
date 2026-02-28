@@ -7,11 +7,11 @@ package main
 import (
 	"os"
 
-	"github.com/andreychh/tgen/internal/cmd"
+	"github.com/andreychh/tgen/cli"
 )
 
 func main() {
-	err := cmd.NewRoot().Execute()
+	err := cli.NewRootCommand().Execute()
 	if err != nil {
 		os.Exit(1)
 	}

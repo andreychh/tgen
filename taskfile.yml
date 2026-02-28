@@ -53,11 +53,11 @@ tasks:
 
   build:
     desc: Compile the tgen binary
-    cmd: go build -o tgen ./cmd/tgen
+    cmd: go build -o tgen .
 
   run:
     desc: Run tgen locally
-    cmd: go run ./cmd/tgen
+    cmd: go run .
 
   release:patch:
     desc: Release a new patch version (x.x.+1)

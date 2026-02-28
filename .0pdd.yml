@@ -5,6 +5,3 @@ tags:
   - pdd
 format:
   - short-title
-alerts:
-  github:
-    - andreychh
