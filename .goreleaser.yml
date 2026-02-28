@@ -9,7 +9,7 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/tgen
+  - main: .
     binary: tgen
     env:
       - CGO_ENABLED=0
@@ -41,17 +41,21 @@ archives:
     format_overrides:
       - goos: windows
         formats: [ zip ]
+    files:
+      - README.md
+      - LICENSES
 
 checksum:
   name_template: 'checksums.txt'
 
 changelog:
-  sort: asc
   use: github
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - '^docs'
+      - '^test'
+      - '^Merge'
+      - '^Update'
 
 release:
   footer: >-
