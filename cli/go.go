@@ -23,20 +23,20 @@ import (
 func NewGoCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "go",
-		Short: "Generate Go structures and methods",
+		Short: "Generate Go client code",
 		RunE:  goAction,
 	}
 	cmd.Flags().StringP(
 		"spec",
 		"s",
 		"https://core.telegram.org/bots/api",
-		"Path to the local api.html file",
+		"URL or local path to the Telegram Bot API HTML specification",
 	)
 	cmd.Flags().StringP(
 		"out",
 		"o",
-		"api",
-		"Output directory for generated files",
+		"./api",
+		"Output directory for the generated Go files",
 	)
 	return cmd
 }
