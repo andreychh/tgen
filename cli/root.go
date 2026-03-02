@@ -9,7 +9,10 @@ import "github.com/spf13/cobra"
 func NewRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tgen",
-		Short: "Telegram Bot API code generator",
+		Short: "Generate strongly-typed Telegram Bot API clients",
+		Long: `tgen turns the Telegram Bot API HTML documentation into ready-to-use API bindings.
+
+Instead of relying on manually updated boilerplate, tgen parses the specification to generate strongly-typed client code.`,
 	}
 	cmd.AddCommand(NewGoCommand())
 	return cmd
