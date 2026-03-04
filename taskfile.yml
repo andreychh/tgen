@@ -45,7 +45,7 @@ tasks:
     sources:
       - '**/*.md'
     cmds:
-      - markdownlint-cli2 --config=.config/markdownlint.yml $(git ls-files "*.md")
+      - markdownlint-cli2 --config .config/.markdownlint.yml $(git ls-files "*.md")
 
   lint:yml:
     desc: Validate YAML syntax
