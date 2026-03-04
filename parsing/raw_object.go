@@ -49,7 +49,7 @@ func (t RawObject) Name() (string, error) {
 // Description returns the human-readable context and purpose of the object.
 func (t RawObject) Description() (string, error) {
 	seq := t.selection.NextUntil("h1, h2, h3, h4, table").Filter("p").All()
-	var parts []string
+	var parts []string //nolint:prealloc //length is unknown before iteration
 	for _, p := range seq {
 		parts = append(parts, p.Text())
 	}

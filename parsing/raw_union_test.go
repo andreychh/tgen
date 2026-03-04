@@ -220,12 +220,7 @@ func TestRawUnion_Variants(t *testing.T) {
 				require.NoError(t, err, "variant name extraction failed inside iterator")
 				names = append(names, name)
 			}
-			assert.Equal(
-				t,
-				len(tt.wantNames),
-				len(names),
-				"number of extracted variants does not match",
-			)
+			assert.Len(t, names, len(tt.wantNames), "number of extracted variants does not match")
 			assert.Equal(t, tt.wantNames, names, "variant names do not match expectation")
 		})
 	}
