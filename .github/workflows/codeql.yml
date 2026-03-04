@@ -11,36 +11,31 @@ name: codeql
   schedule:
     - cron: '29 1 * * 0'
 jobs:
-  codeql-go:
+  codeql:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: autobuild
+          - language: actions
+            build-mode: none
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     permissions:
       packages: read
       security-events: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417  # v6.3.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+      - uses: jdx/mise-action@665d82088236dd987b2af6165be29d21e2e11184  # v3.0.0
+        if: matrix.language == 'go'
         with:
-          go-version-file: go.mod
-      - uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e  # v4.32.4
+          version: v2026.3.1
+      - uses: github/codeql-action/init@cdefb33c0f6224e58673d9004f47f7cb3e328b89  # v4.31.10
         with:
-          languages: go
-          build-mode: autobuild
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           queries: security-and-quality
-      - uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e  # v4.32.4
+      - uses: github/codeql-action/analyze@cdefb33c0f6224e58673d9004f47f7cb3e328b89  # v4.31.10
         with:
-          category: /language:go
-  codeql-actions:
-    timeout-minutes: 15
-    runs-on: ubuntu-24.04
-    permissions:
-      security-events: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-      - uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e  # v4.32.4
-        with:
-          languages: actions
-          build-mode: none
-      - uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e  # v4.32.4
-        with:
-          category: /language:actions
+          category: /language:${{ matrix.language }}
