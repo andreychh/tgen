@@ -53,7 +53,7 @@ linters:
     - gocyclo  # Computes and checks the cyclomatic complexity of functions.
     - godoclint  # Checks Golang's documentation practice (godoc).
     - godot  # Check if comments end in a period.
-    # - godox [style] # Detects usage of FIXME, TODO and other keywords inside comments.
+    # - godox [style] # Detects usage of FIXME and other keywords inside comments.
     # - goheader [duplicate reuse] # Check if file header matches to pattern.
     - gomoddirectives  # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
     # - gomodguard [not applicable] # Allow and blocklist linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
