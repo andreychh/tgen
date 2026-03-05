@@ -10,7 +10,7 @@ import (
 
 // fieldTypeRegex is compiled once at package initialization to avoid repeated
 // compilation on every [FieldType.Value] call.
-var fieldTypeRegex = regexp.MustCompile(`^[a-zA-Z0-9 ]+$`)
+var fieldTypeRegex = regexp.MustCompile(`^[a-zA-Z0-9 ,]+$`)
 
 // FieldType represents a raw type string as it appears in the Type column of
 // the Telegram Bot API field table (e.g., "Integer", "Array of String",
@@ -31,7 +31,7 @@ func NewFieldType(s string) FieldType {
 // construction by [TypeTree.Root].
 func (t FieldType) Value() (string, error) {
 	if !fieldTypeRegex.MatchString(t.raw) {
-		return "", fmt.Errorf("invalid field type: %q", t.raw)
+		return "", fmt.Errorf("field type %q contains invalid characters", t.raw)
 	}
 	return t.raw, nil
 }

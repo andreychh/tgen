@@ -29,7 +29,7 @@ func NewFieldKey(s string) FieldKey {
 // string is not a valid JSON key.
 func (k FieldKey) Value() (string, error) {
 	if !fieldKeyRegex.MatchString(k.raw) {
-		return "", fmt.Errorf("invalid field key: %q", k.raw)
+		return "", fmt.Errorf("field key %q contains invalid characters", k.raw)
 	}
 	return k.raw, nil
 }
