@@ -38,13 +38,13 @@ func (f Fileset) Emit(path string) error {
 
 // renderFile creates and safely opens a target file, delegating the actual
 // content generation to the provided [View].
-func (f Fileset) renderFile(path string, v View) error {
+func (f Fileset) renderFile(path string, view View) error {
 	file, err := os.Create(filepath.Clean(path))
 	if err != nil {
 		return fmt.Errorf("creating file %q: %w", path, err)
 	}
 	defer func() { _ = file.Close() }()
-	err = v.Render(file)
+	err = view.Render(file)
 	if err != nil {
 		return fmt.Errorf("rendering view to %q: %w", path, err)
 	}

@@ -214,12 +214,7 @@ func TestRawObject_Fields(t *testing.T) {
 				require.NoError(t, err, "field JSONKey extraction failed inside iterator")
 				keys = append(keys, key)
 			}
-			assert.Equal(
-				t,
-				len(tt.wantKeys),
-				len(keys),
-				"number of extracted fields does not match",
-			)
+			assert.Len(t, keys, len(tt.wantKeys), "number of extracted fields does not match")
 			assert.Equal(t, tt.wantKeys, keys, "extracted JSON keys do not match expectation")
 		})
 	}

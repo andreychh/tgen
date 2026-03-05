@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+# yaml-language-server: $schema=https://mise.jdx.dev/schema/mise.json
+
+[settings]
+always_keep_download = false
+legacy_version_file = false
+
+[tools]
+"go" = "1.26.0"
+"github:caarlos0/svu" = "3.4.0"
+"github:crate-ci/typos" = "1.44.0"
+"github:golangci/golangci-lint" = "2.10.1"
+"github:goreleaser/goreleaser" = "2.14.1"
+"github:go-task/task" = "3.48.0"
+"github:rhysd/actionlint" = "1.7.11"
+"github:tamasfe/taplo" = "0.10.0"
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.1.4"
+"npm:markdownlint-cli2" = "0.21.0"
+"pipx:reuse" = "6.2.0"
+"pipx:yamllint" = "1.38.0"

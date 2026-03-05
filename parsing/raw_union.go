@@ -71,7 +71,7 @@ func (u RawUnion) Name() (string, error) {
 // variants list (<ul>) or the next section, joining them with spaces.
 func (u RawUnion) Description() (string, error) {
 	seq := u.selection.NextUntil("h1, h2, h3, h4, ul, table").Filter("p").All()
-	var parts []string
+	var parts []string //nolint:prealloc // length is unknown before iteration
 	for _, p := range seq {
 		parts = append(parts, p.Text())
 	}

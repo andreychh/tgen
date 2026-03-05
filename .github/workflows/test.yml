@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Andrey Chernykh
 # SPDX-License-Identifier: MIT
-name: markdownlint
+name: test
 'on':
   push:
     branches:
@@ -9,13 +9,19 @@ name: markdownlint
     branches:
       - main
 jobs:
-  markdownlint:
+  test:
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-      - uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101  # v22.0.0
         with:
-          globs: '**/*.md'
+          fetch-depth: 2
+      - uses: jdx/mise-action@665d82088236dd987b2af6165be29d21e2e11184  # v3.0.0
+        with:
+          version: v2026.3.1
+      - run: task test:coverage
+      - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de  # v5.5.2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

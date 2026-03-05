@@ -13,6 +13,8 @@ import "iter"
 // whitespace sequences to a single space.
 //
 // Methods return a new Selection, leaving the original unmodified.
+//
+//nolint:interfacebloat //all methods belong to the same concept
 type Selection interface {
 	// Text returns the combined text content of the nodes and their descendants.
 	//

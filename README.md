@@ -11,9 +11,8 @@ SPDX-License-Identifier: MIT
 [![PDD status](https://www.0pdd.com/svg?name=andreychh/tgen)](https://www.0pdd.com/p?name=andreychh/tgen)
 [![Go Report Card](https://goreportcard.com/badge/github.com/andreychh/tgen)](https://goreportcard.com/report/github.com/andreychh/tgen)
 
-**tgen** is a command-line tool that turns
-the [Telegram Bot API HTML documentation](https://core.telegram.org/bots/api) into ready-to-use API
-bindings.
+**tgen** is a command-line tool that generates ready-to-use API bindings from
+the [Telegram Bot API HTML documentation](https://core.telegram.org/bots/api).
 
 Instead of relying on manually updated boilerplate, `tgen` parses the specification to generate
 strongly-typed client code.
@@ -26,8 +25,8 @@ strongly-typed client code.
 
 * **Automated & Up-to-Date:** Parses documentation directly from the Telegram website to ensure your
   bindings match the latest API changes.
-* **Fluent Output:** Aims to generate developer-friendly interfaces that follow language-specific
-  idioms. For example, in Go, it targets syntax like:
+* **Fluent Output:** Generates developer-friendly interfaces that follow language-specific idioms.
+  For example, in Go, it targets syntax like:
 
     ```go
     resp, err := api.SendMessage(client).Call(api.SendMessageRequest{
@@ -57,8 +56,7 @@ the [Releases page](https://github.com/andreychh/tgen/releases).
 
 ## Usage
 
-`tgen` uses subcommands to target specific programming languages. Currently, only the `go` command
-is available.
+`tgen` uses subcommands to target specific languages — currently only `go` is available.
 
 ### Fetch from the web
 
@@ -85,23 +83,30 @@ tgen go --spec ./api.html --out ./api
 ## Contributing
 
 Contributions are welcome! As the project evolves, help with refining the HTML parser and generation
-templates is highly appreciated.
+templates is highly appreciated. Whether you're fixing a bug, improving documentation, or adding a
+new feature — feel free to open a pull request.
 
-We use [Task](https://taskfile.dev/) for development automation.
+### Getting started
 
-Running linting tasks locally requires the following tools: `golangci-lint`, `yamllint`,
-`markdownlint-cli2`, `reuse`, `typos`, and `pdd`. Note that all checks are also automatically
-enforced by GitHub Actions on every Pull Request.
+1. Install [mise](https://mise.jdx.dev/) — the toolchain manager we use.
 
-1. Clone the repository.
-2. List available tasks:
+2. Set up the toolchain — installs Go, Task, and all other tools declared in `.сonfig/mise.toml`:
 
-    ```bash
-    task --list
-    ```
+   ```bash
+   mise install
+   ```
 
-3. Run linters and tests before submitting a PR:
+3. Explore available tasks:
 
-    ```bash
-    task lint test
-    ```
+   ```bash
+   task --list
+   ```
+
+4. Before submitting a PR, make sure linters and tests pass:
+
+   ```bash
+   task lint test
+   ```
+
+   If this fails in your environment for reasons unrelated to your changes,
+   please [open an issue](https://github.com/andreychh/tgen/issues/new).

@@ -28,8 +28,8 @@ func (s HTMLSelection) Text() string {
 }
 
 // Attr returns the normalized value of the specified attribute.
-func (s HTMLSelection) Attr(name string) (value string, exists bool) {
-	value, exists = s.inner.Attr(name)
+func (s HTMLSelection) Attr(name string) (string, bool) {
+	value, exists := s.inner.Attr(name)
 	if !exists {
 		return "", false
 	}

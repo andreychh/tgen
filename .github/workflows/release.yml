@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+name: release
+'on':
+  push:
+    tags:
+      - "v*.*.*"
+jobs:
+  release:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@665d82088236dd987b2af6165be29d21e2e11184  # v3.0.0
+        with:
+          version: v2026.3.1
+      - run: goreleaser release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
