@@ -4,6 +4,7 @@
 package parsing
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -25,6 +26,8 @@ import (
 //
 // Union normalization: ", " and " and " are treated as equivalent to " or ".
 // This covers all compound type forms used in the Telegram Bot API.
+//
+//nolint:dupword // "Named" is a grammar rule name, not a duplicate word
 type TypeTree struct {
 	source FieldType
 }
@@ -37,6 +40,8 @@ func NewTypeTree(ft FieldType) TypeTree {
 // Root parses the field type and returns the root of the type expression tree.
 // Returns an error if the source is empty, contains invalid characters, or
 // does not conform to the grammar.
+//
+//nolint:ireturn // TypeExpression is the intentional public contract of this method
 func (t TypeTree) Root() (TypeExpression, error) {
 	value, err := t.source.Value()
 	if err != nil {
@@ -45,14 +50,15 @@ func (t TypeTree) Root() (TypeExpression, error) {
 	return t.parse(value)
 }
 
-func (t TypeTree) parse(s string) (TypeExpression, error) {
-	if s == "" {
-		return nil, fmt.Errorf("unexpected empty type expression")
+//nolint:ireturn // returns interface by design to match Root() contract
+func (t TypeTree) parse(expr string) (TypeExpression, error) {
+	if expr == "" {
+		return nil, errors.New("unexpected empty type expression")
 	}
-	remainder, found := strings.CutPrefix(s, "Array of ")
+	remainder, found := strings.CutPrefix(expr, "Array of ")
 	if found {
 		if remainder == "" {
-			return nil, fmt.Errorf("incomplete array type: %q", s)
+			return nil, fmt.Errorf("incomplete array type: %q", expr)
 		}
 		inner, err := t.parse(remainder)
 		if err != nil {
@@ -60,7 +66,7 @@ func (t TypeTree) parse(s string) (TypeExpression, error) {
 		}
 		return NewArrayType(inner), nil
 	}
-	normalized := strings.ReplaceAll(s, " and ", " or ")
+	normalized := strings.ReplaceAll(expr, " and ", " or ")
 	normalized = strings.ReplaceAll(normalized, ", ", " or ")
 	parts := strings.Split(normalized, " or ")
 	if len(parts) > 1 {
@@ -74,5 +80,5 @@ func (t TypeTree) parse(s string) (TypeExpression, error) {
 		}
 		return NewUnionType(variants), nil
 	}
-	return NewNamedType(s), nil
+	return NewNamedType(expr), nil
 }

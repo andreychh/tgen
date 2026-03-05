@@ -38,7 +38,7 @@ tasks:
     sources:
       - '**/*.go'
     cmds:
-      - golangci-lint run --config=.config/golangci.yml
+      - golangci-lint run --config=.config/golangci.yml --color=always
 
   lint:md:
     desc: Check Markdown formatting

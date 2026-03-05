@@ -34,19 +34,32 @@ type TypeNode struct {
 
 // NewNamedType constructs a named type node (e.g., "Integer", "Message").
 func NewNamedType(name string) TypeNode {
-	return TypeNode{name: name}
+	return TypeNode{
+		name:     name,
+		inner:    nil,
+		variants: nil,
+	}
 }
 
 // NewArrayType constructs an array type node wrapping the given element type.
 func NewArrayType(inner TypeExpression) TypeNode {
-	return TypeNode{inner: inner}
+	return TypeNode{
+		name:     "",
+		inner:    inner,
+		variants: nil,
+	}
 }
 
 // NewUnionType constructs a union type node from the given variant types.
 func NewUnionType(variants []TypeExpression) TypeNode {
-	return TypeNode{variants: variants}
+	return TypeNode{
+		name:     "",
+		inner:    nil,
+		variants: variants,
+	}
 }
 
+// Named implements [TypeExpression].
 func (n TypeNode) Named() (string, bool) {
 	if n.name == "" {
 		return "", false
@@ -54,6 +67,9 @@ func (n TypeNode) Named() (string, bool) {
 	return n.name, true
 }
 
+// Array implements [TypeExpression].
+//
+//nolint:ireturn // TypeExpression is the intentional public contract, matching the interface definition
 func (n TypeNode) Array() (TypeExpression, bool) {
 	if n.inner == nil {
 		return nil, false
@@ -61,6 +77,7 @@ func (n TypeNode) Array() (TypeExpression, bool) {
 	return n.inner, true
 }
 
+// Union implements [TypeExpression].
 func (n TypeNode) Union() ([]TypeExpression, bool) {
 	if n.variants == nil {
 		return nil, false

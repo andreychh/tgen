@@ -41,7 +41,7 @@ func TestTypeTree_Root(t *testing.T) {
 			verify: assertTypeTree_Union(2),
 		},
 		{
-			name:   "parses union with comma and and",
+			name:   "parses union with comma-and syntax",
 			raw:    "InputMediaAudio, InputMediaDocument and InputMediaVideo",
 			verify: assertTypeTree_Union(3),
 		},
