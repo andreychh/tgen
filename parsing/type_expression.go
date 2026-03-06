@@ -19,8 +19,10 @@ type TypeExpression interface {
 	// "Array of Integer").
 	Array() (TypeExpression, bool)
 
-	// Union returns the variant types and true if this node is a union type (e.g.,
-	// "Integer or String").
+	// Union returns the variant types and true if this node is an inline compound
+	// type within a field definition (e.g., "Integer or String"). This is distinct
+	// from a named polymorphic type (e.g., MaybeInaccessibleMessage) which is
+	// defined as a top-level Union in the Specification.
 	Union() ([]TypeExpression, bool)
 }
 
