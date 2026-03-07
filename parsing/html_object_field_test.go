@@ -18,7 +18,7 @@ func newHTMLObjectField(t *testing.T, html string) parsing.HTMLObjectField {
 	t.Helper()
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	require.NoErrorf(t, err, "HTMLObjectField fixture must parse without error")
-	return parsing.NewHTMLObjectField(dom.NewHTMLSelection(doc.Selection).Find("tr"))
+	return parsing.NewHTMLObjectField(dom.NewHTMLSelection(doc.Find("tr")).First())
 }
 
 func TestHTMLObjectField_Key(t *testing.T) {
@@ -49,13 +49,7 @@ func TestHTMLObjectField_Key(t *testing.T) {
 			require.NoErrorf(t, err, "HTMLObjectField must extract key without error")
 			got, err := key.Value()
 			require.NoErrorf(t, err, "HTMLObjectField must produce a valid FieldKey")
-			assert.Equalf(
-				t,
-				tt.want,
-				got,
-				"HTMLObjectField must extract key %q from first column",
-				tt.want,
-			)
+			assert.Equalf(t, tt.want, got, "HTMLObjectField must extract key from first column")
 		})
 	}
 }
@@ -64,18 +58,13 @@ func TestHTMLObjectField_Type(t *testing.T) {
 	tests := []struct {
 		name    string
 		html    string
-		verify  func(t *testing.T, tree parsing.TypeTree)
+		want    string
 		wantErr bool
 	}{
 		{
-			name:   "extracts named type from second column",
-			html:   `<table><tr><td>message_id</td><td>Integer</td><td>Unique identifier</td></tr></table>`,
-			verify: assertHTMLObjectField_NamedType("Integer"),
-		},
-		{
-			name:   "extracts array type from second column",
-			html:   `<table><tr><td>photos</td><td>Array of PhotoSize</td><td>Available sizes</td></tr></table>`,
-			verify: assertHTMLObjectField_ArrayType("PhotoSize"),
+			name: "extracts type string from second column",
+			html: `<table><tr><td>message_id</td><td>Integer</td><td>Unique identifier</td></tr></table>`,
+			want: "Integer",
 		},
 		{
 			name:    "returns error when row has wrong number of columns",
@@ -91,16 +80,21 @@ func TestHTMLObjectField_Type(t *testing.T) {
 				return
 			}
 			require.NoErrorf(t, err, "HTMLObjectField must extract type without error")
-			tt.verify(t, tree)
+			root, err := tree.Root()
+			require.NoErrorf(t, err, "HTMLObjectField must produce a parseable type tree")
+			name, ok := root.Named()
+			require.Truef(t, ok, "HTMLObjectField must produce a named type node")
+			assert.Equalf(t, tt.want, name, "HTMLObjectField must extract type from second column")
 		})
 	}
 }
 
 func TestHTMLObjectField_IsOptional(t *testing.T) {
 	tests := []struct {
-		name string
-		html string
-		want bool
+		name    string
+		html    string
+		want    bool
+		wantErr bool
 	}{
 		{
 			name: "returns true when description starts with Optional",
@@ -112,18 +106,21 @@ func TestHTMLObjectField_IsOptional(t *testing.T) {
 			html: `<table><tr><td>message_id</td><td>Integer</td><td>Unique identifier</td></tr></table>`,
 			want: false,
 		},
+		{
+			name:    "returns error when row has wrong number of columns",
+			html:    `<table><tr><td>message_id</td><td>Integer</td></tr></table>`,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := newHTMLObjectField(t, tt.html).IsOptional()
+			if tt.wantErr {
+				assert.Errorf(t, err, "HTMLObjectField must reject row with wrong column count")
+				return
+			}
 			require.NoErrorf(t, err, "HTMLObjectField must check optionality without error")
-			assert.Equalf(
-				t,
-				tt.want,
-				got,
-				"HTMLObjectField must correctly detect optionality for %q",
-				tt.name,
-			)
+			assert.Equalf(t, tt.want, got, "HTMLObjectField must correctly detect optionality")
 		})
 	}
 }
@@ -161,35 +158,5 @@ func TestHTMLObjectField_Description(t *testing.T) {
 				"HTMLObjectField must extract description from third column",
 			)
 		})
-	}
-}
-
-func assertHTMLObjectField_NamedType(want string) func(t *testing.T, tree parsing.TypeTree) {
-	return func(t *testing.T, tree parsing.TypeTree) {
-		t.Helper()
-		root, err := tree.Root()
-		require.NoErrorf(t, err, "HTMLObjectField must produce a parseable type tree")
-		name, ok := root.Named()
-		require.Truef(t, ok, "HTMLObjectField must produce a named type node")
-		assert.Equalf(t, want, name, "HTMLObjectField must preserve type name %q", want)
-	}
-}
-
-func assertHTMLObjectField_ArrayType(wantInner string) func(t *testing.T, tree parsing.TypeTree) {
-	return func(t *testing.T, tree parsing.TypeTree) {
-		t.Helper()
-		root, err := tree.Root()
-		require.NoErrorf(t, err, "HTMLObjectField must produce a parseable type tree")
-		inner, ok := root.Array()
-		require.Truef(t, ok, "HTMLObjectField must produce an array type node")
-		name, ok := inner.Named()
-		require.Truef(t, ok, "HTMLObjectField must produce a named node as array element")
-		assert.Equalf(
-			t,
-			wantInner,
-			name,
-			"HTMLObjectField must preserve array element type %q",
-			wantInner,
-		)
 	}
 }

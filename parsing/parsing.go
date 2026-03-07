@@ -65,47 +65,41 @@ type Release interface {
 	Date() (time.Time, error)
 }
 
-// Object represents a standard object definition in the Telegram Bot API. It
-// defines the structure of the data payloads sent to and received from the
-// Telegram.
-//
-// Example: In the Telegram Bot API, "Message" and "User" are objects.
+// Object represents a standard object definition in the Telegram Bot API.
+// Objects define the structure of data payloads exchanged with Telegram (e.g.,
+// "Message", "User").
 type Object interface {
-	// ID returns the unique reference identifier of the object definition (e.g.,
-	// "#message").
-	ID() (string, error)
+	// Ref returns the reference identifier of the object (e.g., "message").
+	Ref() (DefinitionRef, error)
 
-	// Name returns the name of the object, formatted to match a specific code
-	// convention (e.g., "Message").
-	Name() (string, error)
+	// Name returns the name of the object (e.g., "Message").
+	Name() (ObjectName, error)
 
 	// Description returns the documentation text describing the object.
 	Description() (string, error)
 
-	// Fields returns an iterator over the properties that belong to this object.
+	// Fields yields the properties defined for this object.
 	Fields() iter.Seq[Field]
 }
 
-// Field represents a single property within an Object definition.
+// Field represents a single property within an Object or Method definition,
+// corresponding to a row in the Telegram Bot API field table.
 type Field interface {
-	// Name returns the name of the field, formatted to match a specific code
-	// convention (e.g., "MessageID").
-	Name() (string, error)
+	// Key returns the field name as it appears in the JSON payload
+	// (e.g., "message_id").
+	Key() (FieldKey, error)
 
-	// Description returns the documentation text explaining the field's purpose.
-	Description() (string, error)
+	// Type returns the type tree for this field.
+	//
+	// Call [TypeTree.Root] to traverse the parsed type expression.
+	Type() (TypeTree, error)
 
-	// Type returns the data type of the field, formatted to match a specific code
-	// convention (e.g., "int", "string", or "[]User").
-	Type() (string, error)
-
-	// JSONKey returns the exact string key used to serialize and deserialize this
-	// field in JSON payloads over the network (e.g., "message_id").
-	JSONKey() (string, error)
-
-	// IsOptional reports whether the field is not strictly required in the JSON
-	// payload.
+	// IsOptional reports whether the field may be absent in the JSON payload.
+	// Optional fields are marked as "Optional" in the Description column.
 	IsOptional() (bool, error)
+
+	// Description returns the raw documentation text from the Description column.
+	Description() (string, error)
 }
 
 // Union represents a polymorphic definition (Sum Type) where a value can be one

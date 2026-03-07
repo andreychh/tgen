@@ -18,7 +18,7 @@ func newHTMLObject(t *testing.T, html string) parsing.HTMLObject {
 	t.Helper()
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	require.NoErrorf(t, err, "HTMLObject fixture must parse without error")
-	return parsing.NewHTMLObject(dom.NewHTMLSelection(doc.Selection).Find("h4"))
+	return parsing.NewHTMLObject(dom.NewHTMLSelection(doc.Find("h4")).First())
 }
 
 func TestHTMLObject_Ref(t *testing.T) {
@@ -54,7 +54,7 @@ func TestHTMLObject_Ref(t *testing.T) {
 			require.NoErrorf(t, err, "HTMLObject must extract ref without error")
 			got, err := ref.Value()
 			require.NoErrorf(t, err, "HTMLObject must produce a valid DefinitionRef")
-			assert.Equalf(t, tt.want, got, "HTMLObject must strip hash and return ref %q", tt.want)
+			assert.Equalf(t, tt.want, got, "HTMLObject must strip hash prefix from anchor href")
 		})
 	}
 }
@@ -67,18 +67,17 @@ func TestHTMLObject_Name(t *testing.T) {
 	}{
 		{
 			name: "extracts PascalCase name from header text",
-			html: `<div><h4><a class="anchor" href="#send-message">SendMessage</a></h4></div>`,
-			want: "SendMessage",
+			html: `<div><h4><a class="anchor" href="#message">Message</a></h4></div>`,
+			want: "Message",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			obj := newHTMLObject(t, tt.html)
-			n, err := obj.Name()
+			n, err := newHTMLObject(t, tt.html).Name()
 			require.NoErrorf(t, err, "HTMLObject must extract name without error")
 			got, err := n.Value()
 			require.NoErrorf(t, err, "HTMLObject must produce a valid ObjectName")
-			assert.Equalf(t, tt.want, got, "HTMLObject must extract name %q from header text", tt.want)
+			assert.Equalf(t, tt.want, got, "HTMLObject must extract name from header text")
 		})
 	}
 }
@@ -114,7 +113,7 @@ func TestHTMLObject_Description(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := newHTMLObject(t, tt.html).Description()
 			require.NoErrorf(t, err, "HTMLObject must extract description without error")
-			assert.Equalf(t, tt.want, got, "HTMLObject must produce description %q", tt.want)
+			assert.Equalf(t, tt.want, got, "HTMLObject must join description paragraphs")
 		})
 	}
 }
@@ -182,7 +181,13 @@ func TestHTMLObject_Fields(t *testing.T) {
 func assertHTMLObject_FieldCount(want int) func(t *testing.T, fields []parsing.Field) {
 	return func(t *testing.T, fields []parsing.Field) {
 		t.Helper()
-		assert.Equalf(t, want, len(fields), "HTMLObject must yield exactly %d field(s)", want)
+		assert.Equalf(
+			t,
+			want,
+			len(fields),
+			"HTMLObject must yield exactly %d field(s) from table",
+			want,
+		)
 	}
 }
 
@@ -194,6 +199,6 @@ func assertHTMLObject_FirstFieldKey(want string) func(t *testing.T, fields []par
 		require.NoErrorf(t, err, "HTMLObject must produce a field with extractable key")
 		got, err := key.Value()
 		require.NoErrorf(t, err, "HTMLObject must produce a field with valid key")
-		assert.Equalf(t, want, got, "HTMLObject must yield first field with key %q", want)
+		assert.Equalf(t, want, got, "HTMLObject must yield first field with correct key")
 	}
 }

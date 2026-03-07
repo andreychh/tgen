@@ -56,7 +56,7 @@ func (s RawSpecification) Objects() iter.Seq[Object] {
 			},
 		).All()
 		for _, h4 := range seq {
-			if !yield(NewRawObject(h4)) {
+			if !yield(NewHTMLObject(h4)) {
 				break
 			}
 		}
