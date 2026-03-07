@@ -33,8 +33,7 @@ func (f HTMLObjectField) Key() (FieldKey, error) {
 	return NewFieldKey(cols.At(0).Text()), nil
 }
 
-// Type returns the type tree for this field. The tree is validated lazily —
-// call Root() to surface structural errors.
+// Type returns the type tree for this field.
 func (f HTMLObjectField) Type() (TypeTree, error) {
 	cols, err := f.cols()
 	if err != nil {
