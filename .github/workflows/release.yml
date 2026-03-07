@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
       - uses: jdx/mise-action@e79ddf65a11cec7b0e882bedced08d6e976efb2d  # v3.6.2
         with:
-          version: v2026.3.2
+          version: v2026.3.3
       - run: goreleaser release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
