@@ -6,6 +6,7 @@
   ],
   "minimumReleaseAge": "3 days",
   "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
   "packageRules": [
     {
       "matchUpdateTypes": [
