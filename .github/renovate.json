@@ -18,11 +18,13 @@
     },
     {
       "matchManagers": [
+        "gomod",
         "mise"
       ],
       "matchDepNames": [
         "go"
       ],
+      "enabled": true,
       "automerge": false
     }
   ],
