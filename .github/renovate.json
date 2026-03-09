@@ -15,17 +15,6 @@
         "digest"
       ],
       "automerge": true
-    },
-    {
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["golang"],
-      "enabled": true,
-      "automerge": false
-    },
-    {
-      "matchManagers": ["mise"],
-      "matchDepNames": ["go"],
-      "automerge": false
     }
   ],
   "customManagers": [
