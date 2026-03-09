@@ -17,14 +17,14 @@
       "automerge": true
     },
     {
-      "matchManagers": [
-        "gomod",
-        "mise"
-      ],
-      "matchDepNames": [
-        "go"
-      ],
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["golang"],
       "enabled": true,
+      "automerge": false
+    },
+    {
+      "matchManagers": ["mise"],
+      "matchDepNames": ["go"],
       "automerge": false
     }
   ],
