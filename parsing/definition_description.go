@@ -1,0 +1,47 @@
+// SPDX-FileCopyrightText: 2026 Andrey Chernykh
+// SPDX-License-Identifier: MIT
+
+package parsing
+
+import (
+	"errors"
+	"strings"
+
+	"github.com/andreychh/tgen/parsing/gq"
+)
+
+type DefinitionDescription struct {
+	selection gq.Selection
+}
+
+func NewDefinitionDescription(h4 gq.Selection) DefinitionDescription {
+	return DefinitionDescription{selection: h4}
+}
+
+func (d DefinitionDescription) Value() (string, error) {
+	nodes := d.selection.
+		Until("h3, h4, hr").
+		Filter("p, blockquote")
+	if nodes.IsEmpty() {
+		return "", errors.New("description not found")
+	}
+	var parts []string
+	for node := range nodes.All() {
+		parts = append(parts, nodeText(node))
+	}
+	return strings.Join(parts, "\n\n"), nil
+}
+
+func nodeText(s gq.Selection) string {
+	var parts []string
+	for child := range s.Find("p, li").All() {
+		text := strings.TrimSpace(child.Text())
+		if text != "" {
+			parts = append(parts, text)
+		}
+	}
+	if len(parts) > 0 {
+		return strings.Join(parts, "\n\n")
+	}
+	return strings.TrimSpace(s.Text())
+}

@@ -1,0 +1,32 @@
+// SPDX-FileCopyrightText: 2026 Andrey Chernykh
+// SPDX-License-Identifier: MIT
+
+package parsing
+
+import (
+	"github.com/andreychh/tgen/parsing/gq"
+)
+
+type ObjectField struct {
+	selection gq.Selection
+}
+
+func NewObjectField(tr gq.Selection) ObjectField {
+	return ObjectField{selection: tr}
+}
+
+func (f ObjectField) Key() FieldKey {
+	return NewFieldKey(f.selection.Find("td").At(0))
+}
+
+func (f ObjectField) Type() TypeTree {
+	return NewTypeTree(NewFieldType(f.selection.Find("td").At(1)))
+}
+
+func (f ObjectField) IsOptional() FieldOptionality {
+	return NewFieldOptionality(f.selection.Find("td").At(2))
+}
+
+func (f ObjectField) Description() FieldDescription {
+	return NewFieldDescription(f.selection.Find("td").At(2))
+}

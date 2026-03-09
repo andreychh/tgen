@@ -6,28 +6,25 @@ package parsing
 import (
 	"fmt"
 	"regexp"
+	"strings"
+
+	"github.com/andreychh/tgen/parsing/gq"
 )
 
-// releaseRefRegex is compiled once at package initialization to avoid repeated
-// compilation on every [ReleaseRef.Value] call.
-var releaseRefRegex = regexp.MustCompile(`^[a-z]+-\d+-\d+$`)
+var releaseRefRegex = regexp.MustCompile(`^#[a-z]+-\d+-\d+$`)
 
-// ReleaseRef represents a reference to a release section in the Telegram Bot
-// API documentation (e.g., "february-9-2026").
 type ReleaseRef struct {
-	raw string
+	selection gq.Selection
 }
 
-// NewReleaseRef creates a ReleaseRef from a raw string.
-func NewReleaseRef(s string) ReleaseRef {
-	return ReleaseRef{raw: s}
+func NewReleaseRef(a gq.Selection) ReleaseRef {
+	return ReleaseRef{selection: a}
 }
 
-// Value returns the validated reference string. Returns an error if the string
-// is not a valid release reference.
 func (r ReleaseRef) Value() (string, error) {
-	if !releaseRefRegex.MatchString(r.raw) {
-		return "", fmt.Errorf("release ref %q contains invalid characters", r.raw)
+	val, _ := r.selection.Attr("href")
+	if !releaseRefRegex.MatchString(val) {
+		return "", fmt.Errorf("invalid release ref %q", val)
 	}
-	return r.raw, nil
+	return strings.TrimPrefix(val, "#"), nil
 }
