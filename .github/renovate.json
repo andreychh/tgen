@@ -20,7 +20,7 @@
       "matchManagers": [
         "mise"
       ],
-      "matchPackageNames": [
+      "matchDepNames": [
         "go"
       ],
       "automerge": false
