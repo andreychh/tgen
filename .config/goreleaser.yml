@@ -54,6 +54,9 @@ changelog:
     exclude:
       - '^docs'
       - '^test'
+      - '^chore'
+      - '^refactor'
+      - '^ci'
       - '^Merge'
       - '^Update'
 

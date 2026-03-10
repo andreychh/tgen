@@ -6,6 +6,7 @@
   ],
   "minimumReleaseAge": "3 days",
   "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
   "packageRules": [
     {
       "matchUpdateTypes": [
@@ -15,15 +16,6 @@
         "digest"
       ],
       "automerge": true
-    },
-    {
-      "matchManagers": [
-        "mise"
-      ],
-      "matchPackageNames": [
-        "go"
-      ],
-      "automerge": false
     }
   ],
   "customManagers": [

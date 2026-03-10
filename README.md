@@ -110,3 +110,7 @@ new feature — feel free to open a pull request.
 
    If this fails in your environment for reasons unrelated to your changes,
    please [open an issue](https://github.com/andreychh/tgen/issues/new).
+
+> [!TIP]
+> [Renovate](https://www.mend.io/renovate/) automatically keeps all dependencies up to date. After
+> its PRs are merged, run `mise upgrade` to install the updated toolchain locally.
