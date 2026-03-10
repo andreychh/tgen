@@ -1,46 +1,46 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "union"}} {{/*gotype: github.com/andreychh/tgen/parsing.Union*/}}
-// {{.Description}}
-type {{.Name}} struct {
-{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
-    {{.Name}} *{{.Name}}
+{{- define "union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Union*/}}
+{{.Doc.Value}}
+type {{.Name.Value}} struct {
+{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Variant*/}}
+    {{.Name.Value}} *{{.Name.Value}}
 {{- end}}
 }
 
-func (u {{.Name}}) MarshalJSON() ([]byte, error) {
+func (u {{.Name.Value}}) MarshalJSON() ([]byte, error) {
     var fields []string
-{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
-    if u.{{.Name}} != nil {
-        fields = append(fields, "{{.Name}}")
+{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Variant*/}}
+    if u.{{.Name.Value}} != nil {
+        fields = append(fields, "{{.Name.Value}}")
     }
 {{- end}}
     if len(fields) == 0 {
-        return nil, errors.New("{{.Name}}: no fields set (expected exactly one)")
+        return nil, errors.New("{{.Name.Value}}: no fields set (expected exactly one)")
     }
     if len(fields) > 1 {
-        return nil, fmt.Errorf("{{.Name}}: multiple fields set (%s)", strings.Join(fields, ", "))
+        return nil, fmt.Errorf("{{.Name.Value}}: multiple fields set (%s)", strings.Join(fields, ", "))
     }
-{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
-    if u.{{.Name}} != nil {
-        return json.Marshal(u.{{.Name}})
+{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Variant*/}}
+    if u.{{.Name.Value}} != nil {
+        return json.Marshal(u.{{.Name.Value}})
     }
 {{- end}}
-    return nil, errors.New("{{.Name}}: internal error")
+    return nil, errors.New("{{.Name.Value}}: internal error")
 }
 
-func (u *{{.Name}}) UnmarshalJSON(data []byte) error {
+func (u *{{.Name.Value}}) UnmarshalJSON(data []byte) error {
     var decoder *json.Decoder
-{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/parsing.Variant*/}}
-    var value{{.Name}} {{.Name}}
+{{- range .Variants | variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Variant*/}}
+    var value{{.Name.Value}} {{.Name.Value}}
     decoder = json.NewDecoder(bytes.NewReader(data))
     decoder.DisallowUnknownFields()
-    if decoder.Decode(&value{{.Name}}) == nil {
-        u.{{.Name}} = &value{{.Name}}
+    if decoder.Decode(&value{{.Name.Value}}) == nil {
+        u.{{.Name.Value}} = &value{{.Name.Value}}
         return nil
     }
 {{- end}}
-    return fmt.Errorf("{{.Name}}: unexpected value %.50q", string(data))
+    return fmt.Errorf("{{.Name.Value}}: unexpected value %.50q", string(data))
 }
 {{- end -}}

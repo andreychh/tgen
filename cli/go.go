@@ -10,7 +10,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/parsing"
-	"github.com/andreychh/tgen/parsing/dom"
+	"github.com/andreychh/tgen/parsing/gq"
 	"github.com/andreychh/tgen/rendering"
 	"github.com/andreychh/tgen/rendering/golang"
 	"github.com/andreychh/tgen/source"
@@ -54,15 +54,16 @@ func goAction(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("parsing HTML from %q: %w", location, err)
 	}
-	sel := dom.NewHTMLSelection(doc.Selection)
-	spec := parsing.NewRawSpecification(sel)
-	tmpl := golang.PrepareTemplate()
-	fileset := rendering.NewFileset(rendering.Artifacts{
-		"unions.go":  golang.NewUnionsView(tmpl, spec),
-		"objects.go": golang.NewObjectsView(tmpl, spec),
-	})
+	artifacts, err := golang.NewArtifacts(
+		parsing.NewSpecification(
+			gq.NewNormSelection(doc.Selection),
+		),
+	).Value()
+	if err != nil {
+		return err
+	}
 	out := cmd.Flag("out").Value.String()
-	err = fileset.Emit(out)
+	err = rendering.NewFileset(artifacts).Emit(out)
 	if err != nil {
 		return fmt.Errorf("generating files in directory %q: %w", out, err)
 	}
