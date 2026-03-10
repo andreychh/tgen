@@ -32,9 +32,9 @@ func (d DefinitionDescription) Value() (string, error) {
 	return strings.Join(parts, "\n\n"), nil
 }
 
-func nodeText(s gq.Selection) string {
+func nodeText(sel gq.Selection) string {
 	var parts []string
-	for child := range s.Find("p, li").All() {
+	for child := range sel.Find("p, li").All() {
 		text := strings.TrimSpace(child.Text())
 		if text != "" {
 			parts = append(parts, text)
@@ -43,5 +43,5 @@ func nodeText(s gq.Selection) string {
 	if len(parts) > 0 {
 		return strings.Join(parts, "\n\n")
 	}
-	return strings.TrimSpace(s.Text())
+	return strings.TrimSpace(sel.Text())
 }

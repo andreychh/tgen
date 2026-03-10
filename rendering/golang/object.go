@@ -21,8 +21,8 @@ func (o Object) Name() Name {
 	return NewDefaultName(o.inner.Name())
 }
 
-func (o Object) Doc() Godoc {
-	return NewGodoc(NewDefinitionDoc(o.inner.Ref(), o.inner.Description()))
+func (o Object) Doc() Doc {
+	return NewDoc(NewDefinitionDoc(o.inner.Ref(), o.inner.Description()))
 }
 
 func (o Object) Fields() iter.Seq[Field] {

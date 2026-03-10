@@ -29,6 +29,6 @@ func (f Field) Tag() FieldTag {
 	return NewFieldTag(f.inner.Key(), f.inner.IsOptional())
 }
 
-func (f Field) Doc() Godoc {
-	return NewGodoc(f.inner.Description())
+func (f Field) Doc() Doc {
+	return NewDoc(f.inner.Description())
 }

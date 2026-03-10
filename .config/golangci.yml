@@ -8,6 +8,7 @@
 #   [not applicable]  - technology/library not used in this project
 #   [too strict]      - too aggressive for this project
 #   [style]           - matter of taste, not critical
+#   [unstable]        - disabled until the architecture stabilizes
 version: '2'
 linters:
   default: none
@@ -51,7 +52,7 @@ linters:
     - goconst  # Finds repeated strings that could be replaced by a constant.
     - gocritic  # Provides diagnostics that check for bugs, performance and style issues.
     - gocyclo  # Computes and checks the cyclomatic complexity of functions.
-    - godoclint  # Checks Golang's documentation practice (godoc).
+    # - godoclint [unstable] # Checks Golang's documentation practice (godoc). TODO #54: re-enable when architecture stabilizes
     - godot  # Check if comments end in a period.
     # - godox [style] # Detects usage of FIXME and other keywords inside comments.
     # - goheader [duplicate reuse] # Check if file header matches to pattern.

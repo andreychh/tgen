@@ -10,6 +10,7 @@ import (
 	"github.com/andreychh/tgen/parsing"
 )
 
+//nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var namedTypes = map[string]string{
 	"Integer": "int64",
 	"Float":   "float64",

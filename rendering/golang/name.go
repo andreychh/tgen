@@ -9,6 +9,7 @@ import (
 	"github.com/iancoleman/strcase"
 )
 
+//nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var defaultAcronyms = map[string]string{
 	"Id":  "ID",
 	"Url": "URL",
@@ -16,23 +17,19 @@ var defaultAcronyms = map[string]string{
 	"Ip":  "IP",
 }
 
-type RawName interface {
-	Value() (string, error)
-}
-
 type Name struct {
-	inner    RawName
+	inner    RawValue
 	acronyms map[string]string
 }
 
-func NewName(n RawName, acronyms map[string]string) Name {
+func NewName(n RawValue, acronyms map[string]string) Name {
 	return Name{
 		inner:    n,
 		acronyms: acronyms,
 	}
 }
 
-func NewDefaultName(n RawName) Name {
+func NewDefaultName(n RawValue) Name {
 	return NewName(n, defaultAcronyms)
 }
 

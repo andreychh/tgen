@@ -30,5 +30,5 @@ func (t FieldTag) Value() (string, error) {
 	if optional {
 		return fmt.Sprintf("`json:\"%s,omitempty\"`", key), nil
 	}
-	return fmt.Sprintf("`json:\"%s\"`", key), nil
+	return fmt.Sprintf("`json:%q`", key), nil
 }

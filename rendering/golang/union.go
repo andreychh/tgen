@@ -21,8 +21,8 @@ func (u Union) Name() Name {
 	return NewDefaultName(u.inner.Name())
 }
 
-func (u Union) Doc() Godoc {
-	return NewGodoc(NewDefinitionDoc(u.inner.Ref(), u.inner.Description()))
+func (u Union) Doc() Doc {
+	return NewDoc(NewDefinitionDoc(u.inner.Ref(), u.inner.Description()))
 }
 
 func (u Union) Variants() iter.Seq[Variant] {

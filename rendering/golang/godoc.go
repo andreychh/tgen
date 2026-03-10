@@ -9,20 +9,16 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
-type RawDesc interface {
-	Value() (string, error)
+type Doc struct {
+	inner RawValue
 }
 
-type Godoc struct {
-	inner RawDesc
+func NewDoc(d RawValue) Doc {
+	return Doc{inner: d}
 }
 
-func NewGodoc(d RawDesc) Godoc {
-	return Godoc{inner: d}
-}
-
-func (g Godoc) Value() (string, error) {
-	text, err := g.inner.Value()
+func (d Doc) Value() (string, error) {
+	text, err := d.inner.Value()
 	if err != nil {
 		return "", err
 	}
@@ -30,7 +26,7 @@ func (g Godoc) Value() (string, error) {
 	var lines []string
 	for i, p := range paragraphs {
 		wrapped := wordwrap.WrapString(p, 77)
-		for _, line := range strings.Split(wrapped, "\n") {
+		for line := range strings.SplitSeq(wrapped, "\n") {
 			lines = append(lines, "// "+line)
 		}
 		if i < len(paragraphs)-1 {
