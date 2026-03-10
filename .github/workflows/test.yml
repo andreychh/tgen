@@ -22,7 +22,8 @@ jobs:
         with:
           version: v2026.3.3
       - run: task test:coverage
-      # TODO #54: re-enable when architecture stabilizes
+      # TODO #54: re-enable this step when architecture stabilizes
+      #
       # - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de  # v5.5.2
       #   with:
       #     token: ${{ secrets.CODECOV_TOKEN }}
