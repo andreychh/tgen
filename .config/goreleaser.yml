@@ -8,6 +8,14 @@ before:
   hooks:
     - go mod tidy
 
+gomod:
+  proxy: true
+
+report_sizes: true
+
+metadata:
+  mod_timestamp: '{{ .CommitTimestamp }}'
+
 builds:
   - main: .
     binary: tgen
@@ -20,14 +28,15 @@ builds:
     goarch:
       - amd64
       - arm64
+    flags:
+      - -trimpath
     ldflags:
       - -s -w
-      - -X github.com/andreychh/tgen/buildinfo.version={{.Version}}
-      - -X github.com/andreychh/tgen/buildinfo.commit={{.FullCommit}}
-      - -X github.com/andreychh/tgen/buildinfo.buildTime={{.Date}}
-      - -X github.com/andreychh/tgen/buildinfo.branch={{.Branch}}
-      - -X github.com/andreychh/tgen/buildinfo.treeState={{.GitTreeState}}
-      - -X github.com/andreychh/tgen/buildinfo.builtBy=goreleaser
+      - -X github.com/andreychh/tgen/meta.version={{.Version}}
+      - -X github.com/andreychh/tgen/meta.commit={{.FullCommit}}
+      - -X github.com/andreychh/tgen/meta.date={{.CommitDate}}
+      - -X github.com/andreychh/tgen/meta.treeState={{.IsGitDirty}}
+      - -X github.com/andreychh/tgen/meta.builder=goreleaser
 
 archives:
   - formats: [ tar.gz ]
@@ -50,15 +59,26 @@ checksum:
 
 changelog:
   use: github
+  format: '{{ .SHA }}: {{ .Message }}{{ if .Logins }} ({{ .Logins | englishJoin }}){{ end }}'
   filters:
     exclude:
-      - '^docs'
       - '^test'
       - '^chore'
       - '^refactor'
       - '^ci'
       - '^Merge'
-      - '^Update'
+  groups:
+    - title: 'New Features'
+      regexp: '^feat'
+      order: 100
+    - title: 'Bug fixes'
+      regexp: '^fix'
+      order: 200
+    - title: 'Documentation updates'
+      regexp: '^docs'
+      order: 400
+    - title: Other work
+      order: 9999
 
 release:
   footer: >-
