@@ -3,17 +3,20 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/andreychh/tgen/meta"
+	"github.com/spf13/cobra"
+)
 
 // NewRootCommand returns the primary application command ("tgen").
 func NewRootCommand() *cobra.Command {
+	metadata := meta.NewMeta(meta.NewDetectedSource())
 	cmd := &cobra.Command{
-		Use:   "tgen",
-		Short: "Generate strongly-typed Telegram Bot API clients",
-		Long: `tgen turns the Telegram Bot API HTML documentation into ready-to-use API bindings.
-
-Instead of relying on manually updated boilerplate, tgen parses the specification to generate strongly-typed client code.`,
+		Use:     "tgen",
+		Short:   "Generate strongly-typed Telegram Bot API clients",
+		Version: metadata.Release().Version(),
 	}
-	cmd.AddCommand(NewGoCommand())
+	cmd.SetVersionTemplate(NewVersionMessage(metadata).String())
+	cmd.AddCommand(NewGoCommand(metadata))
 	return cmd
 }

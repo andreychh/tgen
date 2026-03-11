@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/andreychh/tgen/meta"
 	"github.com/andreychh/tgen/parsing"
 	"github.com/andreychh/tgen/parsing/gq"
 	"github.com/andreychh/tgen/rendering"
@@ -20,11 +21,13 @@ import (
 // NewGoCommand returns the "go" subcommand.
 //
 // TODO #43: Add an option to specify the Go package name.
-func NewGoCommand() *cobra.Command {
+func NewGoCommand(m meta.Meta) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "go",
 		Short: "Generate Go client code",
-		RunE:  goAction,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return goAction(cmd, args, m)
+		},
 	}
 	cmd.Flags().StringP(
 		"spec",
@@ -41,7 +44,8 @@ func NewGoCommand() *cobra.Command {
 	return cmd
 }
 
-func goAction(cmd *cobra.Command, _ []string) error {
+func goAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
+	snapshot := meta.NewSnapshot(m)
 	location := cmd.Flag("spec").Value.String()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -67,5 +71,10 @@ func goAction(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("generating files in directory %q: %w", out, err)
 	}
-	return nil
+	_, err = fmt.Fprintf(
+		cmd.ErrOrStderr(),
+		"done in %s\n",
+		snapshot.Elapsed().Round(time.Millisecond),
+	)
+	return err
 }
