@@ -18,7 +18,7 @@ func NewRelease(source Source) Release {
 func (r Release) Version() string {
 	value, ok := r.source.Get(KeyVersion)
 	if !ok {
-		return "unknown"
+		return unknownValue
 	}
 	return value
 }
@@ -28,7 +28,7 @@ func (r Release) Version() string {
 func (r Release) Builder() string {
 	value, ok := r.source.Get(KeyBuilder)
 	if !ok {
-		return "unknown"
+		return unknownValue
 	}
 	return value
 }

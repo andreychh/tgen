@@ -3,14 +3,16 @@
 
 package meta
 
+const unknownValue = "unknown"
+
 // The following variables are intended to be populated at build time via
 // -ldflags.
 //
 //nolint:gochecknoglobals // These variables are set at build time via ldflags
 var (
-	version   = "unknown"
-	commit    = "unknown"
-	date      = "unknown"
-	treeState = "unknown"
-	builder   = "unknown"
+	version   = unknownValue
+	commit    = unknownValue
+	date      = unknownValue
+	treeState = unknownValue
+	builder   = unknownValue
 )

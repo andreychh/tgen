@@ -3,8 +3,6 @@
 
 package meta
 
-import "runtime/debug"
-
 // DetectedSource infers the build scenario at runtime and delegates to the
 // corresponding [Source] implementation.
 type DetectedSource struct{}
@@ -16,12 +14,8 @@ func NewDetectedSource() DetectedSource {
 
 // Get returns the metadata value for the given key.
 func (DetectedSource) Get(key string) (string, bool) {
-	if version != "unknown" {
+	if version != unknownValue {
 		return NewLDFlagsSource().Get(key)
 	}
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "", false
-	}
-	return NewRuntimeSource(*info).Get(key)
+	return NewRuntimeSource().Get(key)
 }

@@ -17,7 +17,7 @@ func NewRevision(source Source) Revision {
 func (r Revision) Full() string {
 	value, ok := r.source.Get(KeyVCSRevision)
 	if !ok {
-		return "unknown"
+		return unknownValue
 	}
 	return value
 }
@@ -27,7 +27,7 @@ func (r Revision) Full() string {
 func (r Revision) Short() string {
 	value, ok := r.source.Get(KeyVCSRevision)
 	if !ok {
-		return "unknown"
+		return unknownValue
 	}
 	return value[:7]
 }

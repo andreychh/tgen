@@ -18,7 +18,7 @@ func NewBuild(source Source) Build {
 func (b Build) GoVersion() string {
 	value, ok := b.source.Get(KeyGoVersion)
 	if !ok {
-		return "unknown"
+		return unknownValue
 	}
 	return value
 }
@@ -28,7 +28,7 @@ func (b Build) GoVersion() string {
 func (b Build) Platform() string {
 	value, ok := b.source.Get(KeyPlatform)
 	if !ok {
-		return "unknown"
+		return unknownValue
 	}
 	return value
 }
