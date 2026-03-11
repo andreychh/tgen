@@ -8,16 +8,16 @@ import (
 	"text/template"
 )
 
-// TemplateView implements the [View] interface by executing a specific
-// [text/template] with the provided data.
+// TemplateView represents a [View] that renders a named [text/template] with
+// structured data.
 type TemplateView struct {
 	template *template.Template
 	name     string
 	data     any
 }
 
-// NewTemplateView returns a [TemplateView] configured to execute the template
-// named name using the provided data.
+// NewTemplateView constructs a [TemplateView] for template name in t with the
+// given data.
 func NewTemplateView(t *template.Template, name string, data any) TemplateView {
 	return TemplateView{
 		template: t,
@@ -26,7 +26,7 @@ func NewTemplateView(t *template.Template, name string, data any) TemplateView {
 	}
 }
 
-// Render executes the underlying template and writes the generated output to w.
+// Render implements [View].
 func (v TemplateView) Render(w io.Writer) error {
 	return v.template.ExecuteTemplate(w, v.name, v.data)
 }

@@ -1,20 +1,19 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-// Package rendering provides an abstraction layer for code generation.
+// Package rendering turns structured views into source files on disk.
 package rendering
 
 import (
 	"io"
 )
 
-// View represents a generic renderable component that writes generated content
-// to an [io.Writer], abstracting away the underlying templating mechanism.
+// View represents a unit of generated output that can be written to an
+// [io.Writer].
 type View interface {
-	// Render writes the generated output to w.
+	// Render writes the generated content to w. Returns an error if writing fails.
 	Render(w io.Writer) error
 }
 
-// Artifacts maps target file paths to their corresponding [View]. It acts as a
-// virtual, in-memory representation of the files to be generated.
+// Artifacts maps output file names to their corresponding [View].
 type Artifacts map[string]View
