@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+type RawValue interface {
+	Value() (string, error)
+}
+
 // TypeTree builds a TypeExpression tree from a FieldType.
 //
 // The Telegram Bot API describes field types using human-readable English
@@ -29,12 +33,12 @@ import (
 //
 //nolint:dupword // "Named" is a grammar rule name, not a duplicate word
 type TypeTree struct {
-	source FieldType
+	source RawValue
 }
 
-// NewTypeTree creates a TypeTree from a FieldType.
-func NewTypeTree(ft FieldType) TypeTree {
-	return TypeTree{source: ft}
+// NewTypeTree creates a TypeTree from a RawValue.
+func NewTypeTree(v RawValue) TypeTree {
+	return TypeTree{source: v}
 }
 
 // Root parses the field type and returns the root of the type expression tree.
