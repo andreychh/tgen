@@ -6,16 +6,20 @@ package golang
 import (
 	"fmt"
 
+	"github.com/andreychh/tgen/meta"
 	"github.com/andreychh/tgen/parsing"
 	"github.com/andreychh/tgen/rendering"
 )
 
+// Artifacts assembles the rendering artifacts for the Go code generation target.
 type Artifacts struct {
-	spec parsing.Specification
+	spec     parsing.Specification
+	snapshot meta.Snapshot
 }
 
-func NewArtifacts(spec parsing.Specification) Artifacts {
-	return Artifacts{spec: spec}
+// NewArtifacts creates an Artifacts for the given specification and snapshot.
+func NewArtifacts(spec parsing.Specification, snapshot meta.Snapshot) Artifacts {
+	return Artifacts{spec: spec, snapshot: snapshot}
 }
 
 func (a Artifacts) Value() (rendering.Artifacts, error) {
@@ -23,9 +27,12 @@ func (a Artifacts) Value() (rendering.Artifacts, error) {
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
-	spec := NewSpecification(a.spec)
+	ctx := NewGenerationContext(
+		NewSpecification(a.spec),
+		rendering.NewSnapshot(a.snapshot),
+	)
 	return rendering.Artifacts{
-		"objects.go": rendering.NewTemplateView(tmpl, "objects", spec),
-		"unions.go":  rendering.NewTemplateView(tmpl, "unions", spec),
+		"objects.go": rendering.NewTemplateView(tmpl, "objects", ctx),
+		"unions.go":  rendering.NewTemplateView(tmpl, "unions", ctx),
 	}, nil
 }
