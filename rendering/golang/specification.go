@@ -27,6 +27,16 @@ func (s Specification) Objects() iter.Seq[Object] {
 	}
 }
 
+func (s Specification) Methods() iter.Seq[Method] {
+	return func(yield func(Method) bool) {
+		for o := range s.inner.Methods() {
+			if !yield(NewMethod(o)) {
+				break
+			}
+		}
+	}
+}
+
 func (s Specification) Unions() iter.Seq[Union] {
 	return func(yield func(Union) bool) {
 		for u := range s.inner.Unions() {

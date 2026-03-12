@@ -9,22 +9,22 @@ import (
 	"github.com/andreychh/tgen/parsing"
 )
 
-type OptionalFieldType struct {
-	inner       FieldType
+type OptionalType struct {
+	origin      Type
 	tree        parsing.TypeTree
 	optionality parsing.Optionality
 }
 
-func NewOptionalFieldType(
-	ft FieldType,
-	t parsing.TypeTree,
+func NewOptionalType(
+	t Type,
+	tree parsing.TypeTree,
 	o parsing.Optionality,
-) OptionalFieldType {
-	return OptionalFieldType{inner: ft, tree: t, optionality: o}
+) OptionalType {
+	return OptionalType{origin: t, tree: tree, optionality: o}
 }
 
-func (t OptionalFieldType) Value() (string, error) {
-	typ, err := t.inner.Value()
+func (t OptionalType) Value() (string, error) {
+	typ, err := t.origin.Value()
 	if err != nil {
 		return "", fmt.Errorf("getting field type: %w", err)
 	}
@@ -38,7 +38,7 @@ func (t OptionalFieldType) Value() (string, error) {
 	return typ, nil
 }
 
-func (t OptionalFieldType) needsPointer() (bool, error) {
+func (t OptionalType) needsPointer() (bool, error) {
 	root, err := t.tree.Root()
 	if err != nil {
 		return false, err

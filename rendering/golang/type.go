@@ -13,22 +13,23 @@ import (
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var namedTypes = map[string]string{
 	"Integer": "int64",
+	"Int":     "int64",
 	"Float":   "float64",
 	"String":  "string",
 	"Boolean": "bool",
 	"True":    "bool",
 }
 
-type FieldType struct {
-	tree parsing.TypeTree
-	key  parsing.FieldKey
+type Type struct {
+	tree      parsing.TypeTree
+	unionName RawValue
 }
 
-func NewFieldType(t parsing.TypeTree, k parsing.FieldKey) FieldType {
-	return FieldType{tree: t, key: k}
+func NewType(t parsing.TypeTree, unionName RawValue) Type {
+	return Type{tree: t, unionName: unionName}
 }
 
-func (t FieldType) Value() (string, error) {
+func (t Type) Value() (string, error) {
 	root, err := t.tree.Root()
 	if err != nil {
 		return "", fmt.Errorf("getting type root: %w", err)
@@ -36,7 +37,7 @@ func (t FieldType) Value() (string, error) {
 	return t.render(root)
 }
 
-func (t FieldType) render(expr parsing.TypeExpression) (string, error) {
+func (t Type) render(expr parsing.TypeExpression) (string, error) {
 	if name, ok := expr.Named(); ok {
 		goName, ok := namedTypes[name]
 		if !ok {
@@ -52,7 +53,7 @@ func (t FieldType) render(expr parsing.TypeExpression) (string, error) {
 		return "[]" + elem, nil
 	}
 	if _, ok := expr.Union(); ok {
-		return NewDefaultName(t.key).Value()
+		return t.unionName.Value()
 	}
 	return "", errors.New("unknown type expression")
 }

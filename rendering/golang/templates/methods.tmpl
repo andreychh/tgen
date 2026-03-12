@@ -1,0 +1,14 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{define "methods"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
+{{template "header" .}}
+
+package api
+
+{{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
+
+{{template "method" . }}
+{{- end }}
+
+{{- end }}
