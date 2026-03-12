@@ -4,6 +4,7 @@
 package parsing
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -44,7 +45,7 @@ func (r ReturnType) Value() (string, error) {
 		}
 	}
 	if len(parts) == 0 {
-		return "", fmt.Errorf("no description paragraphs found")
+		return "", errors.New("no description paragraphs found")
 	}
 	return extractReturnType(strings.Join(parts, " "))
 }
