@@ -36,3 +36,7 @@ func (s Specification) Unions() iter.Seq[Union] {
 		}
 	}
 }
+
+func (s Specification) Release() Release {
+	return NewRelease(s.inner.Release())
+}
