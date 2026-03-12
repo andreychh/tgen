@@ -10,17 +10,17 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type FieldOptionality struct {
+type ObjectFieldOptionality struct {
 	selection gq.Selection
 }
 
-func NewFieldOptionality(td gq.Selection) FieldOptionality {
-	return FieldOptionality{selection: td}
+func NewObjectFieldOptionality(td gq.Selection) ObjectFieldOptionality {
+	return ObjectFieldOptionality{selection: td}
 }
 
-func (d FieldOptionality) Value() (bool, error) {
-	if d.selection.IsEmpty() {
+func (o ObjectFieldOptionality) Value() (bool, error) {
+	if o.selection.IsEmpty() {
 		return false, errors.New("description column not found")
 	}
-	return strings.HasPrefix(d.selection.Text(), "Optional. "), nil
+	return strings.HasPrefix(o.selection.Text(), "Optional. "), nil
 }

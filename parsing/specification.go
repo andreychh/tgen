@@ -17,21 +17,6 @@ func NewSpecification(root gq.Selection) Specification {
 	return Specification{selection: root}
 }
 
-func (s Specification) Unions() iter.Seq[Union] {
-	return func(yield func(Union) bool) {
-		seq := s.selection.Find("div#dev_page_content h4").FilterFunc(
-			func(s gq.Selection) bool {
-				return NewDefinitionHeader(s).Kind() == KindUnion
-			},
-		).All()
-		for h4 := range seq {
-			if !yield(NewUnion(h4)) {
-				break
-			}
-		}
-	}
-}
-
 func (s Specification) Objects() iter.Seq[Object] {
 	return func(yield func(Object) bool) {
 		seq := s.selection.Find("div#dev_page_content h4").FilterFunc(
@@ -41,6 +26,36 @@ func (s Specification) Objects() iter.Seq[Object] {
 		).All()
 		for h4 := range seq {
 			if !yield(NewObject(h4)) {
+				break
+			}
+		}
+	}
+}
+
+func (s Specification) Methods() iter.Seq[Method] {
+	return func(yield func(method Method) bool) {
+		seq := s.selection.Find("div#dev_page_content h4").FilterFunc(
+			func(s gq.Selection) bool {
+				return NewDefinitionHeader(s).Kind() == KindMethod
+			},
+		).All()
+		for h4 := range seq {
+			if !yield(NewMethod(h4)) {
+				break
+			}
+		}
+	}
+}
+
+func (s Specification) Unions() iter.Seq[Union] {
+	return func(yield func(Union) bool) {
+		seq := s.selection.Find("div#dev_page_content h4").FilterFunc(
+			func(s gq.Selection) bool {
+				return NewDefinitionHeader(s).Kind() == KindUnion
+			},
+		).All()
+		for h4 := range seq {
+			if !yield(NewUnion(h4)) {
 				break
 			}
 		}

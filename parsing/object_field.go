@@ -23,10 +23,12 @@ func (f ObjectField) Type() TypeTree {
 	return NewTypeTree(NewFieldType(f.selection.Find("td").At(1)))
 }
 
-func (f ObjectField) IsOptional() FieldOptionality {
-	return NewFieldOptionality(f.selection.Find("td").At(2))
+//nolint:ireturn // Optionality is the intentional public contract of Field
+func (f ObjectField) IsOptional() Optionality {
+	return NewObjectFieldOptionality(f.selection.Find("td").At(2))
 }
 
-func (f ObjectField) Description() FieldDescription {
-	return NewFieldDescription(f.selection.Find("td").At(2))
+//nolint:ireturn // RawValue is the intentional public contract of Field
+func (f ObjectField) Description() RawValue {
+	return NewObjectFieldDescription(f.selection.Find("td").At(2))
 }

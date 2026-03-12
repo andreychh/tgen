@@ -12,13 +12,13 @@ import (
 type OptionalFieldType struct {
 	inner       FieldType
 	tree        parsing.TypeTree
-	optionality parsing.FieldOptionality
+	optionality parsing.Optionality
 }
 
 func NewOptionalFieldType(
 	ft FieldType,
 	t parsing.TypeTree,
-	o parsing.FieldOptionality,
+	o parsing.Optionality,
 ) OptionalFieldType {
 	return OptionalFieldType{inner: ft, tree: t, optionality: o}
 }
