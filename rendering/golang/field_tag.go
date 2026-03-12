@@ -11,10 +11,10 @@ import (
 
 type FieldTag struct {
 	key         parsing.FieldKey
-	optionality parsing.FieldOptionality
+	optionality parsing.Optionality
 }
 
-func NewFieldTag(k parsing.FieldKey, o parsing.FieldOptionality) FieldTag {
+func NewFieldTag(k parsing.FieldKey, o parsing.Optionality) FieldTag {
 	return FieldTag{key: k, optionality: o}
 }
 
