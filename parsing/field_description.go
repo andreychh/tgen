@@ -10,15 +10,15 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type FieldDescription struct {
+type ObjectFieldDescription struct {
 	selection gq.Selection
 }
 
-func NewFieldDescription(td gq.Selection) FieldDescription {
-	return FieldDescription{selection: td}
+func NewObjectFieldDescription(td gq.Selection) ObjectFieldDescription {
+	return ObjectFieldDescription{selection: td}
 }
 
-func (d FieldDescription) Value() (string, error) {
+func (d ObjectFieldDescription) Value() (string, error) {
 	if d.selection.IsEmpty() {
 		return "", errors.New("description column not found")
 	}
