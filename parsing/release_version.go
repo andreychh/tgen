@@ -26,5 +26,5 @@ func (v ReleaseVersion) Value() (string, error) {
 	if len(matches) != 2 {
 		return "", fmt.Errorf("invalid release version: %q", val)
 	}
-	return "v" + matches[1], nil
+	return matches[1], nil
 }

@@ -5,6 +5,8 @@
 // generate Go source code from the parsed Telegram Bot API specification.
 package golang
 
+const specificationURL = "https://core.telegram.org/bots/api"
+
 type RawValue interface {
 	Value() (string, error)
 }

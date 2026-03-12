@@ -62,6 +62,7 @@ func goAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
 		parsing.NewSpecification(
 			gq.NewNormSelection(doc.Selection),
 		),
+		snapshot,
 	).Value()
 	if err != nil {
 		return err

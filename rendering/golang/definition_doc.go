@@ -27,5 +27,5 @@ func (d DefinitionDoc) Value() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting object description: %w", err)
 	}
-	return fmt.Sprintf("%s\n\nSee %s#%s", desc, "https://core.telegram.org/bots/api", ref), nil
+	return fmt.Sprintf("%s\n\nSee %s#%s", desc, specificationURL, ref), nil
 }
