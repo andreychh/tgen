@@ -21,10 +21,10 @@ func (f MethodField) Type() TypeTree {
 	return NewTypeTree(NewFieldType(f.selection.Find("td").At(1)))
 }
 
-func (f MethodField) IsOptional() FieldOptionality {
-	return NewFieldOptionality(f.selection.Find("td").At(2))
+func (f MethodField) IsOptional() Optionality {
+	return NewMethodFieldOptionality(f.selection.Find("td").At(2))
 }
 
-func (f MethodField) Description() FieldDescription {
-	return NewFieldDescription(f.selection.Find("td").At(3))
+func (f MethodField) Description() RawValue {
+	return NewMethodFieldDescription(f.selection.Find("td").At(3))
 }

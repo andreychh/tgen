@@ -3,9 +3,13 @@
 
 package parsing
 
+type Optionality interface {
+	Value() (bool, error)
+}
+
 type Field interface {
 	Key() FieldKey
 	Type() TypeTree
-	IsOptional() FieldOptionality
-	Description() FieldDescription
+	IsOptional() Optionality
+	Description() RawValue
 }
