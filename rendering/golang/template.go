@@ -26,6 +26,7 @@ func (t Template) Value() (*template.Template, error) {
 		Option("missingkey=error").
 		Funcs(template.FuncMap{
 			"objects":  slices.Collect[Object],
+			"methods":  slices.Collect[Method],
 			"fields":   slices.Collect[Field],
 			"unions":   slices.Collect[Union],
 			"variants": slices.Collect[Variant],
