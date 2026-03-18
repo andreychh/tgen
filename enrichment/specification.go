@@ -23,12 +23,24 @@ func NewSpecification(s parsing.Specification) Specification {
 	return Specification{inner: s}
 }
 
-func (s Specification) Objects() iter.Seq[parsing.Object] {
-	return s.inner.Objects()
+func (s Specification) Objects() iter.Seq[Object] {
+	return func(yield func(Object) bool) {
+		for o := range s.inner.Objects() {
+			if !yield(NewObject(o)) {
+				break
+			}
+		}
+	}
 }
 
-func (s Specification) Methods() iter.Seq[parsing.Method] {
-	return s.inner.Methods()
+func (s Specification) Methods() iter.Seq[Method] {
+	return func(yield func(Method) bool) {
+		for m := range s.inner.Methods() {
+			if !yield(NewMethod(m)) {
+				break
+			}
+		}
+	}
 }
 
 func (s Specification) Unions() iter.Seq[parsing.Union] {
@@ -41,22 +53,27 @@ func (s Specification) Release() parsing.Release {
 
 func (s Specification) ImplicitUnions() iter.Seq[ImplicitUnion] {
 	return slices.Values([]ImplicitUnion{
-		NewStaticImplicitUnion(
+		NewImplicitUnion(
 			"ChatId",
 			"ChatId represents a chat identifier, which is either an integer or a string.",
 			[]string{"Integer", "String"},
 		),
-		NewStaticImplicitUnion(
+		NewImplicitUnion(
 			"ReplyMarkup",
 			"ReplyMarkup represents a reply markup attached to a message.",
-			[]string{"InlineKeyboardMarkup", "ReplyKeyboardMarkup", "ReplyKeyboardRemove", "ForceReply"},
+			[]string{
+				"InlineKeyboardMarkup",
+				"ReplyKeyboardMarkup",
+				"ReplyKeyboardRemove",
+				"ForceReply",
+			},
 		),
-		NewStaticImplicitUnion(
+		NewImplicitUnion(
 			"InputMediaGroup",
 			"InputMediaGroup represents a media element in a media group.",
 			[]string{"InputMediaAudio", "InputMediaDocument", "InputMediaPhoto", "InputMediaVideo"},
 		),
-		NewStaticImplicitUnion(
+		NewImplicitUnion(
 			"MaybeMessage",
 			"MaybeMessage represents a method return type that is either an edited Message or True for inline messages.",
 			[]string{"Message", "True"},
