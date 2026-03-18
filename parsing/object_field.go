@@ -28,7 +28,7 @@ func (f ObjectField) IsOptional() Optionality {
 	return NewObjectFieldOptionality(f.selection.Find("td").At(2))
 }
 
-//nolint:ireturn // RawValue is the intentional public contract of Field
-func (f ObjectField) Description() RawValue {
+//nolint:ireturn // FieldDescription is the intentional public contract of Field
+func (f ObjectField) Description() FieldDescription {
 	return NewObjectFieldDescription(f.selection.Find("td").At(2))
 }

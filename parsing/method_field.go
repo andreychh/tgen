@@ -26,7 +26,7 @@ func (f MethodField) IsOptional() Optionality {
 	return NewMethodFieldOptionality(f.selection.Find("td").At(2))
 }
 
-//nolint:ireturn // RawValue is the intentional public contract of Field
-func (f MethodField) Description() RawValue {
+//nolint:ireturn // FieldDescription is the intentional public contract of Field
+func (f MethodField) Description() FieldDescription {
 	return NewMethodFieldDescription(f.selection.Find("td").At(3))
 }

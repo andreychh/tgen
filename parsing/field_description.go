@@ -24,3 +24,13 @@ func (d ObjectFieldDescription) Value() (string, error) {
 	}
 	return strings.TrimPrefix(d.selection.Text(), "Optional. "), nil
 }
+
+func (d ObjectFieldDescription) Links() []string {
+	var links []string
+	for a := range d.selection.Find("a").All() {
+		if href, ok := a.Attr("href"); ok {
+			links = append(links, href)
+		}
+	}
+	return links
+}
