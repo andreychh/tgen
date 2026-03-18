@@ -5,14 +5,14 @@ package parsing
 
 import "github.com/andreychh/tgen/parsing/gq"
 
-type Variant struct {
+type GQVariant struct {
 	selection gq.Selection
 }
 
-func NewVariant(li gq.Selection) Variant {
-	return Variant{selection: li}
+func NewVariant(li gq.Selection) GQVariant {
+	return GQVariant{selection: li}
 }
 
-func (v Variant) Name() ObjectName {
-	return NewObjectName(v.selection.Find("a"))
+func (v GQVariant) Name() ObjectName {
+	return NewGQObjectName(v.selection.Find("a"))
 }

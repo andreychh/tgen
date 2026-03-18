@@ -22,10 +22,10 @@ func (o Object) Ref() DefinitionRef {
 }
 
 func (o Object) Name() ObjectName {
-	return NewObjectName(o.selection)
+	return NewGQObjectName(o.selection)
 }
 
-func (o Object) Description() DefinitionDescription {
+func (o Object) Description() GQDefinitionDescription {
 	return NewDefinitionDescription(o.selection)
 }
 

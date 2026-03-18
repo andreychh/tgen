@@ -24,6 +24,9 @@ type TypeExpression interface {
 	// from a named polymorphic type (e.g., MaybeInaccessibleMessage) which is
 	// defined as a top-level Union in the Specification.
 	Union() ([]TypeExpression, bool)
+
+	// Equal reports whether this node is structurally identical to other.
+	Equal(other TypeExpression) bool
 }
 
 // TypeNode is the concrete implementation of [TypeExpression]. Use
@@ -85,4 +88,26 @@ func (n TypeNode) Union() ([]TypeExpression, bool) {
 		return nil, false
 	}
 	return n.variants, true
+}
+
+// Equal implements [TypeExpression].
+func (n TypeNode) Equal(other TypeExpression) bool {
+	if n.name != "" {
+		name, ok := other.Named()
+		return ok && n.name == name
+	}
+	if n.inner != nil {
+		inner, ok := other.Array()
+		return ok && n.inner.Equal(inner)
+	}
+	variants, ok := other.Union()
+	if !ok || len(variants) != len(n.variants) {
+		return false
+	}
+	for i, v := range n.variants {
+		if !v.Equal(variants[i]) {
+			return false
+		}
+	}
+	return true
 }

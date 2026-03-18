@@ -12,15 +12,16 @@ import (
 
 var objectNameRegex = regexp.MustCompile(`^[A-Z][a-zA-Z0-9]+$`)
 
-type ObjectName struct {
+// GQObjectName represents a PascalCase identifier parsed from the specification.
+type GQObjectName struct {
 	selection gq.Selection
 }
 
-func NewObjectName(s gq.Selection) ObjectName {
-	return ObjectName{selection: s}
+func NewGQObjectName(s gq.Selection) GQObjectName {
+	return GQObjectName{selection: s}
 }
 
-func (n ObjectName) Value() (string, error) {
+func (n GQObjectName) Value() (string, error) {
 	val := n.selection.Text()
 	if !objectNameRegex.MatchString(val) {
 		return "", fmt.Errorf("object name %q contains invalid characters", val)
