@@ -23,3 +23,13 @@ func (d MethodFieldDescription) Value() (string, error) {
 	}
 	return d.selection.Text(), nil
 }
+
+func (d MethodFieldDescription) Links() []string {
+	var links []string
+	for a := range d.selection.Find("a").All() {
+		if href, ok := a.Attr("href"); ok {
+			links = append(links, href)
+		}
+	}
+	return links
+}
