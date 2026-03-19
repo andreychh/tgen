@@ -6,6 +6,7 @@ package golang
 import (
 	"fmt"
 
+	"github.com/andreychh/tgen/enrichment"
 	"github.com/andreychh/tgen/meta"
 	"github.com/andreychh/tgen/parsing"
 	"github.com/andreychh/tgen/rendering"
@@ -28,7 +29,7 @@ func (a Artifacts) Value() (rendering.Artifacts, error) {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
 	ctx := NewGenerationContext(
-		NewSpecification(a.spec),
+		NewSpecification(enrichment.NewSpecification(a.spec)),
 		rendering.NewSnapshot(a.snapshot),
 	)
 	return rendering.Artifacts{

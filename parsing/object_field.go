@@ -19,6 +19,7 @@ func (f ObjectField) Key() FieldKey {
 	return NewFieldKey(f.selection.Find("td").At(0))
 }
 
+//nolint:ireturn // TypeTree is the intentional public contract of Field
 func (f ObjectField) Type() TypeTree {
 	return NewTypeTree(NewFieldType(f.selection.Find("td").At(1)))
 }

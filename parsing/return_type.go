@@ -28,15 +28,23 @@ var (
 	returnFallback      = regexp.MustCompile(`([A-Z][a-zA-Z]+) is returned`)
 )
 
+// ReturnType extracts the return TypeExpression of a method from its
+// description paragraphs.
 type ReturnType struct {
 	selection gq.Selection
 }
 
+// NewReturnType creates a ReturnType from an h4 selection.
 func NewReturnType(h4 gq.Selection) ReturnType {
 	return ReturnType{selection: h4}
 }
 
-func (r ReturnType) Value() (string, error) {
+// Root parses the method description and returns the return type expression.
+// Returns an error if no description paragraphs are found or the return type
+// cannot be extracted.
+//
+//nolint:ireturn // TypeExpression is the intentional public contract of this method
+func (r ReturnType) Root() (TypeExpression, error) {
 	var parts []string
 	for node := range r.selection.Until("h3, h4, hr").Filter("p").All() {
 		text := node.Text()
@@ -45,38 +53,39 @@ func (r ReturnType) Value() (string, error) {
 		}
 	}
 	if len(parts) == 0 {
-		return "", errors.New("no description paragraphs found")
+		return nil, errors.New("no description paragraphs found")
 	}
 	return extractReturnType(strings.Join(parts, " "))
 }
 
-func extractReturnType(text string) (string, error) {
+//nolint:ireturn // returns interface by design to match Root() contract
+func extractReturnType(text string) (TypeExpression, error) {
 	if m := returnConditional.FindStringSubmatch(text); m != nil {
-		return m[1] + " or " + m[2], nil
+		return NewUnionType([]TypeExpression{NewNamedType(m[1]), NewNamedType(m[2])}), nil
 	}
 	if m := returnArray.FindStringSubmatch(text); m != nil {
-		return "Array of " + m[1], nil
+		return NewArrayType(NewNamedType(m[1])), nil
 	}
 	if m := returnAsType.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
 	if m := returnInFormOf.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
 	if m := returnArticleObject.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
 	if m := returnDirect.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
 	if m := returnTheNamed.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
 	if m := returnThePre.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
 	if m := returnFallback.FindStringSubmatch(text); m != nil {
-		return m[1], nil
+		return NewNamedType(m[1]), nil
 	}
-	return "", fmt.Errorf("cannot extract return type from: %q", text)
+	return nil, fmt.Errorf("cannot extract return type from: %q", text)
 }

@@ -6,14 +6,14 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/parsing"
+	"github.com/andreychh/tgen/enrichment"
 )
 
 type Method struct {
-	inner parsing.Method
+	inner enrichment.Method
 }
 
-func NewMethod(o parsing.Method) Method {
+func NewMethod(o enrichment.Method) Method {
 	return Method{inner: o}
 }
 

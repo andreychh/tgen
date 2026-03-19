@@ -10,15 +10,15 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type DefinitionDescription struct {
+type GQDefinitionDescription struct {
 	selection gq.Selection
 }
 
-func NewDefinitionDescription(h4 gq.Selection) DefinitionDescription {
-	return DefinitionDescription{selection: h4}
+func NewDefinitionDescription(h4 gq.Selection) GQDefinitionDescription {
+	return GQDefinitionDescription{selection: h4}
 }
 
-func (d DefinitionDescription) Value() (string, error) {
+func (d GQDefinitionDescription) Value() (string, error) {
 	nodes := d.selection.
 		Until("h3, h4, hr").
 		Filter("p, blockquote")
