@@ -6,14 +6,14 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/parsing"
+	"github.com/andreychh/tgen/enrichment"
 )
 
 type Specification struct {
-	inner parsing.Specification
+	inner enrichment.Specification
 }
 
-func NewSpecification(s parsing.Specification) Specification {
+func NewSpecification(s enrichment.Specification) Specification {
 	return Specification{inner: s}
 }
 
@@ -41,6 +41,16 @@ func (s Specification) Unions() iter.Seq[Union] {
 	return func(yield func(Union) bool) {
 		for u := range s.inner.Unions() {
 			if !yield(NewUnion(u)) {
+				break
+			}
+		}
+	}
+}
+
+func (s Specification) ImplicitUnions() iter.Seq[ImplicitUnion] {
+	return func(yield func(ImplicitUnion) bool) {
+		for u := range s.inner.ImplicitUnions() {
+			if !yield(NewImplicitUnion(u)) {
 				break
 			}
 		}
