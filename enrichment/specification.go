@@ -56,27 +56,38 @@ func (s Specification) ImplicitUnions() iter.Seq[ImplicitUnion] {
 		NewImplicitUnion(
 			"ChatId",
 			"ChatId represents a chat identifier, which is either an integer or a string.",
-			[]string{"Integer", "String"},
+			[]ImplicitVariant{
+				NewImplicitVariant("Id", "Integer"),
+				NewImplicitVariant("Username", "String"),
+			},
 		),
 		NewImplicitUnion(
 			"ReplyMarkup",
 			"ReplyMarkup represents a reply markup attached to a message.",
-			[]string{
-				"InlineKeyboardMarkup",
-				"ReplyKeyboardMarkup",
-				"ReplyKeyboardRemove",
-				"ForceReply",
+			[]ImplicitVariant{
+				NewTypeVariant("InlineKeyboardMarkup"),
+				NewTypeVariant("ReplyKeyboardMarkup"),
+				NewTypeVariant("ReplyKeyboardRemove"),
+				NewTypeVariant("ForceReply"),
 			},
 		),
 		NewImplicitUnion(
 			"InputMediaGroup",
 			"InputMediaGroup represents a media element in a media group.",
-			[]string{"InputMediaAudio", "InputMediaDocument", "InputMediaPhoto", "InputMediaVideo"},
+			[]ImplicitVariant{
+				NewTypeVariant("InputMediaAudio"),
+				NewTypeVariant("InputMediaDocument"),
+				NewTypeVariant("InputMediaPhoto"),
+				NewTypeVariant("InputMediaVideo"),
+			},
 		),
 		NewImplicitUnion(
 			"MaybeMessage",
 			"MaybeMessage represents a method return type that is either an edited Message or True for inline messages.",
-			[]string{"Message", "True"},
+			[]ImplicitVariant{
+				NewImplicitVariant("Message", "Message"),
+				NewImplicitVariant("Ok", "Boolean"),
+			},
 		),
 	})
 }

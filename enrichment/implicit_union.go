@@ -5,6 +5,7 @@ package enrichment
 
 import (
 	"iter"
+	"slices"
 
 	"github.com/andreychh/tgen/parsing"
 )
@@ -12,10 +13,10 @@ import (
 type ImplicitUnion struct {
 	name        string
 	description string
-	variants    []string
+	variants    []ImplicitVariant
 }
 
-func NewImplicitUnion(name, description string, variants []string) ImplicitUnion {
+func NewImplicitUnion(name, description string, variants []ImplicitVariant) ImplicitUnion {
 	return ImplicitUnion{
 		name:        name,
 		description: description,
@@ -31,14 +32,8 @@ func (u ImplicitUnion) Description() parsing.DefinitionDescription {
 	return staticDefinitionDescription{u.description}
 }
 
-func (u ImplicitUnion) Variants() iter.Seq[parsing.Variant] {
-	return func(yield func(parsing.Variant) bool) {
-		for _, v := range u.variants {
-			if !yield(staticVariant{name: v}) {
-				break
-			}
-		}
-	}
+func (u ImplicitUnion) Variants() iter.Seq[ImplicitVariant] {
+	return slices.Values(u.variants)
 }
 
 type staticObjectName struct {
@@ -55,12 +50,4 @@ type staticDefinitionDescription struct {
 
 func (s staticDefinitionDescription) Value() (string, error) {
 	return s.value, nil
-}
-
-type staticVariant struct {
-	name string
-}
-
-func (v staticVariant) Name() parsing.ObjectName {
-	return staticObjectName{value: v.name}
 }
