@@ -51,6 +51,7 @@ func (m Method) Fields() iter.Seq[parsing.Field] {
 	}
 }
 
+//nolint:ireturn // Field is the intentional public contract of applyRules
 func (m Method) applyRules(f parsing.Field) parsing.Field {
 	for _, r := range m.rules {
 		f = r.Apply(f)

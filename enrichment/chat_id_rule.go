@@ -9,19 +9,20 @@ import "github.com/andreychh/tgen/parsing"
 // field types with ChatId.
 type ChatIdRule struct{}
 
-func (r ChatIdRule) Apply(f parsing.Field) parsing.Field {
-	root, err := f.Type().Root()
+//nolint:ireturn // Field is the intentional public contract of Apply
+func (r ChatIdRule) Apply(field parsing.Field) parsing.Field {
+	root, err := field.Type().Root()
 	if err != nil {
-		return f
+		return field
 	}
 	if !root.Equal(parsing.NewUnionType([]parsing.TypeExpression{
 		parsing.NewNamedType("Integer"),
 		parsing.NewNamedType("String"),
 	})) {
-		return f
+		return field
 	}
 	return typedField{
-		inner: f,
+		inner: field,
 		tree:  parsing.NewTypeTreeExpr(parsing.NewNamedType("ChatId")),
 	}
 }

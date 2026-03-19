@@ -12,20 +12,21 @@ import (
 // InputFileRule represents an enrichment rule that replaces InputFile-or-String and String-with-sending-files-link field types with InputFile.
 type InputFileRule struct{}
 
-func (r InputFileRule) Apply(f parsing.Field) parsing.Field {
-	root, err := f.Type().Root()
+//nolint:ireturn // Field is the intentional public contract of Apply
+func (r InputFileRule) Apply(field parsing.Field) parsing.Field {
+	root, err := field.Type().Root()
 	if err != nil {
-		return f
+		return field
 	}
 	if root.Equal(parsing.NewUnionType([]parsing.TypeExpression{
 		parsing.NewNamedType("InputFile"),
 		parsing.NewNamedType("String"),
 	})) || root.Equal(parsing.NewNamedType("String")) &&
-		slices.Contains(f.Description().Links(), "#sending-files") {
+		slices.Contains(field.Description().Links(), "#sending-files") {
 		return typedField{
-			inner: f,
+			inner: field,
 			tree:  parsing.NewTypeTreeExpr(parsing.NewNamedType("InputFile")),
 		}
 	}
-	return f
+	return field
 }

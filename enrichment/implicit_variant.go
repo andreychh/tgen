@@ -20,10 +20,12 @@ func NewTypeVariant(name string) ImplicitVariant {
 	return NewImplicitVariant(name, name)
 }
 
+//nolint:ireturn // ObjectName is the intentional public contract of this method
 func (v ImplicitVariant) Name() parsing.ObjectName {
 	return staticObjectName{value: v.name}
 }
 
+//nolint:ireturn // ObjectName is the intentional public contract of this method
 func (v ImplicitVariant) Type() parsing.ObjectName {
 	return staticObjectName{value: v.typ}
 }

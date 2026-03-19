@@ -21,6 +21,7 @@ func (u Union) Ref() DefinitionRef {
 	return NewDefinitionRef(u.selection.Find("a.anchor"))
 }
 
+//nolint:ireturn // ObjectName is the intentional public contract of this method
 func (u Union) Name() ObjectName {
 	return NewGQObjectName(u.selection)
 }

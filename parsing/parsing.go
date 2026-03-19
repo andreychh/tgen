@@ -5,10 +5,12 @@ package parsing
 
 import "iter"
 
+//nolint:iface // DefinitionDescription and ObjectName are semantically distinct despite identical signatures
 type DefinitionDescription interface {
 	Value() (string, error)
 }
 
+//nolint:iface // ObjectName and DefinitionDescription are semantically distinct despite identical signatures
 type ObjectName interface {
 	Value() (string, error)
 }

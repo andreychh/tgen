@@ -8,10 +8,11 @@ import "github.com/andreychh/tgen/parsing"
 // ReplyMarkupRule represents an enrichment rule that replaces the four-variant reply markup union with ReplyMarkup.
 type ReplyMarkupRule struct{}
 
-func (r ReplyMarkupRule) Apply(f parsing.Field) parsing.Field {
-	root, err := f.Type().Root()
+//nolint:ireturn // Field is the intentional public contract of Apply
+func (r ReplyMarkupRule) Apply(field parsing.Field) parsing.Field {
+	root, err := field.Type().Root()
 	if err != nil {
-		return f
+		return field
 	}
 	if !root.Equal(parsing.NewUnionType([]parsing.TypeExpression{
 		parsing.NewNamedType("InlineKeyboardMarkup"),
@@ -19,10 +20,10 @@ func (r ReplyMarkupRule) Apply(f parsing.Field) parsing.Field {
 		parsing.NewNamedType("ReplyKeyboardRemove"),
 		parsing.NewNamedType("ForceReply"),
 	})) {
-		return f
+		return field
 	}
 	return typedField{
-		inner: f,
+		inner: field,
 		tree:  parsing.NewTypeTreeExpr(parsing.NewNamedType("ReplyMarkup")),
 	}
 }

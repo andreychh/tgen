@@ -13,6 +13,7 @@ func NewVariant(li gq.Selection) GQVariant {
 	return GQVariant{selection: li}
 }
 
+//nolint:ireturn // ObjectName is the intentional public contract of this method
 func (v GQVariant) Name() ObjectName {
 	return NewGQObjectName(v.selection.Find("a"))
 }

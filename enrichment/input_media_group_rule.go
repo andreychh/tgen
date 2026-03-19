@@ -8,10 +8,11 @@ import "github.com/andreychh/tgen/parsing"
 // InputMediaGroupRule represents an enrichment rule that replaces the input media array union with InputMediaGroup.
 type InputMediaGroupRule struct{}
 
-func (r InputMediaGroupRule) Apply(f parsing.Field) parsing.Field {
-	root, err := f.Type().Root()
+//nolint:ireturn // Field is the intentional public contract of Apply
+func (r InputMediaGroupRule) Apply(field parsing.Field) parsing.Field {
+	root, err := field.Type().Root()
 	if err != nil {
-		return f
+		return field
 	}
 	if !root.Equal(parsing.NewArrayType(parsing.NewUnionType([]parsing.TypeExpression{
 		parsing.NewNamedType("InputMediaAudio"),
@@ -19,10 +20,14 @@ func (r InputMediaGroupRule) Apply(f parsing.Field) parsing.Field {
 		parsing.NewNamedType("InputMediaPhoto"),
 		parsing.NewNamedType("InputMediaVideo"),
 	}))) {
-		return f
+		return field
 	}
 	return typedField{
-		inner: f,
-		tree:  parsing.NewTypeTreeExpr(parsing.NewArrayType(parsing.NewNamedType("InputMediaGroup"))),
+		inner: field,
+		tree: parsing.NewTypeTreeExpr(
+			parsing.NewArrayType(
+				parsing.NewNamedType("InputMediaGroup"),
+			),
+		),
 	}
 }

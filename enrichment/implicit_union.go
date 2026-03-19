@@ -24,10 +24,12 @@ func NewImplicitUnion(name, description string, variants []ImplicitVariant) Impl
 	}
 }
 
+//nolint:ireturn // ObjectName is the intentional public contract of this method
 func (u ImplicitUnion) Name() parsing.ObjectName {
 	return staticObjectName{u.name}
 }
 
+//nolint:ireturn // DefinitionDescription is the intentional public contract of this method
 func (u ImplicitUnion) Description() parsing.DefinitionDescription {
 	return staticDefinitionDescription{u.description}
 }

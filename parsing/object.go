@@ -21,6 +21,7 @@ func (o Object) Ref() DefinitionRef {
 	return NewDefinitionRef(o.selection.Find("a.anchor"))
 }
 
+//nolint:ireturn // ObjectName is the intentional public contract of this method
 func (o Object) Name() ObjectName {
 	return NewGQObjectName(o.selection)
 }
