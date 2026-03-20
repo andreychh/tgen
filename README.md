@@ -200,6 +200,7 @@ new feature — feel free to open a pull request.
 > [!TIP]
 > [Renovate](https://www.mend.io/renovate/) automatically keeps all dependencies up to date. Once
 > its PRs are merged, run the following to update your local toolchain:
+>
 > ```bash
 > mise upgrade
 > ```
