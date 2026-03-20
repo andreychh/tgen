@@ -6,9 +6,44 @@
 
 package api
 
+import (
+	"context"
+	"fmt"
+)
+
+type Method string
+
+const (
+{{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
+	Method{{.Name.Value}} = "{{.Name.Value}}"
+{{- end }}
+)
+
+
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 
 {{template "method" . }}
+{{- end }}
+
+
+type Endpoint[Req, Resp any] struct {
+	conn   Connection
+	method Method
+}
+
+func (e Endpoint[Req, Resp]) Call(ctx context.Context, req Req) (Resp, error) {
+	var resp Resp
+	if err := e.conn.Do(ctx, e.method, req, &resp); err != nil {
+		return resp, fmt.Errorf("%s: %w", e.method, err)
+	}
+	return resp, nil
+}
+
+{{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
+
+func New{{.Name.Value}}Endpoint(conn Connection) Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}] {
+    return Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}]{conn: conn, method: Method{{.Name.Value}}}
+}
 {{- end }}
 
 {{- end }}
