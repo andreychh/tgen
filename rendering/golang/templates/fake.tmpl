@@ -12,8 +12,25 @@ import (
 	"fmt"
 )
 
-// Responses maps Method values to canned response values for FakeConnection.
-type Responses map[Method]any
+// Response represents the outcome of a FakeConnection call — either a value or
+// an error.
+type Response struct {
+	value any
+	err   error
+}
+
+// Ok creates a Response that returns v as the decoded result.
+func Ok(v any) Response {
+	return Response{value: v, err: nil}
+}
+
+// Err creates a Response that returns e as the method error.
+func Err(e error) Response {
+	return Response{value: nil, err: e}
+}
+
+// Responses maps Method values to canned outcomes for FakeConnection.
+type Responses map[Method]Response
 
 // FakeConnection implements Connection with canned responses for use in tests.
 // Misconfiguration causes a panic rather than an error to prevent silent test
@@ -28,15 +45,19 @@ func NewFakeConnection(r Responses) FakeConnection {
 	return FakeConnection{responses: r}
 }
 
-// Do populates response with the canned value registered for method. It panics
-// if method was not registered in Responses or if the canned value cannot be
-// decoded into response.
+// Do returns the canned error for method if the Response was created with Err,
+// or populates response with the canned value. It panics if method was not
+// registered in Responses or if the canned value cannot be decoded into
+// response.
 func (c FakeConnection) Do(_ context.Context, method Method, _, response any) error {
-	want, ok := c.responses[method]
+	resp, ok := c.responses[method]
 	if !ok {
 		panic(fmt.Sprintf("FakeConnection: unexpected method %q", method))
 	}
-	data, err := json.Marshal(want)
+	if resp.err != nil {
+		return resp.err
+	}
+	data, err := json.Marshal(resp.value)
 	if err != nil {
 		panic(fmt.Sprintf("FakeConnection: marshaling response for %q: %v", method, err))
 	}
