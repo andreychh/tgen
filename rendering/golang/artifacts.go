@@ -37,5 +37,6 @@ func (a Artifacts) Value() (rendering.Artifacts, error) {
 		"unions.go":  rendering.NewTemplateView(tmpl, "unions", ctx),
 		"methods.go": rendering.NewTemplateView(tmpl, "methods", ctx),
 		"client.go":  rendering.NewTemplateView(tmpl, "client", ctx),
+		"fake.go":    rendering.NewTemplateView(tmpl, "fake", ctx),
 	}, nil
 }

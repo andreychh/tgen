@@ -11,6 +11,7 @@ import (
 	"fmt"
 )
 
+// Method identifies a Telegram Bot API method by its name.
 type Method string
 
 const (
@@ -26,11 +27,15 @@ const (
 {{- end }}
 
 
+// Endpoint binds a Connection to a Method with typed request and response
+// parameters.
 type Endpoint[Req, Resp any] struct {
 	conn   Connection
 	method Method
 }
 
+// Call sends req to the bound method and returns the decoded response. It
+// returns an error annotated with the method name if the connection fails.
 func (e Endpoint[Req, Resp]) Call(ctx context.Context, req Req) (Resp, error) {
 	var resp Resp
 	if err := e.conn.Do(ctx, e.method, req, &resp); err != nil {
@@ -41,8 +46,9 @@ func (e Endpoint[Req, Resp]) Call(ctx context.Context, req Req) (Resp, error) {
 
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 
+// New{{.Name.Value}}Endpoint creates an Endpoint for the {{.Name.Value}} method.
 func New{{.Name.Value}}Endpoint(conn Connection) Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}] {
-    return Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}]{conn: conn, method: Method{{.Name.Value}}}
+	return Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}]{conn: conn, method: Method{{.Name.Value}}}
 }
 {{- end }}
 
