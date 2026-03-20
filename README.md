@@ -6,12 +6,12 @@ SPDX-License-Identifier: MIT
 # tgen
 
 [![REUSE status](https://api.reuse.software/badge/github.com/andreychh/tgen)](https://api.reuse.software/info/github.com/andreychh/tgen)
-<!--
-[![codecov](https://codecov.io/gh/andreychh/tgen/graph/badge.svg?token=CRAB598PR3)](https://codecov.io/gh/andreychh/tgen)
--->
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/andreychh/tgen)](https://github.com/andreychh/tgen/releases)
 [![PDD status](https://www.0pdd.com/svg?name=andreychh/tgen)](https://www.0pdd.com/p?name=andreychh/tgen)
 [![Go Report Card](https://goreportcard.com/badge/github.com/andreychh/tgen)](https://goreportcard.com/report/github.com/andreychh/tgen)
+<!--
+[![codecov](https://codecov.io/gh/andreychh/tgen/graph/badge.svg?token=CRAB598PR3)](https://codecov.io/gh/andreychh/tgen)
+-->
 
 **tgen** is a command-line tool that generates ready-to-use API bindings from
 the [Telegram Bot API HTML documentation](https://core.telegram.org/bots/api).
@@ -25,27 +25,34 @@ strongly-typed client code.
 
 ## Features
 
-* **Automated & Up-to-Date:** Parses documentation directly from the Telegram website to ensure your
-  bindings match the latest API changes.
-* **Fluent Output:** Generates developer-friendly interfaces that follow language-specific idioms.
-  For example, in Go, it targets syntax like:
+* **Up-to-Date by Default:** New API methods and standard types are picked up automatically — just
+  run `tgen go` after a new Telegram Bot API release.
+* **Spec-Faithful Types:** Ambiguous spec types become real Go types. The Telegram API describes
+  `chat_id` as `Integer or String`. Instead of collapsing this into `any`, tgen generates a proper
+  union type with explicit variants:
 
     ```go
-    resp, err := api.SendMessage(client).Call(api.SendMessageRequest{
-        ChatID: 123456789,
-        Text:   "Hello from generated code!",
-    })
+    // address a public channel by username
+    ChatID: api.ChatID{Username: new("@news")},
+    // or a group by its numeric ID — same field, different variant
+    ChatID: api.ChatID{ID: new(int64(-1001122334455))},
     ```
 
 * **Deterministic Builds:** Supports local HTML files for reproducibility or offline work.
-* **Standards-Driven:** Built following [clig.dev](https://clig.dev/) guidelines and strictly
-  adheres to [REUSE](https://reuse.software/) compliance.
 
 ## Installation
 
+### Using [mise-en-place](https://mise.jdx.dev/)
+
+If you use mise, install the latest release globally:
+
+```bash
+mise use -g github:andreychh/tgen
+```
+
 ### Using Go
 
-If you have Go installed, you can install the latest version directly:
+With Go available, you can fetch the latest version directly:
 
 ```bash
 go install github.com/andreychh/tgen@latest
@@ -62,8 +69,8 @@ the [Releases page](https://github.com/andreychh/tgen/releases).
 
 ### Fetch from the web
 
-Download and parse the specification directly from the Telegram website, outputting the generated
-files to the `./api` directory:
+Downloads and parses the specification directly from the Telegram website, writing the generated
+files to `./api`:
 
 ```bash
 tgen go --out ./api
@@ -71,15 +78,92 @@ tgen go --out ./api
 
 ### Use a local file
 
-If you have downloaded the HTML specification locally, pass the file path using the `--spec` flag.
-This is recommended to ensure build reproducibility and avoid network issues:
+If you have downloaded the HTML specification locally, pass the file path using the `--spec` or `-s`
+flag. This is recommended to ensure build reproducibility and avoid network issues:
 
 ```bash
 # Download the specification
 curl -o api.html https://core.telegram.org/bots/api
 
 # Generate the code
-tgen go --spec ./api.html --out ./api
+tgen go -s ./api.html -o ./api
+```
+
+## Generated API
+
+### Go
+
+The generated API follows a consistent pattern: a constructor takes a `Connection` and returns an
+endpoint, which you call with a typed request struct to get a typed response. You can replace
+`HTTPConnection` with any implementation to add retries, proxy requests, or inject `FakeConnection`
+in tests:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+
+	"awesome-bot/api"
+)
+
+func main() {
+	conn := api.NewHTTPConnection(http.DefaultClient, os.Getenv("BOT_TOKEN"))
+	ctx := context.Background()
+
+	msg, err := api.NewSendMessageEndpoint(conn).Call(ctx, api.SendMessageRequest{
+		ChatID: api.ChatID{Username: new("@news")},
+		Text:   "Hello from tgen!",
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	fmt.Printf("Sent message %d\n", msg.MessageID)
+}
+```
+
+#### Testing
+
+`FakeConnection` provides canned responses for unit tests: use `api.Ok(v)` for a successful result
+and `api.Err(err)` to simulate a failure.
+
+```go
+func TestSendMessage(t *testing.T) {
+	conn := api.NewFakeConnection(api.Responses{
+		api.MethodSendMessage: api.Ok(api.Message{MessageID: 42}),
+	})
+
+	msg, err := api.NewSendMessageEndpoint(conn).Call(
+		context.Background(),
+		api.SendMessageRequest{
+			ChatID: api.ChatID{Username: new("@news")},
+			Text:   "Hello from tgen!",
+		},
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(42), msg.MessageID, "SendMessage must return the sent message")
+}
+
+func TestSendMessage_Failure(t *testing.T) {
+	conn := api.NewFakeConnection(api.Responses{
+		api.MethodSendMessage: api.Err(errors.New("unauthorized")),
+	})
+
+	_, err := api.NewSendMessageEndpoint(conn).Call(
+		context.Background(),
+		api.SendMessageRequest{
+			ChatID: api.ChatID{Username: new("@news")},
+			Text:   "Hello from tgen!",
+		},
+	)
+
+	assert.ErrorContains(t, err, "unauthorized")
+}
 ```
 
 ## Contributing
@@ -90,9 +174,9 @@ new feature — feel free to open a pull request.
 
 ### Getting started
 
-1. Install [mise](https://mise.jdx.dev/) — the toolchain manager we use.
+1. Install [mise-en-place](https://mise.jdx.dev/) — the toolchain manager we use.
 
-2. Set up the toolchain — installs Go, Task, and all other tools declared in `.сonfig/mise.toml`:
+2. Set up the toolchain — installs Go, Task, and all other tools declared in `.config/mise.toml`:
 
    ```bash
    mise install
@@ -114,5 +198,9 @@ new feature — feel free to open a pull request.
    please [open an issue](https://github.com/andreychh/tgen/issues/new).
 
 > [!TIP]
-> [Renovate](https://www.mend.io/renovate/) automatically keeps all dependencies up to date. After
-> its PRs are merged, run `mise upgrade` to install the updated toolchain locally.
+> [Renovate](https://www.mend.io/renovate/) automatically keeps all dependencies up to date. Once
+> its PRs are merged, run the following to update your local toolchain:
+>
+> ```bash
+> mise upgrade
+> ```

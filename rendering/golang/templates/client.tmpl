@@ -15,6 +15,7 @@ import (
 	"net/http"
 )
 
+// Envelope represents the standard Telegram Bot API JSON response envelope.
 type Envelope struct {
 	Ok          bool                `json:"ok"`
 	Result      json.RawMessage     `json:"result,omitempty"`
@@ -23,19 +24,31 @@ type Envelope struct {
 	Parameters  *ResponseParameters `json:"parameters,omitempty"`
 }
 
+// Connection executes Telegram Bot API methods over a transport.
 type Connection interface {
+	// Do sends method with request as the JSON body and decodes the result into
+	// response. It returns an error if the transport fails or the API reports a
+	// failure.
 	Do(ctx context.Context, method Method, request, response any) error
 }
 
+// HTTPConnection implements Connection over HTTP using the Telegram Bot API
+// endpoint.
 type HTTPConnection struct {
 	client *http.Client
 	token  string
 }
 
+// NewHTTPConnection creates an HTTPConnection from an HTTP client and a bot
+// token.
 func NewHTTPConnection(client *http.Client, token string) HTTPConnection {
 	return HTTPConnection{client: client, token: token}
 }
 
+// Do marshals request as JSON, sends a POST to the Telegram API, and decodes
+// the result into response. It returns an error if the request cannot be built,
+// the transport fails, the API reports a failure, or the result cannot be
+// decoded.
 func (c HTTPConnection) Do(ctx context.Context, method Method, request, response any) error {
 	body, err := json.Marshal(request)
 	if err != nil {
