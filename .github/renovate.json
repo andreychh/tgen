@@ -8,6 +8,9 @@
   "minimumReleaseAge": "3 days",
   "rebaseWhen": "behind-base-branch",
   "semanticCommits": "enabled",
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": [
