@@ -51,54 +51,66 @@ func (h DefinitionHeader) Kind() DefinitionKind {
 	case unicode.IsLower(first):
 		return KindMethod
 	case unicode.IsUpper(first) && !hasList:
-		hasDiscriminator := !body.
-			Find("table tbody tr").
-			FilterFunc(func(tr gq.Selection) bool {
-				return NewDefinitionRow(tr).Kind() == KindDiscriminatorField
-			}).
-			IsEmpty()
-		if hasDiscriminator {
-			name := h.h4.Text()
-			isListed := !h.root.
-				Find("div#dev_page_content h4").
-				FilterFunc(func(cand gq.Selection) bool {
-					return !cand.Until("h3, h4, hr").Find("ul li a").
-						FilterFunc(func(a gq.Selection) bool {
-							return a.Text() == name
-						}).
-						IsEmpty()
-				}).
-				IsEmpty()
-			if isListed {
-				return KindVariantObject
-			}
-		}
-		return KindObject
+		return h.objectKind(body)
 	case unicode.IsUpper(first) && hasList:
-		li := body.Find("ul li").At(0)
-		if li.IsEmpty() {
-			return KindUnion
-		}
-		variant := h.root.
-			Find("div#dev_page_content h4").
-			FilterFunc(func(cand gq.Selection) bool {
-				return cand.Text() == li.Find("a").Text()
-			}).
-			At(0)
-		if variant.IsEmpty() {
-			return KindUnion
-		}
-		hasDiscriminator := !variant.
-			Until("h3, h4, hr").
-			Find("table tbody tr").
-			FilterFunc(func(tr gq.Selection) bool {
-				return NewDefinitionRow(tr).Kind() == KindDiscriminatorField
-			}).
-			IsEmpty()
-		if hasDiscriminator {
-			return KindDiscriminatedUnion
-		}
-		return KindUnion
+		return h.unionKind(body)
 	}
 	return KindUnknown
+}
+
+func (h DefinitionHeader) objectKind(body gq.Selection) DefinitionKind {
+	hasDiscriminator := !body.
+		Find("table tbody tr").
+		FilterFunc(func(tr gq.Selection) bool {
+			return NewDefinitionRow(tr).Kind() == KindDiscriminatorField
+		}).
+		IsEmpty()
+	if !hasDiscriminator {
+		return KindObject
+	}
+	name := h.h4.Text()
+	isListed := !h.root.
+		Find("div#dev_page_content h4").
+		FilterFunc(func(cand gq.Selection) bool {
+			return !cand.Until("h3, h4, hr").Find("ul li a").
+				FilterFunc(func(a gq.Selection) bool {
+					return a.Text() == name
+				}).
+				IsEmpty()
+		}).
+		IsEmpty()
+	if isListed {
+		return KindVariantObject
+	}
+	return KindObject
+}
+
+func (h DefinitionHeader) unionKind(body gq.Selection) DefinitionKind {
+	//nolint:varnamelen // <li> is the standard HTML list item element name
+	li := body.
+		Find("ul li").
+		At(0)
+	if li.IsEmpty() {
+		return KindUnion
+	}
+	variant := h.root.
+		Find("div#dev_page_content h4").
+		FilterFunc(func(cand gq.Selection) bool {
+			return cand.Text() == li.Find("a").Text()
+		}).
+		At(0)
+	if variant.IsEmpty() {
+		return KindUnion
+	}
+	hasDiscriminator := !variant.
+		Until("h3, h4, hr").
+		Find("table tbody tr").
+		FilterFunc(func(tr gq.Selection) bool {
+			return NewDefinitionRow(tr).Kind() == KindDiscriminatorField
+		}).
+		IsEmpty()
+	if hasDiscriminator {
+		return KindDiscriminatedUnion
+	}
+	return KindUnion
 }

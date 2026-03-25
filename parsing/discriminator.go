@@ -10,7 +10,9 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-var discriminatorValueRegex = regexp.MustCompile("always \u201c([^\u201d]+)\u201d|must be ([a-z][a-z0-9_]*)\\s*$")
+var discriminatorValueRegex = regexp.MustCompile(
+	"always \u201c([^\u201d]+)\u201d|must be ([a-z][a-z0-9_]*)\\s*$",
+)
 
 // GQDiscriminator represents the discriminator field of a variant, parsed from
 // its table row.

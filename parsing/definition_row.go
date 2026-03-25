@@ -9,7 +9,9 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-var definitionRowDiscriminatorRegex = regexp.MustCompile("always \u201c[^\u201d]+\u201d|must be [a-z][a-z0-9_]*\\s*$")
+var definitionRowDiscriminatorRegex = regexp.MustCompile(
+	"always \u201c[^\u201d]+\u201d|must be [a-z][a-z0-9_]*\\s*$",
+)
 
 // FieldRowKind identifies the role of a field table row in a variant object.
 type FieldRowKind string

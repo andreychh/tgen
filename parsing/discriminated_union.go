@@ -39,6 +39,7 @@ func (u GQDiscriminatedUnion) Description() DefinitionDescription {
 // (e.g. "type" for ReactionType).
 func (u GQDiscriminatedUnion) DiscriminatorKey() FieldKey {
 	li := u.selection.Until("h3, h4, hr").Find("ul li").At(0)
+	//nolint:varnamelen // <h4> is the standard HTML heading element name
 	h4 := u.root.
 		Find("div#dev_page_content h4").
 		FilterFunc(func(s gq.Selection) bool {
@@ -54,6 +55,7 @@ func (u GQDiscriminatedUnion) DiscriminatorKey() FieldKey {
 func (u GQDiscriminatedUnion) Variants() iter.Seq[VariantObject] {
 	return func(yield func(VariantObject) bool) {
 		for li := range u.selection.Until("h3, h4, hr").Find("ul li").All() {
+			//nolint:varnamelen // <h4> is the standard HTML heading element name
 			h4 := u.root.
 				Find("div#dev_page_content h4").
 				FilterFunc(func(s gq.Selection) bool {
