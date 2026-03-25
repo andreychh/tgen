@@ -23,10 +23,14 @@ func NewGQVariantFields(h4 gq.Selection) GQVariantFields {
 // excluding the discriminator field.
 func (f GQVariantFields) Free() iter.Seq[Field] {
 	return func(yield func(Field) bool) {
-		for tr := range f.selection.Until("h3, h4, hr").Find("table tbody tr").All() {
-			if NewDefinitionRow(tr).Kind() == KindDiscriminatorField {
-				continue
-			}
+		seq := f.selection.
+			Until("h3, h4, hr").
+			Find("table tbody tr").
+			FilterFunc(func(tr gq.Selection) bool {
+				return NewDefinitionRow(tr).Kind() != KindDiscriminatorField
+			}).
+			All()
+		for tr := range seq {
 			if !yield(NewObjectField(tr)) {
 				break
 			}

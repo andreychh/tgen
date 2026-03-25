@@ -51,10 +51,14 @@ func (h DefinitionHeader) Kind() DefinitionKind {
 	case unicode.IsLower(first):
 		return KindMethod
 	case unicode.IsUpper(first) && !hasList:
-		for tr := range body.Find("table tbody tr").All() {
-			if NewDefinitionRow(tr).Kind() == KindDiscriminatorField {
-				return KindVariantObject
-			}
+		hasDiscriminator := !body.
+			Find("table tbody tr").
+			FilterFunc(func(tr gq.Selection) bool {
+				return NewDefinitionRow(tr).Kind() == KindDiscriminatorField
+			}).
+			IsEmpty()
+		if hasDiscriminator {
+			return KindVariantObject
 		}
 		return KindObject
 	case unicode.IsUpper(first) && hasList:
@@ -71,10 +75,15 @@ func (h DefinitionHeader) Kind() DefinitionKind {
 		if variant.IsEmpty() {
 			return KindUnion
 		}
-		for tr := range variant.Until("h3, h4, hr").Find("table tbody tr").All() {
-			if NewDefinitionRow(tr).Kind() == KindDiscriminatorField {
-				return KindDiscriminatedUnion
-			}
+		hasDiscriminator := !variant.
+			Until("h3, h4, hr").
+			Find("table tbody tr").
+			FilterFunc(func(tr gq.Selection) bool {
+				return NewDefinitionRow(tr).Kind() == KindDiscriminatorField
+			}).
+			IsEmpty()
+		if hasDiscriminator {
+			return KindDiscriminatedUnion
 		}
 		return KindUnion
 	}
