@@ -37,6 +37,16 @@ func (s Specification) Methods() iter.Seq[Method] {
 	}
 }
 
+func (s Specification) DiscriminatedUnions() iter.Seq[DiscriminatedUnion] {
+	return func(yield func(DiscriminatedUnion) bool) {
+		for u := range s.inner.DiscriminatedUnions() {
+			if !yield(NewDiscriminatedUnion(u)) {
+				break
+			}
+		}
+	}
+}
+
 func (s Specification) Unions() iter.Seq[Union] {
 	return func(yield func(Union) bool) {
 		for u := range s.inner.Unions() {

@@ -58,7 +58,20 @@ func (h DefinitionHeader) Kind() DefinitionKind {
 			}).
 			IsEmpty()
 		if hasDiscriminator {
-			return KindVariantObject
+			name := h.h4.Text()
+			isListed := !h.root.
+				Find("div#dev_page_content h4").
+				FilterFunc(func(cand gq.Selection) bool {
+					return !cand.Until("h3, h4, hr").Find("ul li a").
+						FilterFunc(func(a gq.Selection) bool {
+							return a.Text() == name
+						}).
+						IsEmpty()
+				}).
+				IsEmpty()
+			if isListed {
+				return KindVariantObject
+			}
 		}
 		return KindObject
 	case unicode.IsUpper(first) && hasList:

@@ -47,6 +47,10 @@ func (s Specification) Unions() iter.Seq[parsing.Union] {
 	return s.inner.Unions()
 }
 
+func (s Specification) DiscriminatedUnions() iter.Seq[parsing.DiscriminatedUnion] {
+	return s.inner.DiscriminatedUnions()
+}
+
 func (s Specification) Release() parsing.Release {
 	return s.inner.Release()
 }

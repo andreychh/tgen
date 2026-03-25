@@ -88,5 +88,6 @@ type DiscriminatedUnion interface {
 	Ref() DefinitionRef
 	Name() ObjectName
 	Description() DefinitionDescription
+	DiscriminatorKey() FieldKey
 	Variants() iter.Seq[VariantObject]
 }

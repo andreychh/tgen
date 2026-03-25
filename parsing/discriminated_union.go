@@ -35,19 +35,32 @@ func (u GQDiscriminatedUnion) Description() DefinitionDescription {
 	return NewDefinitionDescription(u.selection)
 }
 
+// DiscriminatorKey returns the field key shared by all variants of this union
+// (e.g. "type" for ReactionType).
+func (u GQDiscriminatedUnion) DiscriminatorKey() FieldKey {
+	li := u.selection.Until("h3, h4, hr").Find("ul li").At(0)
+	h4 := u.root.
+		Find("div#dev_page_content h4").
+		FilterFunc(func(s gq.Selection) bool {
+			return s.Text() == li.Find("a").Text()
+		}).
+		At(0)
+	return NewVariantObject(h4).Fields().Discriminator().Key()
+}
+
 // Variants returns the variant objects of this union. Each variant name is read
 // from the union's <ul> list and resolved to a full object definition by navigating
 // from the document root.
 func (u GQDiscriminatedUnion) Variants() iter.Seq[VariantObject] {
 	return func(yield func(VariantObject) bool) {
 		for li := range u.selection.Until("h3, h4, hr").Find("ul li").All() {
-			if !yield(NewVariantObject(u.root.
+			h4 := u.root.
 				Find("div#dev_page_content h4").
 				FilterFunc(func(s gq.Selection) bool {
 					return s.Text() == li.Find("a").Text()
 				}).
-				At(0),
-			)) {
+				At(0)
+			if !yield(NewVariantObject(h4)) {
 				break
 			}
 		}

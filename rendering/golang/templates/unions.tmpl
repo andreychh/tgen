@@ -24,4 +24,9 @@ import (
 {{template "implicit_union" . }}
 {{- end }}
 
+{{- range .Spec.DiscriminatedUnions | discriminatedUnions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
+
+{{template "discriminated_union" . }}
+{{- end }}
+
 {{- end }}

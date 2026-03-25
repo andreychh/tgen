@@ -81,8 +81,8 @@ func (s Specification) Unions() iter.Seq[Union] {
 	}
 }
 
-func (s Specification) DiscriminatedUnions() iter.Seq[GQDiscriminatedUnion] {
-	return func(yield func(GQDiscriminatedUnion) bool) {
+func (s Specification) DiscriminatedUnions() iter.Seq[DiscriminatedUnion] {
+	return func(yield func(DiscriminatedUnion) bool) {
 		seq := s.selection.
 			Find("div#dev_page_content h4").
 			FilterFunc(func(h4 gq.Selection) bool {
