@@ -68,13 +68,13 @@ changelog:
       - '^ci'
       - '^Merge'
   groups:
-    - title: 'New Features'
+    - title: New Features
       regexp: '^feat'
       order: 100
-    - title: 'Bug fixes'
+    - title: Bug fixes
       regexp: '^fix'
       order: 200
-    - title: 'Documentation updates'
+    - title: Documentation updates
       regexp: '^docs'
       order: 400
     - title: Other work
