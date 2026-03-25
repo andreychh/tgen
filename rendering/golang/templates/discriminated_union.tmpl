@@ -1,0 +1,78 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "variant_object"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.VariantObject*/}}
+{{.Doc.Value}}
+type {{.Type.Value}} struct {
+{{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
+    {{.Doc.Value}}
+    {{.Name.Value}} {{.Type.Value}} {{.Tag.Value}}
+{{- end}}
+}
+
+func (v {{.Type.Value}}) MarshalJSON() ([]byte, error) {
+    type Alias {{.Type.Value}}
+    return json.Marshal(struct {
+        Key string `json:"{{.Fields.Discriminator.Key}}"`
+        Alias
+    }{"{{.Fields.Discriminator.Value}}", Alias(v)})
+}
+{{- end -}}
+
+{{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
+{{- $variants := .Variants | variantObjects}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.VariantObject*/}}
+
+{{template "variant_object" .}}
+{{- end}}
+
+{{.Doc.Value}}
+type {{.Name.Value}} struct {
+{{- range $variants}}
+    {{.Name.Value}} *{{.Type.Value}}
+{{- end}}
+}
+
+func (u {{.Name.Value}}) MarshalJSON() ([]byte, error) {
+    var fields []string
+{{- range $variants}}
+    if u.{{.Name.Value}} != nil {
+        fields = append(fields, "{{.Name.Value}}")
+    }
+{{- end}}
+    if len(fields) == 0 {
+        return nil, errors.New("{{.Name.Value}}: no fields set (expected exactly one)")
+    }
+    if len(fields) > 1 {
+        return nil, fmt.Errorf("{{.Name.Value}}: multiple fields set (%s)", strings.Join(fields, ", "))
+    }
+{{- range $variants}}
+    if u.{{.Name.Value}} != nil {
+        return json.Marshal(u.{{.Name.Value}})
+    }
+{{- end}}
+    return nil, errors.New("{{.Name.Value}}: internal error")
+}
+
+func (u *{{.Name.Value}}) UnmarshalJSON(data []byte) error {
+    var disc struct {
+        Key string `json:"{{.DiscriminatorKey}}"`
+    }
+    if err := json.Unmarshal(data, &disc); err != nil {
+        return err
+    }
+    switch disc.Key {
+{{- range $variants}}
+    case "{{.Fields.Discriminator.Value}}":
+        var v {{.Type.Value}}
+        if err := json.Unmarshal(data, &v); err != nil {
+            return err
+        }
+        u.{{.Name.Value}} = &v
+{{- end}}
+    default:
+        return fmt.Errorf("unknown {{.Name.Value}}: %q", disc.Key)
+    }
+    return nil
+}
+{{- end -}}

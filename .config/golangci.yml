@@ -70,7 +70,7 @@ linters:
     - interfacebloat  # A linter that checks the number of methods inside an interface.
     - intrange  # Intrange is a linter to find places where for loops could make use of an integer range.
     - iotamixing  # Checks if iotas are being used in const blocks with other non-iota declarations.
-    - ireturn  # Accept Interfaces, Return Concrete Types.
+    # - ireturn [too strict] # Accept Interfaces, Return Concrete Types.
     # - lll [duplicate golines] # Reports long lines.
     - loggercheck  # Checks key value pairs for common logger libraries (kitlog,klog,logr,slog,zap).
     - maintidx  # Maintidx measures the maintainability index of each function.

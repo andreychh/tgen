@@ -3,7 +3,9 @@
 
 package parsing
 
-import "iter"
+import (
+	"iter"
+)
 
 //nolint:iface // DefinitionDescription and ObjectName are semantically distinct despite identical signatures
 type DefinitionDescription interface {
@@ -49,4 +51,43 @@ type Field interface {
 
 type TypeTree interface {
 	Root() (TypeExpression, error)
+}
+
+// VariantObject represents an object that is a variant of a discriminated union.
+// It is returned exclusively by DiscriminatedUnion.Variants() and never appears
+// in Specification.Objects().
+type VariantObject interface {
+	Name() ObjectName
+	Fields() VariantFields
+	Ref() DefinitionRef
+	Description() DefinitionDescription
+}
+
+// VariantFields groups the fields of a variant object: free fields that appear
+// in the generated struct, and the discriminator field injected by MarshalJSON.
+type VariantFields interface {
+	Free() iter.Seq[Field]
+	Discriminator() Discriminator
+}
+
+// Discriminator represents the key and fixed JSON value of a discriminator field
+// for a specific variant (e.g. key="type", value="emoji").
+type Discriminator interface {
+	Key() FieldKey
+	Value() (string, error)
+}
+
+type StructuralUnion interface {
+	Ref() DefinitionRef
+	Name() ObjectName
+	Description() DefinitionDescription
+	Variants() iter.Seq[VariantObject]
+}
+
+type DiscriminatedUnion interface {
+	Ref() DefinitionRef
+	Name() ObjectName
+	Description() DefinitionDescription
+	DiscriminatorKey() FieldKey
+	Variants() iter.Seq[VariantObject]
 }
