@@ -11,19 +11,19 @@ import (
 )
 
 type GQDefinitionDescription struct {
-	selection gq.Selection
+	h4 gq.Selection
 }
 
-func NewDefinitionDescription(h4 gq.Selection) GQDefinitionDescription {
-	return GQDefinitionDescription{selection: h4}
+func NewGQDefinitionDescription(h4 gq.Selection) GQDefinitionDescription {
+	return GQDefinitionDescription{h4: h4}
 }
 
-func (d GQDefinitionDescription) Value() (string, error) {
-	nodes := d.selection.
+func (d GQDefinitionDescription) AsString() (string, error) {
+	nodes := d.h4.
 		Until("h3, h4, hr").
 		Filter("p, blockquote")
 	if nodes.IsEmpty() {
-		return "", errors.New("description not found")
+		return "", errors.New("definition description not found")
 	}
 	var parts []string
 	for node := range nodes.All() {
@@ -44,4 +44,20 @@ func nodeText(sel gq.Selection) string {
 		return strings.Join(parts, "\n\n")
 	}
 	return strings.TrimSpace(sel.Text())
+}
+
+func (d GQDefinitionDescription) Links() ([]string, error) {
+	nodes := d.h4.
+		Until("h3, h4, hr").
+		Filter("p, blockquote")
+	if nodes.IsEmpty() {
+		return nil, errors.New("definition description not found")
+	}
+	var links []string
+	for a := range nodes.All() {
+		if href, ok := a.Attr("href"); ok {
+			links = append(links, href)
+		}
+	}
+	return links, nil
 }
