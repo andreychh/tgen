@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package parsing
+package types
 
 import (
 	"errors"
@@ -9,10 +9,10 @@ import (
 	"strings"
 )
 
-// RawTree builds a TypeExpression tree from a field type source.
+// Type builds a TypeExpression tree from a field type source.
 //
 // The Telegram Bot API describes field types using human-readable English
-// strings rather than a formal type syntax. TypeTree parses these strings into
+// strings rather than a formal type syntax. Type parses these strings into
 // a hierarchical AST that the rendering layer can traverse to generate target
 // language types.
 //
@@ -28,26 +28,24 @@ import (
 // This covers all compound type forms used in the Telegram Bot API.
 //
 //nolint:dupword // "Named" is a grammar rule name, not a duplicate word
-type RawTree struct {
-	source FieldType
+type Type struct {
+	source TypeSource
 }
 
-// NewTypeTree creates a TypeTree that parses its expression from a FieldType.
-func NewTypeTree(v FieldType) RawTree {
-	return RawTree{source: v}
+// NewType creates a Type that parses its expression from a FieldType.
+func NewType(s TypeSource) Type {
+	return Type{source: s}
 }
 
-//nolint:ireturn // TypeExpression is the intentional public contract of this method
-func (t RawTree) Root() (TypeExpression, error) {
-	value, err := t.source.Value()
+func (t Type) AsExpression() (TypeExpression, error) {
+	value, err := t.source.AsString()
 	if err != nil {
 		return nil, err
 	}
 	return t.parse(value)
 }
 
-//nolint:ireturn // returns interface by design to match Root() contract
-func (t RawTree) parse(expr string) (TypeExpression, error) {
+func (t Type) parse(expr string) (TypeExpression, error) {
 	if expr == "" {
 		return nil, errors.New("unexpected empty type expression")
 	}
@@ -77,18 +75,4 @@ func (t RawTree) parse(expr string) (TypeExpression, error) {
 		return NewUnionType(variants), nil
 	}
 	return NewNamedType(expr), nil
-}
-
-type ExprTree struct {
-	node TypeExpression
-}
-
-// NewTypeTreeExpr creates a TypeTree from a TypeExpression.
-func NewTypeTreeExpr(e TypeExpression) ExprTree {
-	return ExprTree{node: e}
-}
-
-//nolint:ireturn // TypeExpression is the intentional public contract of this method
-func (t ExprTree) Root() (TypeExpression, error) {
-	return t.node, nil
 }
