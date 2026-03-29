@@ -9,17 +9,17 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type MethodFieldOptionality struct {
-	selection gq.Selection
+type GQMethodFieldOptionality struct {
+	td gq.Selection
 }
 
-func NewMethodFieldOptionality(td gq.Selection) MethodFieldOptionality {
-	return MethodFieldOptionality{selection: td}
+func NewGQMethodFieldOptionality(td gq.Selection) GQMethodFieldOptionality {
+	return GQMethodFieldOptionality{td: td}
 }
 
-func (o MethodFieldOptionality) Value() (bool, error) {
-	if o.selection.IsEmpty() {
+func (o GQMethodFieldOptionality) AsBool() (bool, error) {
+	if o.td.IsEmpty() {
 		return false, errors.New("required column not found")
 	}
-	return o.selection.Text() == "Optional", nil
+	return o.td.Text() == "Optional", nil
 }

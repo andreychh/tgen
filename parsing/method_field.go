@@ -3,31 +3,31 @@
 
 package parsing
 
-import "github.com/andreychh/tgen/parsing/gq"
+import (
+	"github.com/andreychh/tgen/parsing/gq"
+	"github.com/andreychh/tgen/parsing/types"
+)
 
-type MethodField struct {
-	selection gq.Selection
+type GQMethodField struct {
+	tr gq.Selection
 }
 
-func NewMethodField(tr gq.Selection) MethodField {
-	return MethodField{selection: tr}
+func NewGQMethodField(tr gq.Selection) GQMethodField {
+	return GQMethodField{tr: tr}
 }
 
-func (f MethodField) Key() FieldKey {
-	return NewFieldKey(f.selection.Find("td").At(0))
+func (f GQMethodField) Key() Key {
+	return NewGQKey(f.tr.Find("td").At(0))
 }
 
-//nolint:ireturn // TypeTree is the intentional public contract of Field
-func (f MethodField) Type() TypeTree {
-	return NewTypeTree(NewFieldType(f.selection.Find("td").At(1)))
+func (f GQMethodField) Type() Type {
+	return types.NewType(NewGQType(f.tr.Find("td").At(1)))
 }
 
-//nolint:ireturn // Optionality is the intentional public contract of Field
-func (f MethodField) IsOptional() Optionality {
-	return NewMethodFieldOptionality(f.selection.Find("td").At(2))
+func (f GQMethodField) Optionality() Optionality {
+	return NewGQMethodFieldOptionality(f.tr.Find("td").At(2))
 }
 
-//nolint:ireturn // FieldDescription is the intentional public contract of Field
-func (f MethodField) Description() FieldDescription {
-	return NewMethodFieldDescription(f.selection.Find("td").At(3))
+func (f GQMethodField) Description() Description {
+	return NewGQMethodFieldDescription(f.tr.Find("td").At(3))
 }

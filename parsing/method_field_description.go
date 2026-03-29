@@ -9,27 +9,30 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type MethodFieldDescription struct {
-	selection gq.Selection
+type GQMethodFieldDescription struct {
+	td gq.Selection
 }
 
-func NewMethodFieldDescription(td gq.Selection) MethodFieldDescription {
-	return MethodFieldDescription{selection: td}
+func NewGQMethodFieldDescription(td gq.Selection) GQMethodFieldDescription {
+	return GQMethodFieldDescription{td: td}
 }
 
-func (d MethodFieldDescription) Value() (string, error) {
-	if d.selection.IsEmpty() {
+func (d GQMethodFieldDescription) AsString() (string, error) {
+	if d.td.IsEmpty() {
 		return "", errors.New("description column not found")
 	}
-	return d.selection.Text(), nil
+	return d.td.Text(), nil
 }
 
-func (d MethodFieldDescription) Links() []string {
+func (d GQMethodFieldDescription) Links() ([]string, error) {
+	if d.td.IsEmpty() {
+		return nil, errors.New("description column not found")
+	}
 	var links []string
-	for a := range d.selection.Find("a").All() {
+	for a := range d.td.Find("a").All() {
 		if href, ok := a.Attr("href"); ok {
 			links = append(links, href)
 		}
 	}
-	return links
+	return links, nil
 }
