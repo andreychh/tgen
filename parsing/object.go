@@ -9,35 +9,34 @@ import (
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type Object struct {
-	selection gq.Selection
+type GQObject struct {
+	h4 gq.Selection
 }
 
-func NewObject(h4 gq.Selection) Object {
-	return Object{selection: h4}
+func NewGQObject(h4 gq.Selection) GQObject {
+	return GQObject{h4: h4}
 }
 
-func (o Object) Ref() DefinitionRef {
-	return NewDefinitionRef(o.selection.Find("a.anchor"))
+func (o GQObject) Reference() Reference {
+	return NewGQDefinitionReference(o.h4.Find("a.anchor"))
 }
 
-//nolint:ireturn // ObjectName is the intentional public contract of this method
-func (o Object) Name() ObjectName {
-	return NewGQObjectName(o.selection)
+func (o GQObject) Name() Name {
+	return NewGQName(o.h4)
 }
 
-func (o Object) Description() GQDefinitionDescription {
-	return NewDefinitionDescription(o.selection)
+func (o GQObject) Description() Description {
+	return NewGQDefinitionDescription(o.h4)
 }
 
-func (o Object) Fields() iter.Seq[ObjectField] {
-	return func(yield func(ObjectField) bool) {
-		seq := o.selection.
+func (o GQObject) Fields() iter.Seq[Field] {
+	return func(yield func(Field) bool) {
+		seq := o.h4.
 			Until("h3, h4, hr").
 			Find("table tbody tr").
 			All()
 		for tr := range seq {
-			if !yield(NewObjectField(tr)) {
+			if !yield(NewGQObjectField(tr)) {
 				break
 			}
 		}

@@ -5,31 +5,29 @@ package parsing
 
 import (
 	"github.com/andreychh/tgen/parsing/gq"
+	"github.com/andreychh/tgen/parsing/types"
 )
 
-type ObjectField struct {
-	selection gq.Selection
+type GQObjectField struct {
+	tr gq.Selection
 }
 
-func NewObjectField(tr gq.Selection) ObjectField {
-	return ObjectField{selection: tr}
+func NewGQObjectField(tr gq.Selection) GQObjectField {
+	return GQObjectField{tr: tr}
 }
 
-func (f ObjectField) Key() FieldKey {
-	return NewFieldKey(f.selection.Find("td").At(0))
+func (f GQObjectField) Key() Key {
+	return NewGQKey(f.tr.Find("td").At(0))
 }
 
-//nolint:ireturn // TypeTree is the intentional public contract of Field
-func (f ObjectField) Type() TypeTree {
-	return NewTypeTree(NewFieldType(f.selection.Find("td").At(1)))
+func (f GQObjectField) Type() Type {
+	return types.NewType(NewGQType(f.tr.Find("td").At(1)))
 }
 
-//nolint:ireturn // Optionality is the intentional public contract of Field
-func (f ObjectField) IsOptional() Optionality {
-	return NewObjectFieldOptionality(f.selection.Find("td").At(2))
+func (f GQObjectField) Optionality() Optionality {
+	return NewGQObjectFieldOptionality(f.tr.Find("td").At(2))
 }
 
-//nolint:ireturn // FieldDescription is the intentional public contract of Field
-func (f ObjectField) Description() FieldDescription {
-	return NewObjectFieldDescription(f.selection.Find("td").At(2))
+func (f GQObjectField) Description() Description {
+	return NewGQObjectFieldDescription(f.tr.Find("td").At(2))
 }
