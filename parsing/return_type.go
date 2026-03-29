@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/andreychh/tgen/parsing/gq"
+	"github.com/andreychh/tgen/parsing/types"
 )
 
 var (
@@ -28,25 +29,23 @@ var (
 	returnFallback      = regexp.MustCompile(`([A-Z][a-zA-Z]+) is returned`)
 )
 
-// ReturnType extracts the return TypeExpression of a method from its
+// GQReturnType extracts the return TypeExpression of a method from its
 // description paragraphs.
-type ReturnType struct {
-	selection gq.Selection
+type GQReturnType struct {
+	h4 gq.Selection
 }
 
-// NewReturnType creates a ReturnType from an h4 selection.
-func NewReturnType(h4 gq.Selection) ReturnType {
-	return ReturnType{selection: h4}
+// NewGQReturnType creates a GQReturnType from an h4 selection.
+func NewGQReturnType(h4 gq.Selection) GQReturnType {
+	return GQReturnType{h4: h4}
 }
 
-// Root parses the method description and returns the return type expression.
-// Returns an error if no description paragraphs are found or the return type
-// cannot be extracted.
-//
-//nolint:ireturn // TypeExpression is the intentional public contract of this method
-func (r ReturnType) Root() (TypeExpression, error) {
+// AsExpression parses the method description and returns the return type
+// expression. Returns an error if no description paragraphs are found or the
+// return type cannot be extracted.
+func (r GQReturnType) AsExpression() (types.TypeExpression, error) {
 	var parts []string
-	for node := range r.selection.Until("h3, h4, hr").Filter("p").All() {
+	for node := range r.h4.Until("h3, h4, hr").Filter("p").All() {
 		text := node.Text()
 		if text != "" {
 			parts = append(parts, text)
@@ -58,34 +57,35 @@ func (r ReturnType) Root() (TypeExpression, error) {
 	return extractReturnType(strings.Join(parts, " "))
 }
 
-//nolint:ireturn // returns interface by design to match Root() contract
-func extractReturnType(text string) (TypeExpression, error) {
+func extractReturnType(text string) (types.TypeExpression, error) {
 	if m := returnConditional.FindStringSubmatch(text); m != nil {
-		return NewUnionType([]TypeExpression{NewNamedType(m[1]), NewNamedType(m[2])}), nil
+		return types.NewUnionType(
+			[]types.TypeExpression{types.NewNamedType(m[1]), types.NewNamedType(m[2])},
+		), nil
 	}
 	if m := returnArray.FindStringSubmatch(text); m != nil {
-		return NewArrayType(NewNamedType(m[1])), nil
+		return types.NewArrayType(types.NewNamedType(m[1])), nil
 	}
 	if m := returnAsType.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	if m := returnInFormOf.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	if m := returnArticleObject.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	if m := returnDirect.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	if m := returnTheNamed.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	if m := returnThePre.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	if m := returnFallback.FindStringSubmatch(text); m != nil {
-		return NewNamedType(m[1]), nil
+		return types.NewNamedType(m[1]), nil
 	}
 	return nil, fmt.Errorf("cannot extract return type from: %q", text)
 }

@@ -4,6 +4,7 @@
 package parsing
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -12,19 +13,22 @@ import (
 
 var releaseVersionRegex = regexp.MustCompile(`^Bot API (\d+\.\d+)$`)
 
-type ReleaseVersion struct {
-	selection gq.Selection
+type GQReleaseVersion struct {
+	strong gq.Selection
 }
 
-func NewReleaseVersion(strong gq.Selection) ReleaseVersion {
-	return ReleaseVersion{selection: strong}
+func NewGQReleaseVersion(strong gq.Selection) GQReleaseVersion {
+	return GQReleaseVersion{strong: strong}
 }
 
-func (v ReleaseVersion) Value() (string, error) {
-	val := v.selection.Text()
+func (v GQReleaseVersion) AsString() (string, error) {
+	if v.strong.IsEmpty() {
+		return "", errors.New("release version not found")
+	}
+	val := v.strong.Text()
 	matches := releaseVersionRegex.FindStringSubmatch(val)
 	if len(matches) != 2 {
-		return "", fmt.Errorf("invalid release version: %q", val)
+		return "", fmt.Errorf("release version %q contains invalid characters", val)
 	}
 	return matches[1], nil
 }

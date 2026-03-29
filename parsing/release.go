@@ -3,32 +3,29 @@
 
 package parsing
 
-import (
-	"github.com/andreychh/tgen/parsing/gq"
-)
+import "github.com/andreychh/tgen/parsing/gq"
 
-type Release struct {
-	selection gq.Selection
+type GQRelease struct {
+	h4 gq.Selection
 }
 
-func NewRelease(h4 gq.Selection) Release {
-	return Release{selection: h4}
+func NewGQRelease(h4 gq.Selection) GQRelease {
+	return GQRelease{h4: h4}
 }
 
-func (r Release) Ref() ReleaseRef {
-	return NewReleaseRef(r.selection.Find("a.anchor"))
+func (r GQRelease) Reference() Reference {
+	return NewGQReleaseReference(r.h4.Find("a.anchor"))
 }
 
-func (r Release) Version() ReleaseVersion {
-	return NewReleaseVersion(
-		r.selection.
-			Until("h3, h4, hr").
-			Filter("p").
-			Find("strong").
-			At(0),
+func (r GQRelease) Version() Version {
+	return NewGQReleaseVersion(r.h4.
+		Until("h3, h4, hr").
+		Filter("p").
+		Find("strong").
+		At(0),
 	)
 }
 
-func (r Release) Date() ReleaseDate {
-	return NewReleaseDate(r.selection.Find("a.anchor"))
+func (r GQRelease) Date() Date {
+	return NewGQReleaseDate(r.h4.Find("a.anchor"))
 }

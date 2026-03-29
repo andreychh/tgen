@@ -4,22 +4,26 @@
 package parsing
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/andreychh/tgen/parsing/gq"
 )
 
-type ReleaseDate struct {
-	selection gq.Selection
+type GQReleaseDate struct {
+	a gq.Selection
 }
 
-func NewReleaseDate(a gq.Selection) ReleaseDate {
-	return ReleaseDate{selection: a}
+func NewGQReleaseDate(a gq.Selection) GQReleaseDate {
+	return GQReleaseDate{a: a}
 }
 
-func (d ReleaseDate) Value() (time.Time, error) {
-	val, _ := d.selection.Attr("href")
+func (d GQReleaseDate) AsTime() (time.Time, error) {
+	if d.a.IsEmpty() {
+		return time.Time{}, errors.New("release date not found")
+	}
+	val, _ := d.a.Attr("href")
 	parsed, err := time.Parse("#January-2-2006", val)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("parsing release date: %w", err)
