@@ -86,8 +86,8 @@ type Field interface {
 
 type Release interface {
 	Reference() Reference
-	Version() Version
-	Date() Date
+	Version() ReleaseVersion
+	Date() ReleaseDate
 }
 
 // -----
@@ -121,10 +121,10 @@ type DiscriminatorValue interface {
 	AsString() (string, error)
 }
 
-type Version interface {
+type ReleaseVersion interface {
 	AsString() (string, error)
 }
 
-type Date interface {
+type ReleaseDate interface {
 	AsTime() (time.Time, error)
 }

@@ -17,7 +17,7 @@ func (r GQRelease) Reference() Reference {
 	return NewGQReleaseReference(r.h4.Find("a.anchor"))
 }
 
-func (r GQRelease) Version() Version {
+func (r GQRelease) Version() ReleaseVersion {
 	return NewGQReleaseVersion(r.h4.
 		Until("h3, h4, hr").
 		Filter("p").
@@ -26,6 +26,6 @@ func (r GQRelease) Version() Version {
 	)
 }
 
-func (r GQRelease) Date() Date {
+func (r GQRelease) Date() ReleaseDate {
 	return NewGQReleaseDate(r.h4.Find("a.anchor"))
 }

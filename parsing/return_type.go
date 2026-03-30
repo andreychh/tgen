@@ -43,9 +43,9 @@ func NewGQReturnType(h4 gq.Selection) GQReturnType {
 // AsExpression parses the method description and returns the return type
 // expression. Returns an error if no description paragraphs are found or the
 // return type cannot be extracted.
-func (r GQReturnType) AsExpression() (types.TypeExpression, error) {
+func (t GQReturnType) AsExpression() (types.TypeExpression, error) {
 	var parts []string
-	for node := range r.h4.Until("h3, h4, hr").Filter("p").All() {
+	for node := range t.h4.Until("h3, h4, hr").Filter("p").All() {
 		text := node.Text()
 		if text != "" {
 			parts = append(parts, text)

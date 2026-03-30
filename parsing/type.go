@@ -21,11 +21,11 @@ func NewGQType(td gq.Selection) GQType {
 	return GQType{td: td}
 }
 
-func (f GQType) AsString() (string, error) {
-	if f.td.IsEmpty() {
+func (t GQType) AsString() (string, error) {
+	if t.td.IsEmpty() {
 		return "", errors.New("field type not found")
 	}
-	typ := f.td.Text()
+	typ := t.td.Text()
 	if !typeRegex.MatchString(typ) {
 		return "", fmt.Errorf("field type %q contains invalid characters", typ)
 	}
