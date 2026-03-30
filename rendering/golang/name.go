@@ -6,11 +6,13 @@ package golang
 import (
 	"strings"
 
+	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/literals"
 	"github.com/iancoleman/strcase"
 )
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
-var defaultAcronyms = map[string]string{
+var acronyms = map[string]string{
 	"Id":  "ID",
 	"Url": "URL",
 	"Api": "API",
@@ -18,28 +20,24 @@ var defaultAcronyms = map[string]string{
 }
 
 type Name struct {
-	inner    RawValue
-	acronyms map[string]string
+	inner model.Name
 }
 
-func NewName(n RawValue, acronyms map[string]string) Name {
-	return Name{
-		inner:    n,
-		acronyms: acronyms,
-	}
+func NewName(n model.Name) Name {
+	return Name{inner: n}
 }
 
-func NewDefaultName(n RawValue) Name {
-	return NewName(n, defaultAcronyms)
+func NewStringName(s string) Name {
+	return NewName(literals.NewName(s))
 }
 
-func (n Name) Value() (string, error) {
-	val, err := n.inner.Value()
+func (n Name) AsString() (string, error) {
+	val, err := n.inner.AsString()
 	if err != nil {
 		return "", err
 	}
 	camel := strcase.ToCamel(val)
-	for wrong, right := range n.acronyms {
+	for wrong, right := range acronyms {
 		camel = strings.ReplaceAll(camel, wrong, right)
 	}
 	return camel, nil

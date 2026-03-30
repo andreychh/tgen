@@ -9,16 +9,20 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
-type Doc struct {
-	inner RawValue
+type Stringable interface {
+	AsString() (string, error)
 }
 
-func NewDoc(d RawValue) Doc {
-	return Doc{inner: d}
+type GoDoc struct {
+	inner Stringable
 }
 
-func (d Doc) Value() (string, error) {
-	text, err := d.inner.Value()
+func NewGoDoc(s Stringable) GoDoc {
+	return GoDoc{inner: s}
+}
+
+func (d GoDoc) AsString() (string, error) {
+	text, err := d.inner.AsString()
 	if err != nil {
 		return "", err
 	}

@@ -24,7 +24,7 @@ linters:
     # - copyloopvar [duplicate go1.22] # A linter detects places where loop variables are copied.
     # - cyclop [duplicate gocyclo] # Checks function and package cyclomatic complexity.
     # - decorder [too strict] # Check declaration order and count of types, constants, variables and functions.
-    # - depguard [not applicable] # Go linter that checks if package imports are in a list of acceptable packages.
+    - depguard  # Go linter that checks if package imports are in a list of acceptable packages.
     - dogsled  # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f()).
     - dupl  # Detects duplicate fragments of code.
     - dupword  # Checks for duplicate words in the source code.
@@ -144,6 +144,41 @@ linters:
       default: all
     nolintlint:
       require-specific: true
+    depguard:
+      rules:
+        rendering-no-gq:
+          files:
+            - "**/rendering/**/*.go"
+          deny:
+            - pkg: "github.com/andreychh/tgen/model/explicit/gq"
+              desc: "rendering must not import GQ implementation details; use model/explicit interfaces"
+            - pkg: "github.com/andreychh/tgen/model/explicit/overlays"
+              desc: "rendering must not import overlay implementation details; use model/explicit interfaces"
+        implicit-no-explicit-impl:
+          files:
+            - "**/model/implicit/**/*.go"
+          deny:
+            - pkg: "github.com/andreychh/tgen/model/explicit"
+              desc: "implicit must not import explicit; depend only on model primitives"
+        parsing-no-rendering:
+          files:
+            - "**/model/**/*.go"
+          deny:
+            - pkg: "github.com/andreychh/tgen/rendering"
+              desc: "model layer must not depend on rendering layer"
+        literals-no-explicit:
+          files:
+            - "**/model/literals/**/*.go"
+          deny:
+            - pkg: "github.com/andreychh/tgen/model/explicit"
+              desc: "literals implement model primitives and must not depend on explicit"
+        pkg-gq-only-in-gq:
+          files:
+            - "**/*.go"
+            - "!**/model/explicit/gq/**"
+          deny:
+            - pkg: "github.com/andreychh/tgen/pkg/gq"
+              desc: "pkg/gq is an implementation detail of model/explicit/gq"
     exhaustruct:
       exclude:
         - '^github\.com/spf13/cobra\..*$'

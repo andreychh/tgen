@@ -1,77 +1,59 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "variant_object"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.VariantObject*/}}
-{{.Doc.Value}}
-type {{.Type.Value}} struct {
-{{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
-    {{.Doc.Value}}
-    {{.Name.Value}} {{.Type.Value}} {{.Tag.Value}}
-{{- end}}
-}
-
-func (v {{.Type.Value}}) MarshalJSON() ([]byte, error) {
-    type Alias {{.Type.Value}}
-    return json.Marshal(struct {
-        Key string `json:"{{.Fields.Discriminator.Key}}"`
-        Alias
-    }{"{{.Fields.Discriminator.Value}}", Alias(v)})
-}
-{{- end -}}
-
 {{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
-{{- $variants := .Variants | variantObjects}}
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.VariantObject*/}}
+{{- $variants := .Variants | discriminated_variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
 
-{{template "variant_object" .}}
+{{template "discriminated_variant" .}}
 {{- end}}
 
-{{.Doc.Value}}
-type {{.Name.Value}} struct {
+{{.Doc.AsString}}
+type {{.Name.AsString}} struct {
 {{- range $variants}}
-    {{.Name.Value}} *{{.Type.Value}}
+    {{.Name.AsString}} *{{.Type.AsString}}
 {{- end}}
 }
 
-func (u {{.Name.Value}}) MarshalJSON() ([]byte, error) {
+func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
     var fields []string
 {{- range $variants}}
-    if u.{{.Name.Value}} != nil {
-        fields = append(fields, "{{.Name.Value}}")
+    if u.{{.Name.AsString}} != nil {
+        fields = append(fields, "{{.Name.AsString}}")
     }
 {{- end}}
     if len(fields) == 0 {
-        return nil, errors.New("{{.Name.Value}}: no fields set (expected exactly one)")
+        return nil, errors.New("{{.Name.AsString}}: no fields set (expected exactly one)")
     }
     if len(fields) > 1 {
-        return nil, fmt.Errorf("{{.Name.Value}}: multiple fields set (%s)", strings.Join(fields, ", "))
+        return nil, fmt.Errorf("{{.Name.AsString}}: multiple fields set (%s)", strings.Join(fields, ", "))
     }
 {{- range $variants}}
-    if u.{{.Name.Value}} != nil {
-        return json.Marshal(u.{{.Name.Value}})
+    if u.{{.Name.AsString}} != nil {
+        return json.Marshal(u.{{.Name.AsString}})
     }
 {{- end}}
-    return nil, errors.New("{{.Name.Value}}: internal error")
+    return nil, errors.New("{{.Name.AsString}}: internal error")
 }
 
-func (u *{{.Name.Value}}) UnmarshalJSON(data []byte) error {
+func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
     var disc struct {
-        Key string `json:"{{.DiscriminatorKey}}"`
+        Key string `json:"{{.DiscriminatorKey.AsString}}"`
     }
     if err := json.Unmarshal(data, &disc); err != nil {
         return err
     }
     switch disc.Key {
 {{- range $variants}}
-    case "{{.Fields.Discriminator.Value}}":
-        var v {{.Type.Value}}
+    case "{{.Fields.Discriminator.Value.AsString}}":
+        var v {{.Type.AsString}}
         if err := json.Unmarshal(data, &v); err != nil {
             return err
         }
-        u.{{.Name.Value}} = &v
+        u.{{.Name.AsString}} = &v
 {{- end}}
     default:
-        return fmt.Errorf("unknown {{.Name.Value}}: %q", disc.Key)
+        return fmt.Errorf("unknown {{.Name.AsString}}: %q", disc.Key)
     }
     return nil
 }

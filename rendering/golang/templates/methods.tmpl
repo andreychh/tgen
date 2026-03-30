@@ -16,7 +16,7 @@ type Method string
 
 const (
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
-	Method{{.Name.Value}} = "{{.Name.Value}}"
+	Method{{.Name.AsString}} = "{{.Name.AsString}}"
 {{- end }}
 )
 
@@ -46,9 +46,9 @@ func (e Endpoint[Req, Resp]) Call(ctx context.Context, req Req) (Resp, error) {
 
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 
-// New{{.Name.Value}}Endpoint creates an Endpoint for the {{.Name.Value}} method.
-func New{{.Name.Value}}Endpoint(conn Connection) Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}] {
-	return Endpoint[{{.Name.Value}}Request, {{.ReturnType.Value}}]{conn: conn, method: Method{{.Name.Value}}}
+// New{{.Name.AsString}}Endpoint creates an Endpoint for the {{.Name.AsString}} method.
+func New{{.Name.AsString}}Endpoint(conn Connection) Endpoint[{{.Name.AsString}}Request, {{.ReturnType.AsString}}] {
+	return Endpoint[{{.Name.AsString}}Request, {{.ReturnType.AsString}}]{conn: conn, method: Method{{.Name.AsString}}}
 }
 {{- end }}
 

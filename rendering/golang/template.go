@@ -25,15 +25,13 @@ func (t Template) Value() (*template.Template, error) {
 	return template.New("").
 		Option("missingkey=error").
 		Funcs(template.FuncMap{
-			"objects":             slices.Collect[Object],
-			"methods":             slices.Collect[Method],
-			"fields":              slices.Collect[Field],
-			"unions":              slices.Collect[Union],
-			"variants":            slices.Collect[Variant],
-			"implicitUnions":      slices.Collect[ImplicitUnion],
-			"implicitVariants":    slices.Collect[ImplicitVariant],
-			"discriminatedUnions": slices.Collect[DiscriminatedUnion],
-			"variantObjects":      slices.Collect[VariantObject],
+			"objects":                slices.Collect[Object],
+			"methods":                slices.Collect[Method],
+			"fields":                 slices.Collect[Field],
+			"discriminated_unions":   slices.Collect[DiscriminatedUnion],
+			"discriminated_variants": slices.Collect[DiscriminatedVariant],
+			"structured_unions":      slices.Collect[StructuredUnion],
+			"structured_variants":    slices.Collect[StructuredVariant],
 		}).
 		ParseFS(templates, "templates/*.tmpl")
 }

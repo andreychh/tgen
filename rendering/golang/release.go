@@ -3,16 +3,16 @@
 
 package golang
 
-import "github.com/andreychh/tgen/parsing"
+import "github.com/andreychh/tgen/model/explicit"
 
 // Release represents the latest release section of the Telegram Bot API
 // specification, adapted for the Go code generation target.
 type Release struct {
-	inner parsing.Release
+	inner explicit.Release
 }
 
 // NewRelease creates a Release from a parsed release.
-func NewRelease(r parsing.Release) Release {
+func NewRelease(r explicit.Release) Release {
 	return Release{inner: r}
 }
 
@@ -23,5 +23,5 @@ func (r Release) Version() ReleaseVersion {
 
 // URL returns the URL to the release section on the Telegram Bot API page.
 func (r Release) URL() ReleaseURL {
-	return NewReleaseURL(r.inner.Ref())
+	return NewReleaseURL(r.inner.Reference())
 }

@@ -14,19 +14,9 @@ import (
     "strings"
 )
 
-{{- range .Spec.Unions | unions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Union*/}}
+{{- range .Spec.Unions.Discriminated | discriminated_unions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
 
-{{template "union" . }}
-{{- end }}
+{{template "discriminated_union" .}}
+{{- end}}
 
-{{- range .Spec.ImplicitUnions | implicitUnions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.ImplicitUnion*/}}
-
-{{template "implicit_union" . }}
-{{- end }}
-
-{{- range .Spec.DiscriminatedUnions | discriminatedUnions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
-
-{{template "discriminated_union" . }}
-{{- end }}
-
-{{- end }}
+{{- end}}

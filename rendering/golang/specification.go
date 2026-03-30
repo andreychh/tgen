@@ -6,67 +6,36 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/enrichment"
+	"github.com/andreychh/tgen/model/assembled"
+	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Specification struct {
-	inner enrichment.Specification
+	inner assembled.Specification
 }
 
-func NewSpecification(s enrichment.Specification) Specification {
+func NewSpecification(s assembled.Specification) Specification {
 	return Specification{inner: s}
 }
 
 func (s Specification) Objects() iter.Seq[Object] {
-	return func(yield func(Object) bool) {
-		for o := range s.inner.Objects() {
-			if !yield(NewObject(o)) {
-				break
-			}
-		}
-	}
+	return iters.NewMappedSeq(
+		s.inner.Explicit().Objects(),
+		func(o explicit.Object) Object {
+			return NewExplicitObject(o)
+		},
+	)
 }
 
 func (s Specification) Methods() iter.Seq[Method] {
-	return func(yield func(Method) bool) {
-		for o := range s.inner.Methods() {
-			if !yield(NewMethod(o)) {
-				break
-			}
-		}
-	}
+	return iters.NewMappedSeq(s.inner.Explicit().Methods(), NewMethod)
 }
 
-func (s Specification) DiscriminatedUnions() iter.Seq[DiscriminatedUnion] {
-	return func(yield func(DiscriminatedUnion) bool) {
-		for u := range s.inner.DiscriminatedUnions() {
-			if !yield(NewDiscriminatedUnion(u)) {
-				break
-			}
-		}
-	}
-}
-
-func (s Specification) Unions() iter.Seq[Union] {
-	return func(yield func(Union) bool) {
-		for u := range s.inner.Unions() {
-			if !yield(NewUnion(u)) {
-				break
-			}
-		}
-	}
-}
-
-func (s Specification) ImplicitUnions() iter.Seq[ImplicitUnion] {
-	return func(yield func(ImplicitUnion) bool) {
-		for u := range s.inner.ImplicitUnions() {
-			if !yield(NewImplicitUnion(u)) {
-				break
-			}
-		}
-	}
+func (s Specification) Unions() Unions {
+	return NewUnions(s.inner)
 }
 
 func (s Specification) Release() Release {
-	return NewRelease(s.inner.Release())
+	return NewRelease(s.inner.Explicit().Release())
 }
