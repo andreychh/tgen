@@ -5,7 +5,7 @@ package iters
 
 import "iter"
 
-func MapFunc[A, B any](seq iter.Seq[A], f func(A) B) iter.Seq[B] {
+func NewMappedSeq[A, B any](seq iter.Seq[A], f func(A) B) iter.Seq[B] {
 	return func(yield func(B) bool) {
 		for a := range seq {
 			if !yield(f(a)) {

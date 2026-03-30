@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-//nolint:ireturn // returns interface by design — Selection is a fluent interface
 package gq
 
 import (
