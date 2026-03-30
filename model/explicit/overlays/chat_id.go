@@ -12,16 +12,16 @@ import (
 // ChatID.
 type ChatID struct{}
 
-func (o ChatID) Apply(f explicit.Field) explicit.Field {
-	expr, err := f.Type().AsExpression()
+func (o ChatID) Apply(field explicit.Field) explicit.Field {
+	expr, err := field.Type().AsExpression()
 	if err != nil {
-		return f
+		return field
 	}
 	if !expr.Equals(types.NewUnionType([]types.TypeExpression{
 		types.NewNamedType("Integer"),
 		types.NewNamedType("String"),
 	})) {
-		return f
+		return field
 	}
-	return NewModified(f, types.NewNamedType("ChatID"))
+	return NewModified(field, types.NewNamedType("ChatID"))
 }

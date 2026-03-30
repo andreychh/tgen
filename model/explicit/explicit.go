@@ -21,7 +21,7 @@ type Specification interface {
 	Release() Release
 }
 
-type Object interface {
+type Object interface { //nolint:iface // structurally identical to StructuredVariant but semantically distinct domain types
 	Reference() model.Reference
 	Name() model.Name
 	Description() model.Description
@@ -73,7 +73,7 @@ type StructuredUnion interface {
 	Variants() iter.Seq[StructuredVariant]
 }
 
-type StructuredVariant interface {
+type StructuredVariant interface { //nolint:iface // structurally identical to Object but semantically distinct domain types
 	Reference() model.Reference
 	Name() model.Name
 	Description() model.Description

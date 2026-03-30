@@ -9,7 +9,7 @@ import "iter"
 
 const specificationURL = "https://core.telegram.org/bots/api"
 
-type Object interface {
+type Object interface { //nolint:iface // structurally identical to StructuredVariant but semantically distinct domain types
 	Name() Name
 	Doc() GoDoc
 	Fields() iter.Seq[Field]
@@ -35,7 +35,7 @@ type StructuredUnion interface {
 	Variants() iter.Seq[StructuredVariant]
 }
 
-type StructuredVariant interface {
+type StructuredVariant interface { //nolint:iface // structurally identical to Object but semantically distinct domain types
 	Name() Name
 	Doc() GoDoc
 	Fields() iter.Seq[Field]

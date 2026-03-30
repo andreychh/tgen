@@ -4,6 +4,7 @@
 package golang
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
@@ -54,5 +55,5 @@ func (t Type) render(expr types.TypeExpression) (string, error) {
 	if _, ok := expr.Union(); ok {
 		return "any", nil
 	}
-	return "", fmt.Errorf("unknown type expression")
+	return "", errors.New("unknown type expression")
 }

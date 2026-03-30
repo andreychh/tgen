@@ -14,20 +14,20 @@ import (
 // String-with-sending-files-link field types with InputFile.
 type InputFile struct{}
 
-func (o InputFile) Apply(f explicit.Field) explicit.Field {
-	expr, err := f.Type().AsExpression()
+func (o InputFile) Apply(field explicit.Field) explicit.Field {
+	expr, err := field.Type().AsExpression()
 	if err != nil {
-		return f
+		return field
 	}
-	links, err := f.Description().Links()
+	links, err := field.Description().Links()
 	if err != nil {
-		return f
+		return field
 	}
 	if expr.Equals(types.NewUnionType([]types.TypeExpression{
 		types.NewNamedType("InputFile"),
 		types.NewNamedType("String"),
 	})) || expr.Equals(types.NewNamedType("String")) && slices.Contains(links, "#sending-files") {
-		return NewModified(f, types.NewNamedType("InputFile"))
+		return NewModified(field, types.NewNamedType("InputFile"))
 	}
-	return f
+	return field
 }

@@ -22,7 +22,7 @@ func NewArtifacts(spec assembled.Specification, snapshot meta.Snapshot) Artifact
 	return Artifacts{spec: spec, snapshot: snapshot}
 }
 
-func (a Artifacts) Value() (rendering.Artifacts, error) {
+func (a Artifacts) Value() (rendering.Artifacts, error) { //nolint:gocritic // value receiver is intentional; Artifacts is immutable
 	tmpl, err := NewTemplate().Value()
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)

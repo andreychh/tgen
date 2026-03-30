@@ -13,11 +13,11 @@ import (
 	"github.com/andreychh/tgen/model/types"
 )
 
-type Name interface {
+type Name interface { //nolint:iface // identical signature to Reference/Key/DiscriminatorValue/ReleaseVersion but semantically distinct domain concepts
 	AsString() (string, error)
 }
 
-type Reference interface {
+type Reference interface { //nolint:iface // identical signature to Name/Key/DiscriminatorValue/ReleaseVersion but semantically distinct domain concepts
 	AsString() (string, error)
 }
 
@@ -34,15 +34,15 @@ type Description interface {
 	Links() ([]string, error)
 }
 
-type Key interface {
+type Key interface { //nolint:iface // identical signature to Name/Reference/DiscriminatorValue/ReleaseVersion but semantically distinct domain concepts
 	AsString() (string, error)
 }
 
-type DiscriminatorValue interface {
+type DiscriminatorValue interface { //nolint:iface // identical signature to Name/Reference/Key/ReleaseVersion but semantically distinct domain concepts
 	AsString() (string, error)
 }
 
-type ReleaseVersion interface {
+type ReleaseVersion interface { //nolint:iface // identical signature to Name/Reference/Key/DiscriminatorValue but semantically distinct domain concepts
 	AsString() (string, error)
 }
 

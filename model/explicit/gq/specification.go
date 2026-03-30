@@ -6,6 +6,7 @@ package gq
 import (
 	"iter"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/model/explicit"
 	"github.com/andreychh/tgen/pkg/gq"
 )
@@ -16,6 +17,11 @@ type Specification struct {
 
 func NewSpecification(root gq.Selection) Specification {
 	return Specification{root: root}
+}
+
+// NewSpecificationFromDocument creates a Specification from a parsed goquery document.
+func NewSpecificationFromDocument(doc *goquery.Document) Specification {
+	return NewSpecification(gq.NewNormSelection(doc.Selection))
 }
 
 func (s Specification) Objects() iter.Seq[explicit.Object] {

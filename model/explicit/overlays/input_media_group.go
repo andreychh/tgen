@@ -12,10 +12,10 @@ import (
 // union with InputMediaGroup.
 type InputMediaGroup struct{}
 
-func (o InputMediaGroup) Apply(f explicit.Field) explicit.Field {
-	expr, err := f.Type().AsExpression()
+func (o InputMediaGroup) Apply(field explicit.Field) explicit.Field {
+	expr, err := field.Type().AsExpression()
 	if err != nil {
-		return f
+		return field
 	}
 	if !expr.Equals(types.NewArrayType(types.NewUnionType([]types.TypeExpression{
 		types.NewNamedType("InputMediaAudio"),
@@ -23,7 +23,7 @@ func (o InputMediaGroup) Apply(f explicit.Field) explicit.Field {
 		types.NewNamedType("InputMediaPhoto"),
 		types.NewNamedType("InputMediaVideo"),
 	}))) {
-		return f
+		return field
 	}
-	return NewModified(f, types.NewArrayType(types.NewNamedType("InputMediaGroup")))
+	return NewModified(field, types.NewArrayType(types.NewNamedType("InputMediaGroup")))
 }

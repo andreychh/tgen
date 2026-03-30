@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package gq
+package gq //nolint:dupl // structurally identical to StructuredUnion but semantically distinct: Object has table fields, StructuredUnion has list variants
 
 import (
 	"iter"

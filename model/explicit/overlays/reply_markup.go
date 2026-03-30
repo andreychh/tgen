@@ -12,10 +12,10 @@ import (
 // union with ReplyMarkup.
 type ReplyMarkup struct{}
 
-func (o ReplyMarkup) Apply(f explicit.Field) explicit.Field {
-	expr, err := f.Type().AsExpression()
+func (o ReplyMarkup) Apply(field explicit.Field) explicit.Field {
+	expr, err := field.Type().AsExpression()
 	if err != nil {
-		return f
+		return field
 	}
 	if !expr.Equals(types.NewUnionType([]types.TypeExpression{
 		types.NewNamedType("InlineKeyboardMarkup"),
@@ -23,7 +23,7 @@ func (o ReplyMarkup) Apply(f explicit.Field) explicit.Field {
 		types.NewNamedType("ReplyKeyboardRemove"),
 		types.NewNamedType("ForceReply"),
 	})) {
-		return f
+		return field
 	}
-	return NewModified(f, types.NewNamedType("ReplyMarkup"))
+	return NewModified(field, types.NewNamedType("ReplyMarkup"))
 }
