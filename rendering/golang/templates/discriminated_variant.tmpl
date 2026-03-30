@@ -1,0 +1,20 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "discriminated_variant"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
+{{.Doc.AsString}}
+type {{.Type.AsString}} struct {
+{{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
+    {{.Doc.AsString}}
+    {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
+{{- end}}
+}
+
+func (v {{.Type.AsString}}) MarshalJSON() ([]byte, error) {
+    type Alias {{.Type.AsString}}
+    return json.Marshal(struct {
+        Key string `json:"{{.Fields.Discriminator.Key.AsString}}"`
+        Alias
+    }{"{{.Fields.Discriminator.Value.AsString}}", Alias(v)})
+}
+{{- end -}}

@@ -3,23 +3,25 @@
 
 package golang
 
-import "github.com/andreychh/tgen/parsing"
+import (
+	"github.com/andreychh/tgen/model"
+)
 
 // ReleaseURL represents the full URL to the release section on the Telegram Bot
 // API page.
 type ReleaseURL struct {
-	inner parsing.ReleaseRef
+	inner model.Reference
 }
 
 // NewReleaseURL creates a ReleaseURL from a parsed release ref.
-func NewReleaseURL(r parsing.ReleaseRef) ReleaseURL {
+func NewReleaseURL(r model.Reference) ReleaseURL {
 	return ReleaseURL{inner: r}
 }
 
-// Value returns the full URL to the release section (e.g.,
+// AsString returns the full URL to the release section (e.g.,
 // "https://core.telegram.org/bots/api#march-1-2026").
-func (u ReleaseURL) Value() (string, error) {
-	ref, err := u.inner.Value()
+func (u ReleaseURL) AsString() (string, error) {
+	ref, err := u.inner.AsString()
 	if err != nil {
 		return "", err
 	}

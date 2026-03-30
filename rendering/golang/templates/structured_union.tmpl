@@ -1,17 +1,17 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
-{{- $variants := .Variants | discriminated_variants}}
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
+{{- define "structured_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredUnion*/}}
+{{- $variants := .Variants | structured_variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
 
-{{template "discriminated_variant" .}}
+{{template "structured_variant" .}}
 {{- end}}
 
 {{.Doc.AsString}}
 type {{.Name.AsString}} struct {
 {{- range $variants}}
-    {{.Name.AsString}} *{{.Type.AsString}}
+    {{.Name.AsString}} *{{.Name.AsString}}
 {{- end}}
 }
 
@@ -37,24 +37,16 @@ func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
 }
 
 func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
-    var disc struct {
-        Key string `json:"{{.DiscriminatorKey.AsString}}"`
-    }
-    if err := json.Unmarshal(data, &disc); err != nil {
-        return err
-    }
-    switch disc.Key {
+    var decoder *json.Decoder
 {{- range $variants}}
-    case "{{.Fields.Discriminator.Value.AsString}}":
-        var v {{.Type.AsString}}
-        if err := json.Unmarshal(data, &v); err != nil {
-            return err
-        }
-        u.{{.Name.AsString}} = &v
-{{- end}}
-    default:
-        return fmt.Errorf("unknown {{.Name.AsString}}: %q", disc.Key)
+    var value{{.Name.AsString}} {{.Name.AsString}}
+    decoder = json.NewDecoder(bytes.NewReader(data))
+    decoder.DisallowUnknownFields()
+    if decoder.Decode(&value{{.Name.AsString}}) == nil {
+        u.{{.Name.AsString}} = &value{{.Name.AsString}}
+        return nil
     }
-    return nil
+{{- end}}
+    return fmt.Errorf("{{.Name.AsString}}: unexpected value %.50q", string(data))
 }
 {{- end -}}

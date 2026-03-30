@@ -6,38 +6,30 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/enrichment"
+	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Method struct {
-	inner enrichment.Method
+	inner explicit.Method
 }
 
-func NewMethod(o enrichment.Method) Method {
+func NewMethod(o explicit.Method) Method {
 	return Method{inner: o}
 }
 
-func (o Method) Name() Name {
-	return NewDefaultName(o.inner.Name())
+func (m Method) Name() Name {
+	return NewName(m.inner.Name())
 }
 
-func (o Method) Doc() Doc {
-	return NewDoc(NewDefinitionDoc(o.inner.Ref(), o.inner.Description()))
+func (m Method) Doc() GoDoc {
+	return NewGoDoc(NewDefinitionDoc(m.inner.Reference(), m.inner.Description()))
 }
 
-func (o Method) ReturnType() Type {
-	return NewType(
-		o.inner.Returns(),
-		NewMethodResultName(NewDefaultName(o.inner.Name())),
-	)
+func (m Method) ReturnType() Type {
+	return NewType(m.inner.ReturnType())
 }
 
-func (o Method) Fields() iter.Seq[Field] {
-	return func(yield func(Field) bool) {
-		for f := range o.inner.Fields() {
-			if !yield(NewField(f)) {
-				break
-			}
-		}
-	}
+func (m Method) Fields() iter.Seq[Field] {
+	return iters.NewMappedSeq(m.inner.Fields(), NewField)
 }

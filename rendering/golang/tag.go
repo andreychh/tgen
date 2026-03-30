@@ -6,24 +6,24 @@ package golang
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/parsing"
+	"github.com/andreychh/tgen/model"
 )
 
-type FieldTag struct {
-	key         parsing.FieldKey
-	optionality parsing.Optionality
+type Tag struct {
+	key         model.Key
+	optionality model.Optionality
 }
 
-func NewFieldTag(k parsing.FieldKey, o parsing.Optionality) FieldTag {
-	return FieldTag{key: k, optionality: o}
+func NewTag(k model.Key, o model.Optionality) Tag {
+	return Tag{key: k, optionality: o}
 }
 
-func (t FieldTag) Value() (string, error) {
-	key, err := t.key.Value()
+func (t Tag) AsString() (string, error) {
+	key, err := t.key.AsString()
 	if err != nil {
 		return "", fmt.Errorf("getting field key: %w", err)
 	}
-	optional, err := t.optionality.Value()
+	optional, err := t.optionality.AsBool()
 	if err != nil {
 		return "", fmt.Errorf("getting field optionality: %w", err)
 	}

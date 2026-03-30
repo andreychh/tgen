@@ -3,32 +3,28 @@
 
 package golang
 
-import "github.com/andreychh/tgen/parsing"
+import "github.com/andreychh/tgen/model/explicit"
 
 type Field struct {
-	inner parsing.Field
+	inner explicit.Field
 }
 
-func NewField(f parsing.Field) Field {
+func NewField(f explicit.Field) Field {
 	return Field{inner: f}
 }
 
 func (f Field) Name() Name {
-	return NewDefaultName(f.inner.Key())
+	return NewName(f.inner.Key())
 }
 
 func (f Field) Type() OptionalType {
-	return NewOptionalType(
-		NewType(f.inner.Type(), NewDefaultName(f.inner.Key())),
-		f.inner.Type(),
-		f.inner.IsOptional(),
-	)
+	return NewOptionalType(f.inner.Type(), f.inner.Optionality())
 }
 
-func (f Field) Tag() FieldTag {
-	return NewFieldTag(f.inner.Key(), f.inner.IsOptional())
+func (f Field) Tag() Tag {
+	return NewTag(f.inner.Key(), f.inner.Optionality())
 }
 
-func (f Field) Doc() Doc {
-	return NewDoc(f.inner.Description())
+func (f Field) Doc() GoDoc {
+	return NewGoDoc(f.inner.Description())
 }

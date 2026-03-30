@@ -6,47 +6,37 @@ package golang
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/parsing"
+	"github.com/andreychh/tgen/model"
 )
 
 type OptionalType struct {
-	origin      Type
-	tree        parsing.TypeTree
-	optionality parsing.Optionality
+	typ         model.Type
+	optionality model.Optionality
 }
 
-func NewOptionalType(
-	t Type,
-	tree parsing.TypeTree,
-	o parsing.Optionality,
-) OptionalType {
-	return OptionalType{origin: t, tree: tree, optionality: o}
+func NewOptionalType(t model.Type, o model.Optionality) OptionalType {
+	return OptionalType{typ: t, optionality: o}
 }
 
-func (t OptionalType) Value() (string, error) {
-	typ, err := t.origin.Value()
-	if err != nil {
-		return "", fmt.Errorf("getting field type: %w", err)
-	}
-	optional, err := t.needsPointer()
+func (t OptionalType) AsString() (string, error) {
+	typ, err := NewType(t.typ).AsString()
 	if err != nil {
 		return "", err
 	}
-	if optional {
-		return "*" + typ, nil
-	}
-	return typ, nil
-}
-
-func (t OptionalType) needsPointer() (bool, error) {
-	root, err := t.tree.Root()
+	optional, err := t.optionality.AsBool()
 	if err != nil {
-		return false, err
+		return "", fmt.Errorf("getting field optionality: %w", err)
 	}
-	_, isArray := root.Array()
-	optional, err := t.optionality.Value()
+	if !optional {
+		return typ, nil
+	}
+	expr, err := t.typ.AsExpression()
 	if err != nil {
-		return false, fmt.Errorf("getting field optionality: %w", err)
+		return "", fmt.Errorf("getting type expr: %w", err)
 	}
-	return optional && !isArray, nil
+	_, isArray := expr.Array()
+	if isArray {
+		return typ, nil
+	}
+	return "*" + typ, nil
 }

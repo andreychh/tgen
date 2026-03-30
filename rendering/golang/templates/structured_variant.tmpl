@@ -1,10 +1,10 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "object" -}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Object*/}}
+{{- define "structured_variant"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
 {{.Doc.AsString}}
 type {{.Name.AsString}} struct {
-{{- range .Fields | fields }} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
+{{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
     {{.Doc.AsString}}
     {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
 {{- end}}

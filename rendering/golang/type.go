@@ -4,14 +4,14 @@
 package golang
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/andreychh/tgen/parsing"
+	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/types"
 )
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
-var namedTypes = map[string]string{
+var primitives = map[string]string{
 	"Integer": "int64",
 	"Int":     "int64",
 	"Float":   "float64",
@@ -21,29 +21,28 @@ var namedTypes = map[string]string{
 }
 
 type Type struct {
-	tree      parsing.TypeTree
-	unionName RawValue
+	typ model.Type
 }
 
-func NewType(t parsing.TypeTree, unionName RawValue) Type {
-	return Type{tree: t, unionName: unionName}
+func NewType(t model.Type) Type {
+	return Type{typ: t}
 }
 
-func (t Type) Value() (string, error) {
-	root, err := t.tree.Root()
+func (t Type) AsString() (string, error) {
+	expr, err := t.typ.AsExpression()
 	if err != nil {
-		return "", fmt.Errorf("getting type root: %w", err)
+		return "", fmt.Errorf("getting type expr: %w", err)
 	}
-	return t.render(root)
+	return t.render(expr)
 }
 
-func (t Type) render(expr parsing.TypeExpression) (string, error) {
+func (t Type) render(expr types.TypeExpression) (string, error) {
 	if name, ok := expr.Named(); ok {
-		goName, ok := namedTypes[name]
+		p, ok := primitives[name]
 		if !ok {
-			return NewDefaultName(NewStaticName(name)).Value()
+			return NewStringName(name).AsString()
 		}
-		return goName, nil
+		return p, nil
 	}
 	if inner, ok := expr.Array(); ok {
 		elem, err := t.render(inner)
@@ -53,7 +52,7 @@ func (t Type) render(expr parsing.TypeExpression) (string, error) {
 		return "[]" + elem, nil
 	}
 	if _, ok := expr.Union(); ok {
-		return t.unionName.Value()
+		return "any", nil
 	}
-	return "", errors.New("unknown type expression")
+	return "", fmt.Errorf("unknown type expression")
 }

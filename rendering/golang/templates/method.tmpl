@@ -2,11 +2,11 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "method" -}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
-{{.Doc.Value}}
-type {{.Name.Value}}Request struct {
+{{.Doc.AsString}}
+type {{.Name.AsString}}Request struct {
 {{- range .Fields | fields }} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
-{{.Doc.Value}}
-{{.Name.Value}} {{.Type.Value}} {{.Tag.Value}}
+{{.Doc.AsString}}
+{{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
 {{- end}}
 }
 {{- end -}}

@@ -6,26 +6,26 @@ package golang
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/parsing"
+	"github.com/andreychh/tgen/model"
 )
 
 type DefinitionDoc struct {
-	ref         parsing.DefinitionRef
-	description parsing.DefinitionDescription
+	ref         model.Reference
+	description model.Description
 }
 
-func NewDefinitionDoc(r parsing.DefinitionRef, d parsing.DefinitionDescription) DefinitionDoc {
+func NewDefinitionDoc(r model.Reference, d model.Description) DefinitionDoc {
 	return DefinitionDoc{ref: r, description: d}
 }
 
-func (d DefinitionDoc) Value() (string, error) {
-	ref, err := d.ref.Value()
+func (d DefinitionDoc) AsString() (string, error) {
+	ref, err := d.ref.AsString()
 	if err != nil {
-		return "", fmt.Errorf("getting object ref: %w", err)
+		return "", fmt.Errorf("getting reference: %w", err)
 	}
-	desc, err := d.description.Value()
+	desc, err := d.description.AsString()
 	if err != nil {
-		return "", fmt.Errorf("getting object description: %w", err)
+		return "", fmt.Errorf("getting description: %w", err)
 	}
 	return fmt.Sprintf("%s\n\nSee %s#%s", desc, specificationURL, ref), nil
 }
