@@ -19,8 +19,8 @@ type Method struct {
 
 // NewMethod constructs a Method from a parsed method with the given overlay
 // applied to its fields.
-func NewMethod(m explicit.Method, overlay Overlay) Method {
-	return Method{inner: NewMaybeMessage(m), overlay: overlay}
+func NewMethod(m explicit.Method, o Overlay) Method {
+	return Method{inner: NewMaybeMessage(m), overlay: o}
 }
 
 func (m Method) Reference() model.Reference {

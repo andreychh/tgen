@@ -9,15 +9,16 @@ import (
 	"github.com/andreychh/tgen/model/explicit"
 )
 
-// Spec represents the Telegram Bot API specification with field and method type overlays applied.
-type Spec struct {
+// Specification represents the Telegram Bot API specification with field and
+// method type overlays applied.
+type Specification struct {
 	inner   explicit.Specification
 	overlay Overlay
 }
 
-// NewSpec constructs a Spec from a parsed specification.
-func NewSpec(s explicit.Specification) Spec {
-	return Spec{
+// NewSpecification constructs a Specification from a parsed specification.
+func NewSpecification(s explicit.Specification) Specification {
+	return Specification{
 		inner: s,
 		overlay: NewSequential(
 			ChatID{},
@@ -28,7 +29,7 @@ func NewSpec(s explicit.Specification) Spec {
 	}
 }
 
-func (s Spec) Objects() iter.Seq[explicit.Object] {
+func (s Specification) Objects() iter.Seq[explicit.Object] {
 	return func(yield func(explicit.Object) bool) {
 		for o := range s.inner.Objects() {
 			if !yield(NewObject(o, s.overlay)) {
@@ -38,7 +39,7 @@ func (s Spec) Objects() iter.Seq[explicit.Object] {
 	}
 }
 
-func (s Spec) Methods() iter.Seq[explicit.Method] {
+func (s Specification) Methods() iter.Seq[explicit.Method] {
 	return func(yield func(explicit.Method) bool) {
 		for m := range s.inner.Methods() {
 			if !yield(NewMethod(m, s.overlay)) {
@@ -48,10 +49,10 @@ func (s Spec) Methods() iter.Seq[explicit.Method] {
 	}
 }
 
-func (s Spec) Unions() explicit.Unions {
-	return s.inner.Unions()
+func (s Specification) Unions() explicit.Unions {
+	return NewUnions(s.inner.Unions(), s.overlay)
 }
 
-func (s Spec) Release() explicit.Release {
+func (s Specification) Release() explicit.Release {
 	return s.inner.Release()
 }
