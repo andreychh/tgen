@@ -53,7 +53,7 @@ func (t Type) render(expr types.TypeExpression) (string, error) {
 		return "[]" + elem, nil
 	}
 	if _, ok := expr.Union(); ok {
-		return "any", nil
+		return "", errors.New("unions not supported")
 	}
 	return "", errors.New("unknown type expression")
 }

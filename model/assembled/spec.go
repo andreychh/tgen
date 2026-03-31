@@ -23,7 +23,7 @@ type Specification struct {
 // NewSpec constructs a Specification from a parsed specification.
 func NewSpec(s explicit.Specification) Specification {
 	return Specification{
-		explicit: overlays.NewSpec(s),
+		explicit: overlays.NewSpecification(s),
 		implicit: implicit.NewSpec(),
 	}
 }
