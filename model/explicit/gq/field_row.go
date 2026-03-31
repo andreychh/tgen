@@ -10,7 +10,7 @@ import (
 )
 
 var fieldRowDiscriminatorRegex = regexp.MustCompile(
-	"always \u201c[^\u201d]+\u201d|must be [a-z][a-z0-9_]*\\s*$",
+	"[Aa]lways (?:\u201c[^\u201d]+\u201d|\\d+\\.)|must be [a-z][a-z0-9_]*\\s*$",
 )
 
 // FieldKind identifies the role of a field table row in a variant object.
