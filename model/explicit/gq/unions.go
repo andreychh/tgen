@@ -36,6 +36,16 @@ func (u Unions) Discriminated() iter.Seq[explicit.DiscriminatedUnion] {
 
 func (u Unions) Structured() iter.Seq[explicit.StructuredUnion] {
 	return func(yield func(explicit.StructuredUnion) bool) {
-		panic("not implemented")
+		seq := u.root.
+			Find("div#dev_page_content h4").
+			FilterFunc(func(h4 gq.Selection) bool {
+				return NewHeader(u.root, h4).Kind() == DefinitionKindStructuredUnion
+			}).
+			All()
+		for h4 := range seq {
+			if !yield(NewStructuredUnion(u.root, h4)) {
+				break
+			}
+		}
 	}
 }

@@ -2,15 +2,10 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "structured_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredUnion*/}}
-{{- $variants := .Variants | structured_variants}}
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
-
-{{template "structured_variant" .}}
-{{- end}}
-
+{{- $variants := .Variants | objects}}
 {{.Doc.AsString}}
 type {{.Name.AsString}} struct {
-{{- range $variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Object*/}}
     {{.Name.AsString}} *{{.Name.AsString}}
 {{- end}}
 }

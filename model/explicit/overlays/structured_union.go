@@ -36,11 +36,11 @@ func (u StructuredUnion) Description() model.Description {
 	return u.inner.Description()
 }
 
-func (u StructuredUnion) Variants() iter.Seq[explicit.StructuredVariant] {
+func (u StructuredUnion) Variants() iter.Seq[explicit.Object] {
 	return iters.NewMappedSeq(
 		u.inner.Variants(),
-		func(v explicit.StructuredVariant) explicit.StructuredVariant {
-			return NewStructuredVariant(v, u.overlay)
+		func(o explicit.Object) explicit.Object {
+			return NewObject(o, u.overlay)
 		},
 	)
 }

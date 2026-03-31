@@ -3,11 +3,6 @@
 
 {{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
 {{- $variants := .Variants | discriminated_variants}}
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
-
-{{template "discriminated_variant" .}}
-{{- end}}
-
 {{.Doc.AsString}}
 type {{.Name.AsString}} struct {
 {{- range $variants}}
@@ -57,4 +52,9 @@ func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
     }
     return nil
 }
+
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
+
+{{template "discriminated_variant" .}}
+{{- end}}
 {{- end -}}

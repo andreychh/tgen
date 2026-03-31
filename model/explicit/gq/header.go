@@ -14,17 +14,18 @@ import (
 type DefinitionKind string
 
 const (
-	DefinitionKindUnknown            DefinitionKind = "unknown"
-	DefinitionKindObject             DefinitionKind = "object"
-	DefinitionKindVariantObject      DefinitionKind = "variant_object"
-	DefinitionKindMethod             DefinitionKind = "method"
-	DefinitionKindUnion              DefinitionKind = "union"
-	DefinitionKindDiscriminatedUnion DefinitionKind = "discriminated_union"
+	DefinitionKindUnknown              DefinitionKind = "unknown"
+	DefinitionKindObject               DefinitionKind = "object"
+	DefinitionKindMethod               DefinitionKind = "method"
+	DefinitionKindStructuredUnion      DefinitionKind = "structured_union"
+	DefinitionKindDiscriminatedUnion   DefinitionKind = "discriminated_union"
+	DefinitionKindFallbackUnion        DefinitionKind = "fallback_union"
+	DefinitionKindDiscriminatedVariant DefinitionKind = "discriminated_variant"
 )
 
 // Header classifies an h4 section within a Telegram Bot API document. root is
 // the document root used to resolve cross-document references when
-// distinguishing discriminated unions from structural unions.
+// distinguishing union kinds.
 type Header struct {
 	root gq.Selection
 	h4   gq.Selection
@@ -37,8 +38,8 @@ func NewHeader(root, h4 gq.Selection) Header {
 }
 
 // Kind returns the kind of definition this h4 represents. For unions it
-// performs a one-variant lookahead into the document to distinguish
-// DefinitionKindDiscriminatedUnion from DefinitionKindUnion.
+// inspects all variants to distinguish DefinitionKindDiscriminatedUnion,
+// DefinitionKindStructuredUnion, and DefinitionKindFallbackUnion.
 func (h Header) Kind() DefinitionKind {
 	id, exists := h.h4.Find("a.anchor").Attr("href")
 	if !exists || strings.Contains(id, "-") {
@@ -82,37 +83,41 @@ func (h Header) objectKind(body gq.Selection) DefinitionKind {
 		}).
 		IsEmpty()
 	if isListed {
-		return DefinitionKindVariantObject
+		return DefinitionKindDiscriminatedVariant
 	}
 	return DefinitionKindObject
 }
 
-//nolint:varnamelen // <li> is the standard HTML list item element name
 func (h Header) unionKind(body gq.Selection) DefinitionKind {
-	li := body.
-		Find("ul li").
-		At(0)
-	if li.IsEmpty() {
-		return DefinitionKindUnion
+	all, discriminated := 0, 0
+	for li := range body.Find("ul li").All() {
+		variant := h.root.
+			Find("div#dev_page_content h4").
+			FilterFunc(func(cand gq.Selection) bool {
+				return cand.Text() == li.Find("a").Text()
+			}).
+			At(0)
+		if variant.IsEmpty() {
+			continue
+		}
+		all++
+		hasDiscriminator := !variant.
+			Until("h3, h4, hr").
+			Find("table tbody tr").
+			FilterFunc(func(tr gq.Selection) bool {
+				return NewFieldRow(tr).Kind() == FieldKindDiscriminator
+			}).
+			IsEmpty()
+		if hasDiscriminator {
+			discriminated++
+		}
 	}
-	variant := h.root.
-		Find("div#dev_page_content h4").
-		FilterFunc(func(cand gq.Selection) bool {
-			return cand.Text() == li.Find("a").Text()
-		}).
-		At(0)
-	if variant.IsEmpty() {
-		return DefinitionKindUnion
-	}
-	hasDiscriminator := !variant.
-		Until("h3, h4, hr").
-		Find("table tbody tr").
-		FilterFunc(func(tr gq.Selection) bool {
-			return NewFieldRow(tr).Kind() == FieldKindDiscriminator
-		}).
-		IsEmpty()
-	if hasDiscriminator {
+	switch {
+	case all == 0 || discriminated == 0:
+		return DefinitionKindStructuredUnion
+	case discriminated == all:
 		return DefinitionKindDiscriminatedUnion
+	default:
+		return DefinitionKindFallbackUnion
 	}
-	return DefinitionKindUnion
 }
