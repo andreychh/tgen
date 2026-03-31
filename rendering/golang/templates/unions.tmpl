@@ -19,4 +19,84 @@ import (
 {{template "discriminated_union" .}}
 {{- end}}
 
+{{- range .Spec.Unions.Structured | structured_unions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredUnion*/}}
+
+{{template "structured_union" .}}
+{{- end}}
+
+// This object describes a message that can be inaccessible to the bot. It can
+// be one of
+//
+// See https://core.telegram.org/bots/api#maybeinaccessiblemessage
+type MaybeInaccessibleMessage struct {
+	Message             *Message
+	InaccessibleMessage *InaccessibleMessage
+}
+
+func (u MaybeInaccessibleMessage) MarshalJSON() ([]byte, error) {
+	var fields []string
+	if u.Message != nil {
+		fields = append(fields, "Message")
+	}
+	if u.InaccessibleMessage != nil {
+		fields = append(fields, "InaccessibleMessage")
+	}
+	if len(fields) == 0 {
+		return nil, errors.New("MaybeInaccessibleMessage: no fields set (expected exactly one)")
+	}
+	if len(fields) > 1 {
+		return nil, fmt.Errorf("MaybeInaccessibleMessage: multiple fields set (%s)", strings.Join(fields, ", "))
+	}
+	if u.Message != nil {
+		return json.Marshal(u.Message)
+	}
+	if u.InaccessibleMessage != nil {
+		return json.Marshal(u.InaccessibleMessage)
+	}
+	return nil, errors.New("MaybeInaccessibleMessage: internal error")
+}
+
+func (u *MaybeInaccessibleMessage) UnmarshalJSON(data []byte) error {
+	var disc struct {
+		Key int64 `json:"date"`
+	}
+	if err := json.Unmarshal(data, &disc); err != nil {
+		return err
+	}
+	switch disc.Key {
+	case 0:
+		var v InaccessibleMessage
+		if err := json.Unmarshal(data, &v); err != nil {
+			return err
+		}
+		u.InaccessibleMessage = &v
+	default:
+		var v Message
+		if err := json.Unmarshal(data, &v); err != nil {
+			return err
+		}
+		u.Message = &v
+	}
+	return nil
+}
+
+// This object describes a message that was deleted or is otherwise inaccessible
+// to the bot.
+//
+// See https://core.telegram.org/bots/api#inaccessiblemessage
+type InaccessibleMessage struct {
+	// Chat the message belonged to
+	Chat Chat `json:"chat"`
+	// Unique message identifier inside the chat
+	MessageID int64 `json:"message_id"`
+}
+
+func (v InaccessibleMessage) MarshalJSON() ([]byte, error) {
+	type Alias InaccessibleMessage
+	return json.Marshal(struct {
+		Date int64 `json:"date"`
+		Alias
+	}{0, Alias(v)})
+}
+
 {{- end}}
