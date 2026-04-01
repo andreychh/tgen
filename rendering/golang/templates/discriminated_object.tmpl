@@ -1,17 +1,17 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "discriminated_variant"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
+{{- define "discriminated_object"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedObject*/}}
 {{.Doc.AsString}}
-type {{.Type.AsString}} struct {
+type {{.Name.AsString}} struct {
 {{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
     {{.Doc.AsString}}
     {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
 {{- end}}
 }
 
-func (v {{.Type.AsString}}) MarshalJSON() ([]byte, error) {
-    type Alias {{.Type.AsString}}
+func (v {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
+    type Alias {{.Name.AsString}}
     return json.Marshal(struct {
         Key string `json:"{{.Fields.Discriminator.Key.AsString}}"`
         Alias

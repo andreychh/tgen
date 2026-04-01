@@ -79,24 +79,4 @@ func (u *MaybeInaccessibleMessage) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
-
-// This object describes a message that was deleted or is otherwise inaccessible
-// to the bot.
-//
-// See https://core.telegram.org/bots/api#inaccessiblemessage
-type InaccessibleMessage struct {
-	// Chat the message belonged to
-	Chat Chat `json:"chat"`
-	// Unique message identifier inside the chat
-	MessageID int64 `json:"message_id"`
-}
-
-func (v InaccessibleMessage) MarshalJSON() ([]byte, error) {
-	type Alias InaccessibleMessage
-	return json.Marshal(struct {
-		Date int64 `json:"date"`
-		Alias
-	}{0, Alias(v)})
-}
-
 {{- end}}

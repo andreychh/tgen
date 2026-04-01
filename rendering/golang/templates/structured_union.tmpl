@@ -2,17 +2,17 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "structured_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredUnion*/}}
-{{- $variants := .Variants | objects}}
+{{- $variants := .Variants | structured_variants }}
 {{.Doc.AsString}}
 type {{.Name.AsString}} struct {
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Object*/}}
-    {{.Name.AsString}} *{{.Name.AsString}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
+    {{.Name.AsString}} *{{.Type.AsString}}
 {{- end}}
 }
 
 func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
     var fields []string
-{{- range $variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
     if u.{{.Name.AsString}} != nil {
         fields = append(fields, "{{.Name.AsString}}")
     }
@@ -23,7 +23,7 @@ func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
     if len(fields) > 1 {
         return nil, fmt.Errorf("{{.Name.AsString}}: multiple fields set (%s)", strings.Join(fields, ", "))
     }
-{{- range $variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
     if u.{{.Name.AsString}} != nil {
         return json.Marshal(u.{{.Name.AsString}})
     }
@@ -33,8 +33,8 @@ func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
 
 func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
     var decoder *json.Decoder
-{{- range $variants}}
-    var value{{.Name.AsString}} {{.Name.AsString}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.StructuredVariant*/}}
+    var value{{.Name.AsString}} {{.Type.AsString}}
     decoder = json.NewDecoder(bytes.NewReader(data))
     decoder.DisallowUnknownFields()
     if decoder.Decode(&value{{.Name.AsString}}) == nil {

@@ -5,14 +5,14 @@
 {{- $variants := .Variants | discriminated_variants}}
 {{.Doc.AsString}}
 type {{.Name.AsString}} struct {
-{{- range $variants}}
-    {{.Name.AsString}} *{{.Type.AsString}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
+    {{.Name.AsString}} *{{.Name.AsString}}
 {{- end}}
 }
 
 func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
     var fields []string
-{{- range $variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
     if u.{{.Name.AsString}} != nil {
         fields = append(fields, "{{.Name.AsString}}")
     }
@@ -23,7 +23,7 @@ func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
     if len(fields) > 1 {
         return nil, fmt.Errorf("{{.Name.AsString}}: multiple fields set (%s)", strings.Join(fields, ", "))
     }
-{{- range $variants}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
     if u.{{.Name.AsString}} != nil {
         return json.Marshal(u.{{.Name.AsString}})
     }
@@ -39,9 +39,9 @@ func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
         return err
     }
     switch disc.Key {
-{{- range $variants}}
-    case "{{.Fields.Discriminator.Value.AsString}}":
-        var v {{.Type.AsString}}
+{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
+    case "{{.DiscriminatorValue.AsString}}":
+        var v {{.Name.AsString}}
         if err := json.Unmarshal(data, &v); err != nil {
             return err
         }
@@ -53,8 +53,4 @@ func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
     return nil
 }
 
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
-
-{{template "discriminated_variant" .}}
-{{- end}}
 {{- end -}}
