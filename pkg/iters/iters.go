@@ -14,3 +14,15 @@ func NewMappedSeq[A, B any](seq iter.Seq[A], f func(A) B) iter.Seq[B] {
 		}
 	}
 }
+
+func NewMergedSeq[A any](seqs ...iter.Seq[A]) iter.Seq[A] {
+	return func(yield func(A) bool) {
+		for _, seq := range seqs {
+			for a := range seq {
+				if !yield(a) {
+					return
+				}
+			}
+		}
+	}
+}
