@@ -10,22 +10,22 @@ import (
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
-type ExplicitObject struct {
+type Object struct {
 	inner explicit.Object
 }
 
-func NewExplicitObject(o explicit.Object) ExplicitObject {
-	return ExplicitObject{inner: o}
+func NewObject(o explicit.Object) Object {
+	return Object{inner: o}
 }
 
-func (o ExplicitObject) Name() Name {
+func (o Object) Name() Name {
 	return NewName(o.inner.Name())
 }
 
-func (o ExplicitObject) Doc() GoDoc {
+func (o Object) Doc() GoDoc {
 	return NewGoDoc(NewDefinitionDoc(o.inner.Reference(), o.inner.Description()))
 }
 
-func (o ExplicitObject) Fields() iter.Seq[Field] {
+func (o Object) Fields() iter.Seq[Field] {
 	return iters.NewMappedSeq(o.inner.Fields(), NewField)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
+//nolint:iface // intentionally distinct from Type: Type is a Go type expression, not a doc string
 type Stringable interface {
 	AsString() (string, error)
 }

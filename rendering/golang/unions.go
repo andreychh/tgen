@@ -8,6 +8,7 @@ import (
 
 	"github.com/andreychh/tgen/model/assembled"
 	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/implicit"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
@@ -23,20 +24,36 @@ func NewUnions(s assembled.Specification) Unions {
 
 // Discriminated returns all discriminated unions from the explicit spec.
 func (u Unions) Discriminated() iter.Seq[DiscriminatedUnion] {
-	return iters.NewMappedSeq(
-		u.inner.Explicit().Unions().Discriminated(),
-		func(v explicit.DiscriminatedUnion) DiscriminatedUnion {
-			return NewExplicitDiscriminatedUnion(v)
-		},
+	return iters.NewMergedSeq(
+		iters.NewMappedSeq(
+			u.inner.Explicit().Unions().Discriminated(),
+			func(v explicit.DiscriminatedUnion) DiscriminatedUnion {
+				return NewExplicitDiscriminatedUnion(v)
+			},
+		),
+		iters.NewMappedSeq(
+			u.inner.Implicit().Unions().Discriminated(),
+			func(v implicit.DiscriminatedUnion) DiscriminatedUnion {
+				return NewImplicitDiscriminatedUnion(v)
+			},
+		),
 	)
 }
 
 // Structured returns all structured unions from the explicit spec.
 func (u Unions) Structured() iter.Seq[StructuredUnion] {
-	return iters.NewMappedSeq(
-		u.inner.Explicit().Unions().Structured(),
-		func(v explicit.StructuredUnion) StructuredUnion {
-			return NewExplicitStructuredUnion(v)
-		},
+	return iters.NewMergedSeq(
+		iters.NewMappedSeq(
+			u.inner.Explicit().Unions().Structured(),
+			func(v explicit.StructuredUnion) StructuredUnion {
+				return NewExplicitStructuredUnion(v)
+			},
+		),
+		iters.NewMappedSeq(
+			u.inner.Implicit().Unions().Structured(),
+			func(v implicit.StructuredUnion) StructuredUnion {
+				return NewImplicitStructuredUnion(v)
+			},
+		),
 	)
 }

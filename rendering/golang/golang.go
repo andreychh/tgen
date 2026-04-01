@@ -9,12 +9,6 @@ import "iter"
 
 const specificationURL = "https://core.telegram.org/bots/api"
 
-type Object interface {
-	Name() Name
-	Doc() GoDoc
-	Fields() iter.Seq[Field]
-}
-
 type DiscriminatedUnion interface {
 	Name() Name
 	Doc() GoDoc
@@ -24,13 +18,23 @@ type DiscriminatedUnion interface {
 
 type DiscriminatedVariant interface {
 	Name() Name
-	Type() Name
-	Doc() GoDoc
-	Fields() DiscriminatedVariantFields
+	DiscriminatorValue() DiscriminatorValue
 }
 
 type StructuredUnion interface {
 	Name() Name
 	Doc() GoDoc
-	Variants() iter.Seq[Object]
+	Variants() iter.Seq[StructuredVariant]
+}
+
+type StructuredVariant interface {
+	Name() Name
+	Type() Type
+}
+
+// Type represents a Go type expression that can be rendered as a string.
+//
+//nolint:iface // intentionally distinct from Stringable: Type is a Go type expression, not a doc string
+type Type interface {
+	AsString() (string, error)
 }

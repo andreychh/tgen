@@ -7,7 +7,6 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model/assembled"
-	"github.com/andreychh/tgen/model/explicit"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
@@ -19,13 +18,8 @@ func NewSpecification(s assembled.Specification) Specification {
 	return Specification{inner: s}
 }
 
-func (s Specification) Objects() iter.Seq[Object] {
-	return iters.NewMappedSeq(
-		s.inner.Explicit().Objects(),
-		func(o explicit.Object) Object {
-			return NewExplicitObject(o)
-		},
-	)
+func (s Specification) Objects() Objects {
+	return NewObjects(s.inner)
 }
 
 func (s Specification) Methods() iter.Seq[Method] {
