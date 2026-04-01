@@ -21,15 +21,15 @@ var primitives = map[string]string{
 	"True":    "bool",
 }
 
-type Type struct {
+type ExprType struct {
 	typ model.Type
 }
 
-func NewType(t model.Type) Type {
-	return Type{typ: t}
+func NewExprType(t model.Type) ExprType {
+	return ExprType{typ: t}
 }
 
-func (t Type) AsString() (string, error) {
+func (t ExprType) AsString() (string, error) {
 	expr, err := t.typ.AsExpression()
 	if err != nil {
 		return "", fmt.Errorf("getting type expr: %w", err)
@@ -37,7 +37,7 @@ func (t Type) AsString() (string, error) {
 	return t.render(expr)
 }
 
-func (t Type) render(expr types.TypeExpression) (string, error) {
+func (t ExprType) render(expr types.TypeExpression) (string, error) {
 	if name, ok := expr.Named(); ok {
 		p, ok := primitives[name]
 		if !ok {
