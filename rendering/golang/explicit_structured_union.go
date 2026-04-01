@@ -30,11 +30,11 @@ func (u ExplicitStructuredUnion) Doc() GoDoc {
 	return NewGoDoc(NewDefinitionDoc(u.inner.Reference(), u.inner.Description()))
 }
 
-func (u ExplicitStructuredUnion) Variants() iter.Seq[Object] {
+func (u ExplicitStructuredUnion) Variants() iter.Seq[StructuredVariant] {
 	return iters.NewMappedSeq(
 		slices.Values(slices.SortedFunc(u.inner.Variants(), u.sortKey)),
-		func(o explicit.Object) Object {
-			return NewExplicitObject(o)
+		func(o explicit.Object) StructuredVariant {
+			return NewExplicitStructuredVariant(o)
 		},
 	)
 }

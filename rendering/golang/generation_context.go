@@ -20,10 +20,10 @@ func NewGenerationContext(spec Specification, snapshot rendering.Snapshot) Gener
 	}
 }
 
-func (c GenerationContext) Spec() Specification { //nolint:gocritic // value receiver is intentional; GenerationContext is immutable
+func (c GenerationContext) Spec() Specification {
 	return c.spec
 }
 
-func (c GenerationContext) Snapshot() rendering.Snapshot { //nolint:gocritic // value receiver is intentional; GenerationContext is immutable
+func (c GenerationContext) Snapshot() rendering.Snapshot {
 	return c.snapshot
 }

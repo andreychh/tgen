@@ -19,7 +19,7 @@ func NewOptionalType(t model.Type, o model.Optionality) OptionalType {
 }
 
 func (t OptionalType) AsString() (string, error) {
-	typ, err := NewType(t.typ).AsString()
+	typ, err := NewExprType(t.typ).AsString()
 	if err != nil {
 		return "", err
 	}

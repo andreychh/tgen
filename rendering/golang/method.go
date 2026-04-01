@@ -27,7 +27,7 @@ func (m Method) Doc() GoDoc {
 }
 
 func (m Method) ReturnType() Type {
-	return NewType(m.inner.ReturnType())
+	return NewExprType(m.inner.ReturnType())
 }
 
 func (m Method) Fields() iter.Seq[Field] {
