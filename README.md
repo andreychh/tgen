@@ -93,10 +93,10 @@ tgen go -s ./api.html -o ./api
 
 ### Go
 
-The generated API follows a consistent pattern: a constructor takes a `Connection` and returns an
-endpoint, which you call with a typed request struct to get a typed response. You can replace
-`HTTPConnection` with any implementation to add retries, proxy requests, or inject `FakeConnection`
-in tests:
+The generated API follows a consistent pattern: each Telegram Bot API method is a struct you
+populate with parameters and call directly on a `Connection` to get a typed response. You can
+replace `HTTPConnection` with any implementation to add retries, proxy requests, or inject
+`FakeConnection` in tests:
 
 ```go
 package main
@@ -114,10 +114,10 @@ func main() {
 	conn := api.NewHTTPConnection(http.DefaultClient, os.Getenv("BOT_TOKEN"))
 	ctx := context.Background()
 
-	msg, err := api.NewSendMessageEndpoint(conn).Call(ctx, api.SendMessageRequest{
+	msg, err := api.SendMessageMethod{
 		ChatID: api.ChatID{Username: new("@news")},
 		Text:   "Hello from tgen!",
-	})
+	}.Call(ctx, conn)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -137,13 +137,10 @@ func TestSendMessage(t *testing.T) {
 		api.MethodSendMessage: api.Ok(api.Message{MessageID: 42}),
 	})
 
-	msg, err := api.NewSendMessageEndpoint(conn).Call(
-		context.Background(),
-		api.SendMessageRequest{
-			ChatID: api.ChatID{Username: new("@news")},
-			Text:   "Hello from tgen!",
-		},
-	)
+	msg, err := api.SendMessageMethod{
+		ChatID: api.ChatID{Username: new("@news")},
+		Text:   "Hello from tgen!",
+	}.Call(context.Background(), conn)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(42), msg.MessageID, "SendMessage must return the sent message")
@@ -154,13 +151,10 @@ func TestSendMessage_Failure(t *testing.T) {
 		api.MethodSendMessage: api.Err(errors.New("unauthorized")),
 	})
 
-	_, err := api.NewSendMessageEndpoint(conn).Call(
-		context.Background(),
-		api.SendMessageRequest{
-			ChatID: api.ChatID{Username: new("@news")},
-			Text:   "Hello from tgen!",
-		},
-	)
+	_, err := api.SendMessageMethod{
+		ChatID: api.ChatID{Username: new("@news")},
+		Text:   "Hello from tgen!",
+	}.Call(context.Background(), conn)
 
 	assert.ErrorContains(t, err, "unauthorized")
 }
