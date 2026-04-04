@@ -3,10 +3,18 @@
 
 {{- define "method" -}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 {{.Doc.AsString}}
-type {{.Name.AsString}}Request struct {
+type {{.Name.AsString}}Method struct {
 {{- range .Fields | fields }} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
-{{.Doc.AsString}}
-{{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
+    {{.Doc.AsString}}
+    {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
 {{- end}}
+}
+
+func (m {{.Name.AsString}}Method) Call(ctx context.Context, conn Connection) ({{.ReturnType.AsString}}, error) {
+	var resp {{.ReturnType.AsString}}
+	if err := conn.Do(ctx, Method{{.Name.AsString}}, m, &resp); err != nil {
+		return resp, fmt.Errorf("%s: %w", Method{{.Name.AsString}}, err)
+	}
+	return resp, nil
 }
 {{- end -}}

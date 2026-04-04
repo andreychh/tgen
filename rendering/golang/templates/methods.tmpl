@@ -16,40 +16,13 @@ type Method string
 
 const (
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
-	Method{{.Name.AsString}} = "{{.Name.AsString}}"
+	Method{{.Name.AsString}} Method = "{{.Name.AsString}}"
 {{- end }}
 )
-
 
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 
 {{template "method" . }}
 {{- end }}
 
-
-// Endpoint binds a Connection to a Method with typed request and response
-// parameters.
-type Endpoint[Req, Resp any] struct {
-	conn   Connection
-	method Method
-}
-
-// Call sends req to the bound method and returns the decoded response. It
-// returns an error annotated with the method name if the connection fails.
-func (e Endpoint[Req, Resp]) Call(ctx context.Context, req Req) (Resp, error) {
-	var resp Resp
-	if err := e.conn.Do(ctx, e.method, req, &resp); err != nil {
-		return resp, fmt.Errorf("%s: %w", e.method, err)
-	}
-	return resp, nil
-}
-
-{{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
-
-// New{{.Name.AsString}}Endpoint creates an Endpoint for the {{.Name.AsString}} method.
-func New{{.Name.AsString}}Endpoint(conn Connection) Endpoint[{{.Name.AsString}}Request, {{.ReturnType.AsString}}] {
-	return Endpoint[{{.Name.AsString}}Request, {{.ReturnType.AsString}}]{conn: conn, method: Method{{.Name.AsString}}}
-}
-{{- end }}
-
-{{- end }}
+{{- end -}}
