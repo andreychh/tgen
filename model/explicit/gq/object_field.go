@@ -10,11 +10,11 @@ import (
 )
 
 type ObjectField struct {
-	tr gq.Selection
+	root, tr gq.Selection
 }
 
-func NewObjectField(tr gq.Selection) ObjectField {
-	return ObjectField{tr: tr}
+func NewObjectField(root, tr gq.Selection) ObjectField {
+	return ObjectField{root: root, tr: tr}
 }
 
 func (f ObjectField) Key() model.Key {
@@ -22,7 +22,7 @@ func (f ObjectField) Key() model.Key {
 }
 
 func (f ObjectField) Type() model.Type {
-	return types.NewType(NewType(f.tr.Find("td").At(1)))
+	return types.NewType(NewCatalog(f.root), NewType(f.tr.Find("td").At(1)))
 }
 
 func (f ObjectField) Optionality() model.Optionality {

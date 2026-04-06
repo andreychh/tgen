@@ -51,7 +51,7 @@ func (u StructuredUnion) Variants() iter.Seq[explicit.Object] {
 					return s.Text() == li.Find("a").Text()
 				}).
 				At(0)
-			if !yield(NewObject(h4)) {
+			if !yield(NewObject(u.root, h4)) {
 				break
 			}
 		}

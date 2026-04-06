@@ -12,12 +12,12 @@ import (
 
 // Fields provides the free fields and discriminator of a variant object.
 type Fields struct {
-	h4 gq.Selection
+	root, h4 gq.Selection
 }
 
 // NewFields constructs a Fields from an h4 selection.
-func NewFields(h4 gq.Selection) Fields {
-	return Fields{h4: h4}
+func NewFields(root, h4 gq.Selection) Fields {
+	return Fields{root: root, h4: h4}
 }
 
 // Free returns the fields of the variant that appear in the generated struct,
@@ -32,7 +32,7 @@ func (f Fields) Free() iter.Seq[explicit.Field] {
 			}).
 			All()
 		for tr := range seq {
-			if !yield(NewObjectField(tr)) {
+			if !yield(NewObjectField(f.root, tr)) {
 				break
 			}
 		}

@@ -29,21 +29,21 @@ var (
 	returnFallback      = regexp.MustCompile(`([A-Z][a-zA-Z]+) is returned`)
 )
 
-// ReturnType extracts the return TypeExpression of a method from its
+// ReturnType extracts the return Expression of a method from its
 // description paragraphs.
 type ReturnType struct {
-	h4 gq.Selection
+	root, h4 gq.Selection
 }
 
 // NewReturnType creates a ReturnType from an h4 selection.
-func NewReturnType(h4 gq.Selection) ReturnType {
-	return ReturnType{h4: h4}
+func NewReturnType(root, h4 gq.Selection) ReturnType {
+	return ReturnType{root: root, h4: h4}
 }
 
 // AsExpression parses the method description and returns the return type
 // expression. Returns an error if no description paragraphs are found or the
 // return type cannot be extracted.
-func (t ReturnType) AsExpression() (types.TypeExpression, error) {
+func (t ReturnType) AsExpression() (types.Expression, error) {
 	var parts []string
 	for node := range t.h4.Until("h3, h4, hr").Filter("p").All() {
 		text := node.Text()
@@ -54,38 +54,56 @@ func (t ReturnType) AsExpression() (types.TypeExpression, error) {
 	if len(parts) == 0 {
 		return nil, errors.New("no description paragraphs found")
 	}
-	return extractReturnType(strings.Join(parts, " "))
+	return t.extractReturnType(strings.Join(parts, " "))
 }
 
-func extractReturnType(text string) (types.TypeExpression, error) {
+func (t ReturnType) extractReturnType(text string) (types.Expression, error) {
 	if m := returnConditional.FindStringSubmatch(text); m != nil {
-		return types.NewUnionType(
-			[]types.TypeExpression{types.NewNamedType(m[1]), types.NewNamedType(m[2])},
-		), nil
+		first, err := t.named(m[1])
+		if err != nil {
+			return nil, err
+		}
+		second, err := t.named(m[2])
+		if err != nil {
+			return nil, err
+		}
+		return types.NewUnion([]types.Expression{first, second}), nil
 	}
 	if m := returnArray.FindStringSubmatch(text); m != nil {
-		return types.NewArrayType(types.NewNamedType(m[1])), nil
+		elem, err := t.named(m[1])
+		if err != nil {
+			return nil, err
+		}
+		return types.NewArray(elem), nil
 	}
 	if m := returnAsType.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	if m := returnInFormOf.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	if m := returnArticleObject.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	if m := returnDirect.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	if m := returnTheNamed.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	if m := returnThePre.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	if m := returnFallback.FindStringSubmatch(text); m != nil {
-		return types.NewNamedType(m[1]), nil
+		return t.named(m[1])
 	}
 	return nil, fmt.Errorf("cannot extract return type from: %q", text)
+}
+
+func (t ReturnType) named(name string) (types.Expression, error) {
+	kind, found := NewCatalog(t.root).Lookup(name)
+	if !found {
+		return nil, fmt.Errorf("unknown type %q", name)
+	}
+	return types.NewNamed(name, kind), nil
 }
