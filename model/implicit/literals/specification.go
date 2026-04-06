@@ -3,7 +3,10 @@
 
 package literals
 
-import "github.com/andreychh/tgen/model/implicit"
+import (
+	"github.com/andreychh/tgen/model/implicit"
+	"github.com/andreychh/tgen/model/types"
+)
 
 // Specification represents the set of tgen-defined types not present in the
 // Telegram Bot API specification.
@@ -33,26 +36,38 @@ func NewSpecification() Specification {
 					"ReplyMarkup",
 					"ReplyMarkup represents a reply markup attached to a message.",
 					[]implicit.StructuredVariant{
-						NewStructuredVariant("InlineKeyboardMarkup", "InlineKeyboardMarkup"),
-						NewStructuredVariant("ReplyKeyboardMarkup", "ReplyKeyboardMarkup"),
-						NewStructuredVariant("ReplyKeyboardRemove", "ReplyKeyboardRemove"),
-						NewStructuredVariant("ForceReply", "ForceReply"),
+						NewStructuredVariant(
+							"InlineKeyboardMarkup",
+							"InlineKeyboardMarkup",
+							types.KindObject,
+						),
+						NewStructuredVariant(
+							"ReplyKeyboardMarkup",
+							"ReplyKeyboardMarkup",
+							types.KindObject,
+						),
+						NewStructuredVariant(
+							"ReplyKeyboardRemove",
+							"ReplyKeyboardRemove",
+							types.KindObject,
+						),
+						NewStructuredVariant("ForceReply", "ForceReply", types.KindObject),
 					},
 				),
 				NewStructuredUnion(
 					"ChatId",
 					"ChatId represents a chat identifier, which is either an integer or a string.",
 					[]implicit.StructuredVariant{
-						NewStructuredVariant("Id", "Integer"),
-						NewStructuredVariant("Username", "String"),
+						NewStructuredVariant("Id", "Integer", types.KindPrimitive),
+						NewStructuredVariant("Username", "String", types.KindPrimitive),
 					},
 				),
 				NewStructuredUnion(
 					"MaybeMessage",
 					"MaybeMessage represents a method return type that is either an edited Message or True for inline messages.",
 					[]implicit.StructuredVariant{
-						NewStructuredVariant("Message", "Message"),
-						NewStructuredVariant("Ok", "Boolean"),
+						NewStructuredVariant("Message", "Message", types.KindObject),
+						NewStructuredVariant("Ok", "Boolean", types.KindPrimitive),
 					},
 				),
 			},

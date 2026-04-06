@@ -23,11 +23,12 @@ func (o InputFile) Apply(field explicit.Field) explicit.Field {
 	if err != nil {
 		return field
 	}
-	if expr.Equals(types.NewUnionType([]types.TypeExpression{
-		types.NewNamedType("InputFile"),
-		types.NewNamedType("String"),
-	})) || expr.Equals(types.NewNamedType("String")) && slices.Contains(links, "#sending-files") {
-		return NewModified(field, types.NewNamedType("InputFile"))
+	if expr.Equals(types.NewUnion([]types.Expression{
+		types.NewNamed("InputFile", types.KindObject),
+		types.NewNamed("String", types.KindPrimitive),
+	})) || expr.Equals(types.NewNamed("String", types.KindPrimitive)) &&
+		slices.Contains(links, "#sending-files") {
+		return NewModified(field, types.NewNamed("InputFile", types.KindUnion))
 	}
 	return field
 }

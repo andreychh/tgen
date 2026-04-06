@@ -40,13 +40,13 @@ func (r MaybeMessage) ReturnType() model.Type {
 	if err != nil {
 		return r.inner.ReturnType()
 	}
-	if !expr.Equals(types.NewUnionType([]types.TypeExpression{
-		types.NewNamedType("Message"),
-		types.NewNamedType("True"),
+	if !expr.Equals(types.NewUnion([]types.Expression{
+		types.NewNamed("Message", types.KindObject),
+		types.NewNamed("True", types.KindPrimitive),
 	})) {
 		return r.inner.ReturnType()
 	}
-	return literals.NewType(types.NewNamedType("MaybeMessage"))
+	return literals.NewType(types.NewNamed("MaybeMessage", types.KindUnion))
 }
 
 func (r MaybeMessage) Fields() iter.Seq[explicit.Field] {

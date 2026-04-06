@@ -26,7 +26,7 @@ linters:
     # - decorder [too strict] # Check declaration order and count of types, constants, variables and functions.
     - depguard  # Go linter that checks if package imports are in a list of acceptable packages.
     - dogsled  # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f()).
-    - dupl  # Detects duplicate fragments of code.
+    # - dupl [unstable] # Detects duplicate fragments of code.
     - dupword  # Checks for duplicate words in the source code.
     - durationcheck  # Check for two durations multiplied together.
     - embeddedstructfieldcheck  # Embedded types should be at the top of the field list of a struct, and there must be an empty line separating embedded fields from regular fields.

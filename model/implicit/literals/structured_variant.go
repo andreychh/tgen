@@ -14,12 +14,13 @@ import (
 type StructuredVariant struct {
 	name string
 	typ  string
+	kind types.Kind
 }
 
 // NewStructuredVariant constructs a StructuredVariant from a field name and
 // type name.
-func NewStructuredVariant(name, typ string) StructuredVariant {
-	return StructuredVariant{name: name, typ: typ}
+func NewStructuredVariant(name, typ string, kind types.Kind) StructuredVariant {
+	return StructuredVariant{name: name, typ: typ, kind: kind}
 }
 
 func (v StructuredVariant) Name() model.Name {
@@ -27,5 +28,5 @@ func (v StructuredVariant) Name() model.Name {
 }
 
 func (v StructuredVariant) Type() model.Type {
-	return literals.NewType(types.NewNamedType(v.typ))
+	return literals.NewType(types.NewNamed(v.typ, v.kind))
 }

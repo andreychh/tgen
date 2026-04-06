@@ -49,7 +49,7 @@ func (u DiscriminatedUnion) DiscriminatorKey() model.Key {
 			return s.Text() == li.Find("a").Text()
 		}).
 		At(0)
-	return NewDiscriminatedVariant(h4).Fields().Discriminator().Key()
+	return NewDiscriminatedVariant(u.root, h4).Fields().Discriminator().Key()
 }
 
 // Variants returns the variant objects of this union. Each variant name is read
@@ -66,7 +66,7 @@ func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedVariant] {
 					return s.Text() == li.Find("a").Text()
 				}).
 				At(0)
-			if !yield(NewDiscriminatedVariant(h4)) {
+			if !yield(NewDiscriminatedVariant(u.root, h4)) {
 				break
 			}
 		}

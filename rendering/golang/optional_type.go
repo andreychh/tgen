@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/types"
 )
 
 type OptionalType struct {
@@ -34,8 +35,7 @@ func (t OptionalType) AsString() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting type expr: %w", err)
 	}
-	_, isArray := expr.Array()
-	if isArray {
+	if _, ok := expr.(types.Array); ok {
 		return typ, nil
 	}
 	return "*" + typ, nil

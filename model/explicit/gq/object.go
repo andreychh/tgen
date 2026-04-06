@@ -12,11 +12,11 @@ import (
 )
 
 type Object struct {
-	h4 gq.Selection
+	root, h4 gq.Selection
 }
 
-func NewObject(h4 gq.Selection) Object {
-	return Object{h4: h4}
+func NewObject(root, h4 gq.Selection) Object {
+	return Object{root: root, h4: h4}
 }
 
 func (o Object) Reference() model.Reference {
@@ -38,7 +38,7 @@ func (o Object) Fields() iter.Seq[explicit.Field] {
 			Find("table tbody tr").
 			All()
 		for tr := range seq {
-			if !yield(NewObjectField(tr)) {
+			if !yield(NewObjectField(o.root, tr)) {
 				break
 			}
 		}

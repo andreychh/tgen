@@ -17,13 +17,13 @@ func (o ReplyMarkup) Apply(field explicit.Field) explicit.Field {
 	if err != nil {
 		return field
 	}
-	if !expr.Equals(types.NewUnionType([]types.TypeExpression{
-		types.NewNamedType("InlineKeyboardMarkup"),
-		types.NewNamedType("ReplyKeyboardMarkup"),
-		types.NewNamedType("ReplyKeyboardRemove"),
-		types.NewNamedType("ForceReply"),
+	if !expr.Equals(types.NewUnion([]types.Expression{
+		types.NewNamed("InlineKeyboardMarkup", types.KindObject),
+		types.NewNamed("ReplyKeyboardMarkup", types.KindObject),
+		types.NewNamed("ReplyKeyboardRemove", types.KindObject),
+		types.NewNamed("ForceReply", types.KindObject),
 	})) {
 		return field
 	}
-	return NewModified(field, types.NewNamedType("ReplyMarkup"))
+	return NewModified(field, types.NewNamed("ReplyMarkup", types.KindUnion))
 }

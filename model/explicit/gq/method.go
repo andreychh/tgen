@@ -13,12 +13,12 @@ import (
 
 // Method represents a Telegram Bot API method definition parsed from HTML.
 type Method struct {
-	h4 gq.Selection
+	root, h4 gq.Selection
 }
 
 // NewMethod creates a Method from an h4 selection.
-func NewMethod(h4 gq.Selection) Method {
-	return Method{h4: h4}
+func NewMethod(root, h4 gq.Selection) Method {
+	return Method{root: root, h4: h4}
 }
 
 func (m Method) Reference() model.Reference {
@@ -34,7 +34,7 @@ func (m Method) Description() model.Description {
 }
 
 func (m Method) ReturnType() model.Type {
-	return NewReturnType(m.h4)
+	return NewReturnType(m.root, m.h4)
 }
 
 func (m Method) Fields() iter.Seq[explicit.Field] {
@@ -44,7 +44,7 @@ func (m Method) Fields() iter.Seq[explicit.Field] {
 			Find("table tbody tr").
 			All()
 		for tr := range seq {
-			if !yield(NewMethodField(tr)) {
+			if !yield(NewMethodField(m.root, tr)) {
 				break
 			}
 		}

@@ -4,7 +4,6 @@
 package golang
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
@@ -37,23 +36,22 @@ func (t ExprType) AsString() (string, error) {
 	return t.render(expr)
 }
 
-func (t ExprType) render(expr types.TypeExpression) (string, error) {
-	if name, ok := expr.Named(); ok {
-		p, ok := primitives[name]
+func (t ExprType) render(expr types.Expression) (string, error) {
+	switch expr := expr.(type) {
+	case types.Named:
+		p, ok := primitives[expr.Name()]
 		if !ok {
-			return NewStringName(name).AsString()
+			return NewStringName(expr.Name()).AsString()
 		}
 		return p, nil
-	}
-	if inner, ok := expr.Array(); ok {
-		elem, err := t.render(inner)
+	case types.Array:
+		elem, err := t.render(expr.Element())
 		if err != nil {
 			return "", err
 		}
 		return "[]" + elem, nil
+	case types.Union:
+		return "", fmt.Errorf("unsupported union %q", expr)
 	}
-	if _, ok := expr.Union(); ok {
-		return "", errors.New("unions not supported")
-	}
-	return "", errors.New("unknown type expression")
+	return "", fmt.Errorf("unknown type expression %q", expr)
 }

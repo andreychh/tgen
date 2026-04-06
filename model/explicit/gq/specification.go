@@ -33,7 +33,7 @@ func (s Specification) Objects() iter.Seq[explicit.Object] {
 			}).
 			All()
 		for h4 := range seq {
-			if !yield(NewObject(h4)) {
+			if !yield(NewObject(s.root, h4)) {
 				break
 			}
 		}
@@ -49,7 +49,7 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 			}).
 			All()
 		for h4 := range seq {
-			if !yield(NewMethod(h4)) {
+			if !yield(NewMethod(s.root, h4)) {
 				break
 			}
 		}
