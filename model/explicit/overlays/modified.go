@@ -13,18 +13,18 @@ import (
 // Modified represents a field whose type and optionally description are overridden.
 type Modified struct {
 	origin explicit.Field
-	expr   types.TypeExpression
+	expr   types.Expression
 	desc   model.Description
 }
 
 // NewModified constructs a Modified from origin with an overridden type.
-func NewModified(f explicit.Field, e types.TypeExpression) Modified {
+func NewModified(f explicit.Field, e types.Expression) Modified {
 	return NewDescribed(f, e, f.Description())
 }
 
 // NewDescribed constructs a Modified from origin with an overridden type and
 // description.
-func NewDescribed(f explicit.Field, e types.TypeExpression, d model.Description) Modified {
+func NewDescribed(f explicit.Field, e types.Expression, d model.Description) Modified {
 	return Modified{origin: f, expr: e, desc: d}
 }
 

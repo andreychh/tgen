@@ -17,13 +17,13 @@ func (o InputMediaGroup) Apply(field explicit.Field) explicit.Field {
 	if err != nil {
 		return field
 	}
-	if !expr.Equals(types.NewArrayType(types.NewUnionType([]types.TypeExpression{
-		types.NewNamedType("InputMediaAudio"),
-		types.NewNamedType("InputMediaDocument"),
-		types.NewNamedType("InputMediaPhoto"),
-		types.NewNamedType("InputMediaVideo"),
+	if !expr.Equals(types.NewArray(types.NewUnion([]types.Expression{
+		types.NewNamed("InputMediaAudio", types.KindObject),
+		types.NewNamed("InputMediaDocument", types.KindObject),
+		types.NewNamed("InputMediaPhoto", types.KindObject),
+		types.NewNamed("InputMediaVideo", types.KindObject),
 	}))) {
 		return field
 	}
-	return NewModified(field, types.NewArrayType(types.NewNamedType("InputMediaGroup")))
+	return NewModified(field, types.NewArray(types.NewNamed("InputMediaGroup", types.KindUnion)))
 }
