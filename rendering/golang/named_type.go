@@ -24,5 +24,5 @@ func (t NamedType) AsString() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting name: %w", err)
 	}
-	return NewExprType(literals.NewType(types.NewNamedType(name))).AsString()
+	return NewExprType(literals.NewType(types.NewNamed(name, types.KindUnknown))).AsString()
 }
