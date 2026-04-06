@@ -22,7 +22,7 @@ type Reference interface { //nolint:iface // identical signature to Name/Key/Dis
 }
 
 type Type interface {
-	AsExpression() (types.TypeExpression, error)
+	AsExpression() (types.Expression, error)
 }
 
 type Optionality interface {

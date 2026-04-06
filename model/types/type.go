@@ -9,7 +9,11 @@ import (
 	"strings"
 )
 
-// Type builds a TypeExpression tree from a field type source.
+type TypeSource interface {
+	AsString() (string, error)
+}
+
+// Type builds an expression tree from a field type source.
 //
 // The Telegram Bot API describes field types using human-readable English
 // strings rather than a formal type syntax. Type parses these strings into
@@ -29,15 +33,15 @@ import (
 //
 //nolint:dupword // "Named" is a grammar rule name, not a duplicate word
 type Type struct {
-	source TypeSource
+	catalog Catalog
+	source  TypeSource
 }
 
-// NewType creates a Type that parses its expression from a FieldType.
-func NewType(s TypeSource) Type {
-	return Type{source: s}
+func NewType(c Catalog, s TypeSource) Type {
+	return Type{catalog: c, source: s}
 }
 
-func (t Type) AsExpression() (TypeExpression, error) {
+func (t Type) AsExpression() (Expression, error) {
 	value, err := t.source.AsString()
 	if err != nil {
 		return nil, err
@@ -45,7 +49,7 @@ func (t Type) AsExpression() (TypeExpression, error) {
 	return t.parse(value)
 }
 
-func (t Type) parse(expr string) (TypeExpression, error) {
+func (t Type) parse(expr string) (Expression, error) {
 	if expr == "" {
 		return nil, errors.New("unexpected empty type expression")
 	}
@@ -58,13 +62,13 @@ func (t Type) parse(expr string) (TypeExpression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NewArrayType(inner), nil
+		return NewArray(inner), nil
 	}
 	normalized := strings.ReplaceAll(expr, " and ", " or ")
 	normalized = strings.ReplaceAll(normalized, ", ", " or ")
 	parts := strings.Split(normalized, " or ")
 	if len(parts) > 1 {
-		variants := make([]TypeExpression, len(parts))
+		variants := make([]Expression, len(parts))
 		for i, part := range parts {
 			expr, err := t.parse(part)
 			if err != nil {
@@ -72,7 +76,11 @@ func (t Type) parse(expr string) (TypeExpression, error) {
 			}
 			variants[i] = expr
 		}
-		return NewUnionType(variants), nil
+		return NewUnion(variants), nil
 	}
-	return NewNamedType(expr), nil
+	kind, ok := t.catalog.Lookup(expr)
+	if !ok {
+		return nil, fmt.Errorf("unknown kind for %q", expr)
+	}
+	return NewNamed(expr, kind), nil
 }
