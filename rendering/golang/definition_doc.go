@@ -10,12 +10,12 @@ import (
 )
 
 type DefinitionDoc struct {
-	ref         model.Reference
-	description model.Description
+	ref  model.Reference
+	desc model.Description
 }
 
 func NewDefinitionDoc(r model.Reference, d model.Description) DefinitionDoc {
-	return DefinitionDoc{ref: r, description: d}
+	return DefinitionDoc{ref: r, desc: d}
 }
 
 func (d DefinitionDoc) AsString() (string, error) {
@@ -23,7 +23,7 @@ func (d DefinitionDoc) AsString() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting reference: %w", err)
 	}
-	desc, err := d.description.AsString()
+	desc, err := d.desc.AsString()
 	if err != nil {
 		return "", fmt.Errorf("getting description: %w", err)
 	}
