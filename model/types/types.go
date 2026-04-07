@@ -19,5 +19,6 @@ type Catalog interface {
 //sumtype:decl
 type Expression interface {
 	Equals(other Expression) bool
+	String() string
 	isNode()
 }
