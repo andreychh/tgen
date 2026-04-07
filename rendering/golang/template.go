@@ -29,9 +29,7 @@ func (t Template) Value() (*template.Template, error) {
 			"methods":                slices.Collect[Method],
 			"fields":                 slices.Collect[Field],
 			"discriminated_unions":   slices.Collect[DiscriminatedUnion],
-			"structured_unions":      slices.Collect[StructuredUnion],
 			"discriminated_variants": slices.Collect[DiscriminatedVariant],
-			"structured_variants":    slices.Collect[StructuredVariant],
 			"discriminated_objects":  slices.Collect[DiscriminatedObject],
 		}).
 		ParseFS(templates, "templates/*.tmpl")
