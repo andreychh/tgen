@@ -15,8 +15,7 @@ import (
 // fixed-value discriminator field (e.g. type="emoji"). It navigates from the
 // document root to locate each variant's full definition.
 type DiscriminatedUnion struct {
-	root gq.Selection
-	h4   gq.Selection
+	root, h4 gq.Selection
 }
 
 // NewDiscriminatedUnion constructs a DiscriminatedUnion from the document
@@ -49,7 +48,7 @@ func (u DiscriminatedUnion) DiscriminatorKey() model.Key {
 			return s.Text() == li.Find("a").Text()
 		}).
 		At(0)
-	return NewDiscriminatedVariant(u.root, h4).Fields().Discriminator().Key()
+	return NewDiscriminatedObject(u.root, h4).Fields().Discriminator().Key()
 }
 
 // Variants returns the variant objects of this union. Each variant name is read
@@ -57,8 +56,8 @@ func (u DiscriminatedUnion) DiscriminatorKey() model.Key {
 // navigating from the document root.
 //
 //nolint:varnamelen // <h4> is the standard HTML heading element name
-func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedVariant] {
-	return func(yield func(explicit.DiscriminatedVariant) bool) {
+func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedObject] {
+	return func(yield func(explicit.DiscriminatedObject) bool) {
 		for li := range u.h4.Until("h3, h4, hr").Find("ul li").All() {
 			h4 := u.root.
 				Find("div#dev_page_content h4").
@@ -66,7 +65,7 @@ func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedVariant] {
 					return s.Text() == li.Find("a").Text()
 				}).
 				At(0)
-			if !yield(NewDiscriminatedVariant(u.root, h4)) {
+			if !yield(NewDiscriminatedObject(u.root, h4)) {
 				break
 			}
 		}

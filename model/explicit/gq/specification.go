@@ -56,8 +56,20 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 	}
 }
 
-func (s Specification) Unions() explicit.Unions {
-	return NewUnions(s.root)
+func (s Specification) DiscriminatedUnions() iter.Seq[explicit.DiscriminatedUnion] {
+	return func(yield func(explicit.DiscriminatedUnion) bool) {
+		seq := s.root.
+			Find("div#dev_page_content h4").
+			FilterFunc(func(h4 gq.Selection) bool {
+				return NewHeader(s.root, h4).Kind() == DefinitionKindDiscriminatedUnion
+			}).
+			All()
+		for h4 := range seq {
+			if !yield(NewDiscriminatedUnion(s.root, h4)) {
+				break
+			}
+		}
+	}
 }
 
 func (s Specification) Release() explicit.Release {

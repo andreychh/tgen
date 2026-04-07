@@ -67,7 +67,7 @@ func (t ReturnType) extractReturnType(text string) (types.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return types.NewUnion([]types.Expression{first, second}), nil
+		return types.NewUnion(first, second), nil
 	}
 	if m := returnArray.FindStringSubmatch(text); m != nil {
 		elem, err := t.named(m[1])
