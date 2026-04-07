@@ -6,10 +6,10 @@ package golang
 import "github.com/andreychh/tgen/model/explicit"
 
 type DiscriminatedObject struct {
-	inner explicit.DiscriminatedVariant
+	inner explicit.DiscriminatedObject
 }
 
-func NewDiscriminatedObject(v explicit.DiscriminatedVariant) DiscriminatedObject {
+func NewDiscriminatedObject(v explicit.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: v}
 }
 

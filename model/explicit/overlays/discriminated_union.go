@@ -40,11 +40,11 @@ func (u DiscriminatedUnion) DiscriminatorKey() model.Key {
 	return u.inner.DiscriminatorKey()
 }
 
-func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedVariant] {
+func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedObject] {
 	return iters.NewMappedSeq(
 		u.inner.Variants(),
-		func(v explicit.DiscriminatedVariant) explicit.DiscriminatedVariant {
-			return NewDiscriminatedVariant(v, u.overlay)
+		func(v explicit.DiscriminatedObject) explicit.DiscriminatedObject {
+			return NewDiscriminatedObject(v, u.overlay)
 		},
 	)
 }

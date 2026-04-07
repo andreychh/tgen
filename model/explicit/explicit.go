@@ -17,7 +17,7 @@ import (
 type Specification interface {
 	Objects() iter.Seq[Object]
 	Methods() iter.Seq[Method]
-	Unions() Unions
+	DiscriminatedUnions() iter.Seq[DiscriminatedUnion]
 	Release() Release
 }
 
@@ -36,20 +36,15 @@ type Method interface {
 	Fields() iter.Seq[Field]
 }
 
-type Unions interface {
-	Discriminated() iter.Seq[DiscriminatedUnion]
-	Structured() iter.Seq[StructuredUnion]
-}
-
 type DiscriminatedUnion interface {
 	Reference() model.Reference
 	Name() model.Name
 	Description() model.Description
 	DiscriminatorKey() model.Key
-	Variants() iter.Seq[DiscriminatedVariant]
+	Variants() iter.Seq[DiscriminatedObject]
 }
 
-type DiscriminatedVariant interface {
+type DiscriminatedObject interface {
 	Reference() model.Reference
 	Name() model.Name
 	Description() model.Description
@@ -64,13 +59,6 @@ type Fields interface {
 type Discriminator interface {
 	Key() model.Key
 	Value() model.DiscriminatorValue
-}
-
-type StructuredUnion interface {
-	Reference() model.Reference
-	Name() model.Name
-	Description() model.Description
-	Variants() iter.Seq[Object]
 }
 
 type Field interface {

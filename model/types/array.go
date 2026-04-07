@@ -22,4 +22,8 @@ func (a Array) Equals(other Expression) bool {
 	return false
 }
 
+func (a Array) String() string {
+	return "Array<" + a.element.String() + ">"
+}
+
 func (a Array) isNode() {}

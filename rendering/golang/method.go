@@ -26,7 +26,7 @@ func (m Method) Doc() GoDoc {
 	return NewGoDoc(NewDefinitionDoc(m.inner.Reference(), m.inner.Description()))
 }
 
-func (m Method) ReturnType() Type {
+func (m Method) ReturnType() ExprType {
 	return NewExprType(m.inner.ReturnType())
 }
 

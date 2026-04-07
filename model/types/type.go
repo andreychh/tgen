@@ -76,7 +76,7 @@ func (t Type) parse(expr string) (Expression, error) {
 			}
 			variants[i] = expr
 		}
-		return NewUnion(variants), nil
+		return NewUnion(variants...), nil
 	}
 	kind, ok := t.catalog.Lookup(expr)
 	if !ok {

@@ -17,10 +17,10 @@ func (o ChatID) Apply(field explicit.Field) explicit.Field {
 	if err != nil {
 		return field
 	}
-	if !expr.Equals(types.NewUnion([]types.Expression{
+	if !expr.Equals(types.NewUnion(
 		types.NewNamed("Integer", types.KindPrimitive),
 		types.NewNamed("String", types.KindPrimitive),
-	})) {
+	)) {
 		return field
 	}
 	return NewModified(field, types.NewNamed("ChatID", types.KindUnion))

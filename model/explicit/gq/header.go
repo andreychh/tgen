@@ -14,13 +14,13 @@ import (
 type DefinitionKind string
 
 const (
-	DefinitionKindUnknown              DefinitionKind = "unknown"
-	DefinitionKindObject               DefinitionKind = "object"
-	DefinitionKindMethod               DefinitionKind = "method"
-	DefinitionKindStructuredUnion      DefinitionKind = "structured_union"
-	DefinitionKindDiscriminatedUnion   DefinitionKind = "discriminated_union"
-	DefinitionKindFallbackUnion        DefinitionKind = "fallback_union"
-	DefinitionKindDiscriminatedVariant DefinitionKind = "discriminated_variant"
+	DefinitionKindUnknown             DefinitionKind = "unknown"
+	DefinitionKindObject              DefinitionKind = "object"
+	DefinitionKindDiscriminatedObject DefinitionKind = "discriminated_object"
+	DefinitionKindMethod              DefinitionKind = "method"
+	DefinitionKindStructuredUnion     DefinitionKind = "structured_union"
+	DefinitionKindDiscriminatedUnion  DefinitionKind = "discriminated_union"
+	DefinitionKindFallbackUnion       DefinitionKind = "fallback_union"
 )
 
 // Header classifies an h4 section within a Telegram Bot API document. root is
@@ -83,7 +83,7 @@ func (h Header) objectKind(body gq.Selection) DefinitionKind {
 		}).
 		IsEmpty()
 	if isListed {
-		return DefinitionKindDiscriminatedVariant
+		return DefinitionKindDiscriminatedObject
 	}
 	return DefinitionKindObject
 }

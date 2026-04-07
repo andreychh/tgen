@@ -1,8 +1,8 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "fake" -}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Specification*/}}
-{{template "header" .}}
+{{- define "fake"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
+{{- template "header" .}}
 
 package api
 
@@ -67,4 +67,4 @@ func (c FakeConnection) Do(_ context.Context, method Method, _, response any) er
 	return nil
 }
 
-{{- end -}}
+{{- end}}

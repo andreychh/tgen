@@ -1,8 +1,8 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "client" -}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Specification*/}}
-{{template "header" .}}
+{{- define "client"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
+{{- template "header" .}}
 
 package api
 
@@ -96,4 +96,4 @@ func (c HTTPConnection) request(
 func (c HTTPConnection) url(method Method) string {
 	return fmt.Sprintf("https://api.telegram.org/bot%s/%s", c.token, method)
 }
-{{- end -}}
+{{- end}}

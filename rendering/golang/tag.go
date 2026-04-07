@@ -10,12 +10,12 @@ import (
 )
 
 type Tag struct {
-	key         model.Key
-	optionality model.Optionality
+	key model.Key
+	opt model.Optionality
 }
 
 func NewTag(k model.Key, o model.Optionality) Tag {
-	return Tag{key: k, optionality: o}
+	return Tag{key: k, opt: o}
 }
 
 func (t Tag) AsString() (string, error) {
@@ -23,11 +23,11 @@ func (t Tag) AsString() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting field key: %w", err)
 	}
-	optional, err := t.optionality.AsBool()
+	opt, err := t.opt.AsBool()
 	if err != nil {
 		return "", fmt.Errorf("getting field optionality: %w", err)
 	}
-	if optional {
+	if opt {
 		return fmt.Sprintf("`json:\"%s,omitempty\"`", key), nil
 	}
 	return fmt.Sprintf("`json:%q`", key), nil

@@ -1,22 +1,22 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{define "objects"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
-{{template "header" .}}
+{{- define "objects"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
+{{- template "header" .}}
 
 package api
 
 import "encoding/json"
 
-{{- range .Spec.Objects.Free | objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Object*/}}
+{{- range .Spec.Objects | objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Object*/}}
 
-{{template "object" . }}
-{{- end }}
+{{- template "object" .}}
+{{- end}}
 
-{{- range .Spec.Objects.Discriminated | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedObject*/}}
+{{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedObject*/}}
 
-{{template "discriminated_object" . }}
-{{- end }}
+{{- template "discriminated_object" .}}
+{{- end}}
 
 
 // This object describes a message that was deleted or is otherwise inaccessible
@@ -38,4 +38,4 @@ func (v InaccessibleMessage) MarshalJSON() ([]byte, error) {
 	}{0, Alias(v)})
 }
 
-{{- end }}
+{{- end}}

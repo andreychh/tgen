@@ -8,31 +8,31 @@ import (
 	"github.com/andreychh/tgen/model/explicit"
 )
 
-// DiscriminatedVariant represents an enriched discriminated variant with
+// DiscriminatedObject represents an enriched discriminated variant with
 // overlay applied to its free fields.
-type DiscriminatedVariant struct {
-	inner   explicit.DiscriminatedVariant
+type DiscriminatedObject struct {
+	inner   explicit.DiscriminatedObject
 	overlay Overlay
 }
 
-// NewDiscriminatedVariant constructs a DiscriminatedVariant from a parsed
+// NewDiscriminatedObject constructs a DiscriminatedObject from a parsed
 // variant with the given overlay applied to its free fields.
-func NewDiscriminatedVariant(v explicit.DiscriminatedVariant, o Overlay) DiscriminatedVariant {
-	return DiscriminatedVariant{inner: v, overlay: o}
+func NewDiscriminatedObject(v explicit.DiscriminatedObject, o Overlay) DiscriminatedObject {
+	return DiscriminatedObject{inner: v, overlay: o}
 }
 
-func (v DiscriminatedVariant) Reference() model.Reference {
+func (v DiscriminatedObject) Reference() model.Reference {
 	return v.inner.Reference()
 }
 
-func (v DiscriminatedVariant) Name() model.Name {
+func (v DiscriminatedObject) Name() model.Name {
 	return v.inner.Name()
 }
 
-func (v DiscriminatedVariant) Description() model.Description {
+func (v DiscriminatedObject) Description() model.Description {
 	return v.inner.Description()
 }
 
-func (v DiscriminatedVariant) Fields() explicit.Fields {
+func (v DiscriminatedObject) Fields() explicit.Fields {
 	return NewVariantFields(v.inner.Fields(), v.overlay)
 }

@@ -11,12 +11,12 @@ import (
 )
 
 type OptionalType struct {
-	typ         model.Type
-	optionality model.Optionality
+	typ model.Type
+	opt model.Optionality
 }
 
 func NewOptionalType(t model.Type, o model.Optionality) OptionalType {
-	return OptionalType{typ: t, optionality: o}
+	return OptionalType{typ: t, opt: o}
 }
 
 func (t OptionalType) AsString() (string, error) {
@@ -24,11 +24,11 @@ func (t OptionalType) AsString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	optional, err := t.optionality.AsBool()
+	opt, err := t.opt.AsBool()
 	if err != nil {
 		return "", fmt.Errorf("getting field optionality: %w", err)
 	}
-	if !optional {
+	if !opt {
 		return typ, nil
 	}
 	expr, err := t.typ.AsExpression()

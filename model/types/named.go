@@ -27,4 +27,8 @@ func (n Named) Equals(other Expression) bool {
 	return false
 }
 
+func (n Named) String() string {
+	return n.name + "(" + string(n.kind) + ")"
+}
+
 func (n Named) isNode() {}

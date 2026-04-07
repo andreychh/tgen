@@ -22,7 +22,8 @@ func (c Catalog) Lookup(name string) (types.Kind, bool) {
 	if c.isPrimitive(name) {
 		return types.KindPrimitive, true
 	}
-	definition := c.root.Find("div#dev_page_content h4").
+	definition := c.root.
+		Find("div#dev_page_content h4").
 		FilterFunc(func(h4 gq.Selection) bool {
 			return h4.Text() == name
 		}).
@@ -32,7 +33,7 @@ func (c Catalog) Lookup(name string) (types.Kind, bool) {
 	}
 	switch NewHeader(c.root, definition).Kind() {
 	case DefinitionKindObject,
-		DefinitionKindDiscriminatedVariant:
+		DefinitionKindDiscriminatedObject:
 		return types.KindObject, true
 	case DefinitionKindDiscriminatedUnion,
 		DefinitionKindStructuredUnion,
