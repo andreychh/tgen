@@ -1,8 +1,8 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{define "methods"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
-{{template "header" .}}
+{{- define "methods"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
+{{- template "header" .}}
 
 package api
 
@@ -17,12 +17,12 @@ type Method string
 const (
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 	Method{{.Name.AsString}} Method = "{{.Name.AsString}}"
-{{- end }}
+{{- end}}
 )
 
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Method*/}}
 
-{{template "method" . }}
-{{- end }}
+{{- template "method" .}}
+{{- end}}
 
-{{- end -}}
+{{- end}}
