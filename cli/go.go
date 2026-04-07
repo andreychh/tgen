@@ -10,8 +10,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/meta"
-	"github.com/andreychh/tgen/model/assembled"
 	"github.com/andreychh/tgen/model/explicit/gq"
+	"github.com/andreychh/tgen/model/explicit/overlays"
 	"github.com/andreychh/tgen/rendering"
 	"github.com/andreychh/tgen/rendering/golang"
 	"github.com/andreychh/tgen/source"
@@ -59,7 +59,7 @@ func goAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
 		return fmt.Errorf("parsing HTML from %q: %w", location, err)
 	}
 	artifacts, err := golang.NewArtifacts(
-		assembled.NewSpec(
+		overlays.NewSpecification(
 			gq.NewSpecificationFromDocument(doc),
 		),
 		snapshot,
