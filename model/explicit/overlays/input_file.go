@@ -23,10 +23,10 @@ func (o InputFile) Apply(field explicit.Field) explicit.Field {
 	if err != nil {
 		return field
 	}
-	if expr.Equals(types.NewUnion([]types.Expression{
+	if expr.Equals(types.NewUnion(
 		types.NewNamed("InputFile", types.KindObject),
 		types.NewNamed("String", types.KindPrimitive),
-	})) || expr.Equals(types.NewNamed("String", types.KindPrimitive)) &&
+	)) || expr.Equals(types.NewNamed("String", types.KindPrimitive)) &&
 		slices.Contains(links, "#sending-files") {
 		return NewModified(field, types.NewNamed("InputFile", types.KindUnion))
 	}

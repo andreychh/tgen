@@ -7,6 +7,7 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/pkg/iters"
 )
 
 // Specification represents the Telegram Bot API specification with field and
@@ -49,8 +50,13 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 	}
 }
 
-func (s Specification) Unions() explicit.Unions {
-	return NewUnions(s.inner.Unions(), s.overlay)
+func (s Specification) DiscriminatedUnions() iter.Seq[explicit.DiscriminatedUnion] {
+	return iters.NewMappedSeq(
+		s.inner.DiscriminatedUnions(),
+		func(d explicit.DiscriminatedUnion) explicit.DiscriminatedUnion {
+			return NewDiscriminatedUnion(d, s.overlay)
+		},
+	)
 }
 
 func (s Specification) Release() explicit.Release {
