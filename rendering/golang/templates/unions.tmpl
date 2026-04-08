@@ -16,7 +16,8 @@ import (
 {{- template "discriminated_union" .}}
 {{- end}}
 
-// MaybeMessage ...
+// MaybeMessage represents a method return value that is either an edited
+// Message or True for inline messages.
 //
 //sumtype:decl
 type MaybeMessage interface{ sealedMaybeMessage() }
@@ -43,7 +44,7 @@ func unmarshalMaybeMessage(data []byte) (MaybeMessage, error) {
 	)
 }
 
-// ChatID ...
+// ChatID represents a chat identifier, either a numeric ID or a username.
 //
 //sumtype:decl
 type ChatID interface{ sealedChatID() }
@@ -52,9 +53,10 @@ func (v ID) sealedChatID()       {}
 func (v Username) sealedChatID() {}
 
 func unmarshalChatID(data []byte) (ChatID, error) {
-	return nil,nil
+	return nil, nil
 }
-// InputFile ...
+
+// InputFile represents a file to send, either by file ID or by uploading.
 //
 //sumtype:decl
 type InputFile interface{ sealedInputFile() }
@@ -63,10 +65,10 @@ func (v FileID) sealedInputFile() {}
 func (v Upload) sealedInputFile() {}
 
 func unmarshalInputFile(data []byte) (InputFile, error) {
-	return nil,nil
+	return nil, nil
 }
 
-// ReplyMarkup ...
+// ReplyMarkup represents a reply markup attached to a message.
 //
 //sumtype:decl
 type ReplyMarkup interface{ sealedReplyMarkup() }
@@ -77,10 +79,10 @@ func (v ReplyKeyboardRemove) sealedReplyMarkup()  {}
 func (v ForceReply) sealedReplyMarkup()           {}
 
 func unmarshalReplyMarkup(data []byte) (ReplyMarkup, error) {
-	return nil,nil
+	return nil, nil
 }
 
-// InputMediaGroup ...
+// InputMediaGroup represents a media element in a media group.
 //
 //sumtype:decl
 type InputMediaGroup interface{ sealedInputMediaGroup() }
@@ -91,10 +93,11 @@ func (v InputMediaPhoto) sealedInputMediaGroup()    {}
 func (v InputMediaVideo) sealedInputMediaGroup()    {}
 
 func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
-	return nil,nil
+	return nil, nil
 }
 
-// InputMessageContent ...
+// InputMessageContent represents the content of a message to be sent as an
+// inline query result.
 //
 //sumtype:decl
 type InputMessageContent interface{ sealedInputMessageContent() }
@@ -106,9 +109,13 @@ func (v InputContactMessageContent) sealedInputMessageContent()  {}
 func (v InputTextMessageContent) sealedInputMessageContent()     {}
 
 func unmarshalInputMessageContent(data []byte) (InputMessageContent, error) {
-	return nil,nil
+	return nil, nil
 }
 
+// MaybeInaccessibleMessage represents a message that is either accessible or
+// has been deleted and is inaccessible to the bot.
+//
+//sumtype:decl
 type MaybeInaccessibleMessage interface{ sealedMaybeInaccessibleMessage() }
 
 func (v Message) sealedMaybeInaccessibleMessage()             {}

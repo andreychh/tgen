@@ -25,19 +25,23 @@ type Envelope struct {
 	Parameters  *ResponseParameters `json:"parameters,omitempty"`
 }
 
+// ID represents a numeric Telegram chat or user identifier.
 type ID int64
 
+// Username represents a Telegram username.
 type Username string
 
+// True represents the boolean true value in Telegram API responses.
 type True bool
 
+// FileID represents a Telegram file identifier.
 type FileID string
 
+// Upload represents a file to be uploaded by providing its name and reader.
 type Upload struct {
 	Name   string
 	Reader io.Reader
 }
-
 
 {{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedObject*/}}
 
