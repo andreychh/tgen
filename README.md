@@ -27,15 +27,17 @@ strongly-typed client code.
 
 * **Up-to-Date by Default:** New API methods and standard types are picked up automatically — just
   run `tgen go` after a new Telegram Bot API release.
+* **Spec-Faithful Naming:** Every name from the Telegram Bot API — methods, types, and fields — is
+  carried over unchanged, adapted only to Go naming conventions (`message_id` → `MessageID`).
 * **Spec-Faithful Types:** Ambiguous spec types become real Go types. The Telegram API describes
   `chat_id` as `Integer or String`. Instead of collapsing this into `any`, tgen generates a proper
   union type with explicit variants:
 
     ```go
     // address a public channel by username
-    ChatID: api.ChatID{Username: new("@news")},
+    ChatID: api.Username("@news"),
     // or a group by its numeric ID — same field, different variant
-    ChatID: api.ChatID{ID: new(int64(-1001122334455))},
+    ChatID: api.ID(-1001122334455),
     ```
 
 * **Deterministic Builds:** Supports local HTML files for reproducibility or offline work.
@@ -103,11 +105,11 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 
-	"awesome-bot/api"
+	"my-awesome-bot/api"
 )
 
 func main() {
@@ -115,14 +117,13 @@ func main() {
 	ctx := context.Background()
 
 	msg, err := api.SendMessageMethod{
-		ChatID: api.ChatID{Username: new("@news")},
+		ChatID: api.Username("@news"),
 		Text:   "Hello from tgen!",
 	}.Call(ctx, conn)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
-	fmt.Printf("Sent message %d\n", msg.MessageID)
+	log.Printf("Sent message %d\n", msg.MessageID)
 }
 ```
 
@@ -138,7 +139,7 @@ func TestSendMessage(t *testing.T) {
 	})
 
 	msg, err := api.SendMessageMethod{
-		ChatID: api.ChatID{Username: new("@news")},
+		ChatID: api.ID(-1001122334455),
 		Text:   "Hello from tgen!",
 	}.Call(context.Background(), conn)
 
@@ -152,7 +153,7 @@ func TestSendMessage_Failure(t *testing.T) {
 	})
 
 	_, err := api.SendMessageMethod{
-		ChatID: api.ChatID{Username: new("@news")},
+		ChatID: api.ID(-1001122334455),
 		Text:   "Hello from tgen!",
 	}.Call(context.Background(), conn)
 
