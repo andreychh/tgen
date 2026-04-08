@@ -67,7 +67,7 @@ the [Releases page](https://github.com/andreychh/tgen/releases).
 
 ## Usage
 
-`tgen` uses subcommands to target specific languages — currently only `go` is available.
+tgen uses subcommands to target specific languages — currently only go is available.
 
 ### Fetch from the web
 
@@ -164,7 +164,7 @@ func TestSendMessage_Failure(t *testing.T) {
 #### Exhaustiveness checking
 
 All union types are sealed interfaces annotated with `//sumtype:decl`. Use
-[`go-check-sumtype`](https://github.com/alecthomas/go-check-sumtype) (available in
+[go-check-sumtype](https://github.com/alecthomas/go-check-sumtype) (available in
 [golangci-lint](https://golangci-lint.run)) to catch type switches that don't handle all variants.
 
 ## Contributing
