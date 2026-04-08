@@ -161,6 +161,12 @@ func TestSendMessage_Failure(t *testing.T) {
 }
 ```
 
+#### Exhaustiveness checking
+
+All union types are sealed interfaces annotated with `//sumtype:decl`. Use
+[`go-check-sumtype`](https://github.com/alecthomas/go-check-sumtype) (available in
+[golangci-lint](https://golangci-lint.run)) to catch type switches that don't handle all variants.
+
 ## Contributing
 
 Contributions are welcome! As the project evolves, help with refining the HTML parser and generation
