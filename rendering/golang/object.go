@@ -29,3 +29,7 @@ func (o Object) Doc() GoDoc {
 func (o Object) Fields() iter.Seq[Field] {
 	return iters.NewMappedSeq(o.inner.Fields(), NewField)
 }
+
+func (o Object) Unions() Unions {
+	return Unions{inner: o.Fields()}
+}

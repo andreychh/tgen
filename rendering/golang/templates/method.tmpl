@@ -11,10 +11,36 @@ type {{.Name.AsString}}Method struct {
 }
 
 func (m {{.Name.AsString}}Method) Call(ctx context.Context, conn Connection) ({{.ReturnType.AsString}}, error) {
+{{- if and .ReturnType.IsUnion (eq .ReturnType.Depth 1)}}
+	var resp []json.RawMessage
+	if err := conn.Do(ctx, Method{{.Name.AsString}}, m, &resp); err != nil {
+		return nil, fmt.Errorf("%s: %w", Method{{.Name.AsString}}, err)
+	}
+	result := make([]{{.ReturnType.Name}}, len(resp))
+	for i, r := range resp {
+		u, err := unmarshal{{.ReturnType.Name}}(r)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = u
+	}
+	return result, nil
+{{- else if .ReturnType.IsUnion }}
+	var resp json.RawMessage
+	if err := conn.Do(ctx, Method{{.Name.AsString}}, m, &resp); err != nil {
+		return nil, fmt.Errorf("%s: %w", Method{{.Name.AsString}}, err)
+	}
+	result, err := unmarshal{{.ReturnType.Name}}(resp)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+{{- else}}
 	var resp {{.ReturnType.AsString}}
 	if err := conn.Do(ctx, Method{{.Name.AsString}}, m, &resp); err != nil {
 		return resp, fmt.Errorf("%s: %w", Method{{.Name.AsString}}, err)
 	}
 	return resp, nil
+{{- end}}
 }
 {{- end}}

@@ -7,11 +7,8 @@
 package api
 
 import (
-    "bytes"
     "encoding/json"
-    "errors"
     "fmt"
-    "strings"
 )
 
 {{- range .Spec.DiscriminatedUnions | discriminated_unions}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
@@ -19,406 +16,124 @@ import (
 {{- template "discriminated_union" .}}
 {{- end}}
 
-// InputMediaGroup represents a media element in a media group.
-type InputMediaGroup struct {
-	InputMediaAudio    *InputMediaAudio
-	InputMediaDocument *InputMediaDocument
-	InputMediaPhoto    *InputMediaPhoto
-	InputMediaVideo    *InputMediaVideo
-}
-
-func (u InputMediaGroup) MarshalJSON() ([]byte, error) {
-	var fields []string
-	if u.InputMediaAudio != nil {
-		fields = append(fields, "InputMediaAudio")
-	}
-	if u.InputMediaDocument != nil {
-		fields = append(fields, "InputMediaDocument")
-	}
-	if u.InputMediaPhoto != nil {
-		fields = append(fields, "InputMediaPhoto")
-	}
-	if u.InputMediaVideo != nil {
-		fields = append(fields, "InputMediaVideo")
-	}
-	if len(fields) == 0 {
-		return nil, errors.New("InputMediaGroup: no fields set (expected exactly one)")
-	}
-	if len(fields) > 1 {
-		return nil, fmt.Errorf("InputMediaGroup: multiple fields set (%s)", strings.Join(fields, ", "))
-	}
-	if u.InputMediaAudio != nil {
-		return json.Marshal(u.InputMediaAudio)
-	}
-	if u.InputMediaDocument != nil {
-		return json.Marshal(u.InputMediaDocument)
-	}
-	if u.InputMediaPhoto != nil {
-		return json.Marshal(u.InputMediaPhoto)
-	}
-	if u.InputMediaVideo != nil {
-		return json.Marshal(u.InputMediaVideo)
-	}
-	return nil, errors.New("InputMediaGroup: internal error")
-}
-
-func (u *InputMediaGroup) UnmarshalJSON(data []byte) error {
-	var disc struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &disc); err != nil {
-		return err
-	}
-	switch disc.Key {
-	case "audio":
-		var v InputMediaAudio
-		if err := json.Unmarshal(data, &v); err != nil {
-			return err
-		}
-		u.InputMediaAudio = &v
-	case "document":
-		var v InputMediaDocument
-		if err := json.Unmarshal(data, &v); err != nil {
-			return err
-		}
-		u.InputMediaDocument = &v
-	case "photo":
-		var v InputMediaPhoto
-		if err := json.Unmarshal(data, &v); err != nil {
-			return err
-		}
-		u.InputMediaPhoto = &v
-	case "video":
-		var v InputMediaVideo
-		if err := json.Unmarshal(data, &v); err != nil {
-			return err
-		}
-		u.InputMediaVideo = &v
-	default:
-		return fmt.Errorf("unknown InputMediaGroup: %q", disc.Key)
-	}
-	return nil
-}
-
-// This object represents the content of a message to be sent as a result of an
-// inline query. Telegram clients currently support the following 5 types:
+// MaybeMessage ...
 //
-// See https://core.telegram.org/bots/api#inputmessagecontent
-type InputMessageContent struct {
-	InputInvoiceMessageContent  *InputInvoiceMessageContent
-	InputVenueMessageContent    *InputVenueMessageContent
-	InputLocationMessageContent *InputLocationMessageContent
-	InputContactMessageContent  *InputContactMessageContent
-	InputTextMessageContent     *InputTextMessageContent
+//sumtype:decl
+type MaybeMessage interface{ sealedMaybeMessage() }
+
+func (v Message) sealedMaybeMessage() {}
+func (v True) sealedMaybeMessage()    {}
+
+func unmarshalMaybeMessage(data []byte) (MaybeMessage, error) {
+	{
+		var v Message
+		if json.Unmarshal(data, &v) == nil {
+			return v, nil
+		}
+	}
+	{
+		var v True
+		if json.Unmarshal(data, &v) == nil {
+			return v, nil
+		}
+	}
+	return nil, fmt.Errorf(
+		"cannot unmarshal %q into any of the MaybeMessage variants",
+		string(data),
+	)
 }
 
-func (u InputMessageContent) MarshalJSON() ([]byte, error) {
-	var fields []string
-	if u.InputInvoiceMessageContent != nil {
-		fields = append(fields, "InputInvoiceMessageContent")
-	}
-	if u.InputVenueMessageContent != nil {
-		fields = append(fields, "InputVenueMessageContent")
-	}
-	if u.InputLocationMessageContent != nil {
-		fields = append(fields, "InputLocationMessageContent")
-	}
-	if u.InputContactMessageContent != nil {
-		fields = append(fields, "InputContactMessageContent")
-	}
-	if u.InputTextMessageContent != nil {
-		fields = append(fields, "InputTextMessageContent")
-	}
-	if len(fields) == 0 {
-		return nil, errors.New("InputMessageContent: no fields set (expected exactly one)")
-	}
-	if len(fields) > 1 {
-		return nil, fmt.Errorf("InputMessageContent: multiple fields set (%s)", strings.Join(fields, ", "))
-	}
-	if u.InputInvoiceMessageContent != nil {
-		return json.Marshal(u.InputInvoiceMessageContent)
-	}
-	if u.InputVenueMessageContent != nil {
-		return json.Marshal(u.InputVenueMessageContent)
-	}
-	if u.InputLocationMessageContent != nil {
-		return json.Marshal(u.InputLocationMessageContent)
-	}
-	if u.InputContactMessageContent != nil {
-		return json.Marshal(u.InputContactMessageContent)
-	}
-	if u.InputTextMessageContent != nil {
-		return json.Marshal(u.InputTextMessageContent)
-	}
-	return nil, errors.New("InputMessageContent: internal error")
-}
-
-func (u *InputMessageContent) UnmarshalJSON(data []byte) error {
-	var decoder *json.Decoder
-	var valueInputInvoiceMessageContent InputInvoiceMessageContent
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueInputInvoiceMessageContent) == nil {
-		u.InputInvoiceMessageContent = &valueInputInvoiceMessageContent
-		return nil
-	}
-	var valueInputVenueMessageContent InputVenueMessageContent
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueInputVenueMessageContent) == nil {
-		u.InputVenueMessageContent = &valueInputVenueMessageContent
-		return nil
-	}
-	var valueInputLocationMessageContent InputLocationMessageContent
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueInputLocationMessageContent) == nil {
-		u.InputLocationMessageContent = &valueInputLocationMessageContent
-		return nil
-	}
-	var valueInputContactMessageContent InputContactMessageContent
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueInputContactMessageContent) == nil {
-		u.InputContactMessageContent = &valueInputContactMessageContent
-		return nil
-	}
-	var valueInputTextMessageContent InputTextMessageContent
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueInputTextMessageContent) == nil {
-		u.InputTextMessageContent = &valueInputTextMessageContent
-		return nil
-	}
-	return fmt.Errorf("InputMessageContent: unexpected value %.50q", string(data))
-}
-
-// ReplyMarkup represents a reply markup attached to a message.
-type ReplyMarkup struct {
-	InlineKeyboardMarkup *InlineKeyboardMarkup
-	ReplyKeyboardMarkup  *ReplyKeyboardMarkup
-	ReplyKeyboardRemove  *ReplyKeyboardRemove
-	ForceReply           *ForceReply
-}
-
-func (u ReplyMarkup) MarshalJSON() ([]byte, error) {
-	var fields []string
-	if u.InlineKeyboardMarkup != nil {
-		fields = append(fields, "InlineKeyboardMarkup")
-	}
-	if u.ReplyKeyboardMarkup != nil {
-		fields = append(fields, "ReplyKeyboardMarkup")
-	}
-	if u.ReplyKeyboardRemove != nil {
-		fields = append(fields, "ReplyKeyboardRemove")
-	}
-	if u.ForceReply != nil {
-		fields = append(fields, "ForceReply")
-	}
-	if len(fields) == 0 {
-		return nil, errors.New("ReplyMarkup: no fields set (expected exactly one)")
-	}
-	if len(fields) > 1 {
-		return nil, fmt.Errorf("ReplyMarkup: multiple fields set (%s)", strings.Join(fields, ", "))
-	}
-	if u.InlineKeyboardMarkup != nil {
-		return json.Marshal(u.InlineKeyboardMarkup)
-	}
-	if u.ReplyKeyboardMarkup != nil {
-		return json.Marshal(u.ReplyKeyboardMarkup)
-	}
-	if u.ReplyKeyboardRemove != nil {
-		return json.Marshal(u.ReplyKeyboardRemove)
-	}
-	if u.ForceReply != nil {
-		return json.Marshal(u.ForceReply)
-	}
-	return nil, errors.New("ReplyMarkup: internal error")
-}
-
-func (u *ReplyMarkup) UnmarshalJSON(data []byte) error {
-	var decoder *json.Decoder
-	var valueInlineKeyboardMarkup InlineKeyboardMarkup
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueInlineKeyboardMarkup) == nil {
-		u.InlineKeyboardMarkup = &valueInlineKeyboardMarkup
-		return nil
-	}
-	var valueReplyKeyboardMarkup ReplyKeyboardMarkup
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueReplyKeyboardMarkup) == nil {
-		u.ReplyKeyboardMarkup = &valueReplyKeyboardMarkup
-		return nil
-	}
-	var valueReplyKeyboardRemove ReplyKeyboardRemove
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueReplyKeyboardRemove) == nil {
-		u.ReplyKeyboardRemove = &valueReplyKeyboardRemove
-		return nil
-	}
-	var valueForceReply ForceReply
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueForceReply) == nil {
-		u.ForceReply = &valueForceReply
-		return nil
-	}
-	return fmt.Errorf("ReplyMarkup: unexpected value %.50q", string(data))
-}
-
-// ChatId represents a chat identifier, which is either an integer or a string.
-type ChatID struct {
-	ID       *int64
-	Username *string
-}
-
-func (u ChatID) MarshalJSON() ([]byte, error) {
-	var fields []string
-	if u.ID != nil {
-		fields = append(fields, "ID")
-	}
-	if u.Username != nil {
-		fields = append(fields, "Username")
-	}
-	if len(fields) == 0 {
-		return nil, errors.New("ChatID: no fields set (expected exactly one)")
-	}
-	if len(fields) > 1 {
-		return nil, fmt.Errorf("ChatID: multiple fields set (%s)", strings.Join(fields, ", "))
-	}
-	if u.ID != nil {
-		return json.Marshal(u.ID)
-	}
-	if u.Username != nil {
-		return json.Marshal(u.Username)
-	}
-	return nil, errors.New("ChatID: internal error")
-}
-
-func (u *ChatID) UnmarshalJSON(data []byte) error {
-	var decoder *json.Decoder
-	var valueID int64
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueID) == nil {
-		u.ID = &valueID
-		return nil
-	}
-	var valueUsername string
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueUsername) == nil {
-		u.Username = &valueUsername
-		return nil
-	}
-	return fmt.Errorf("ChatID: unexpected value %.50q", string(data))
-}
-
-// MaybeMessage represents a method return type that is either an edited Message
-// or True for inline messages.
-type MaybeMessage struct {
-	Message *Message
-	Ok      *bool
-}
-
-func (u MaybeMessage) MarshalJSON() ([]byte, error) {
-	var fields []string
-	if u.Message != nil {
-		fields = append(fields, "Message")
-	}
-	if u.Ok != nil {
-		fields = append(fields, "Ok")
-	}
-	if len(fields) == 0 {
-		return nil, errors.New("MaybeMessage: no fields set (expected exactly one)")
-	}
-	if len(fields) > 1 {
-		return nil, fmt.Errorf("MaybeMessage: multiple fields set (%s)", strings.Join(fields, ", "))
-	}
-	if u.Message != nil {
-		return json.Marshal(u.Message)
-	}
-	if u.Ok != nil {
-		return json.Marshal(u.Ok)
-	}
-	return nil, errors.New("MaybeMessage: internal error")
-}
-
-func (u *MaybeMessage) UnmarshalJSON(data []byte) error {
-	var decoder *json.Decoder
-	var valueMessage Message
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueMessage) == nil {
-		u.Message = &valueMessage
-		return nil
-	}
-	var valueOk bool
-	decoder = json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&valueOk) == nil {
-		u.Ok = &valueOk
-		return nil
-	}
-	return fmt.Errorf("MaybeMessage: unexpected value %.50q", string(data))
-}
-
-// This object describes a message that can be inaccessible to the bot. It can
-// be one of
+// ChatID ...
 //
-// See https://core.telegram.org/bots/api#maybeinaccessiblemessage
-type MaybeInaccessibleMessage struct {
-	Message             *Message
-	InaccessibleMessage *InaccessibleMessage
+//sumtype:decl
+type ChatID interface{ sealedChatID() }
+
+func (v ID) sealedChatID()       {}
+func (v Username) sealedChatID() {}
+
+func unmarshalChatID(data []byte) (ChatID, error) {
+	return nil,nil
+}
+// InputFile ...
+//
+//sumtype:decl
+type InputFile interface{ sealedInputFile() }
+
+func (v FileID) sealedInputFile() {}
+func (v Upload) sealedInputFile() {}
+
+func unmarshalInputFile(data []byte) (InputFile, error) {
+	return nil,nil
 }
 
-func (u MaybeInaccessibleMessage) MarshalJSON() ([]byte, error) {
-	var fields []string
-	if u.Message != nil {
-		fields = append(fields, "Message")
-	}
-	if u.InaccessibleMessage != nil {
-		fields = append(fields, "InaccessibleMessage")
-	}
-	if len(fields) == 0 {
-		return nil, errors.New("MaybeInaccessibleMessage: no fields set (expected exactly one)")
-	}
-	if len(fields) > 1 {
-		return nil, fmt.Errorf("MaybeInaccessibleMessage: multiple fields set (%s)", strings.Join(fields, ", "))
-	}
-	if u.Message != nil {
-		return json.Marshal(u.Message)
-	}
-	if u.InaccessibleMessage != nil {
-		return json.Marshal(u.InaccessibleMessage)
-	}
-	return nil, errors.New("MaybeInaccessibleMessage: internal error")
+// ReplyMarkup ...
+//
+//sumtype:decl
+type ReplyMarkup interface{ sealedReplyMarkup() }
+
+func (v InlineKeyboardMarkup) sealedReplyMarkup() {}
+func (v ReplyKeyboardMarkup) sealedReplyMarkup()  {}
+func (v ReplyKeyboardRemove) sealedReplyMarkup()  {}
+func (v ForceReply) sealedReplyMarkup()           {}
+
+func unmarshalReplyMarkup(data []byte) (ReplyMarkup, error) {
+	return nil,nil
 }
 
-func (u *MaybeInaccessibleMessage) UnmarshalJSON(data []byte) error {
+// InputMediaGroup ...
+//
+//sumtype:decl
+type InputMediaGroup interface{ sealedInputMediaGroup() }
+
+func (v InputMediaAudio) sealedInputMediaGroup()    {}
+func (v InputMediaDocument) sealedInputMediaGroup() {}
+func (v InputMediaPhoto) sealedInputMediaGroup()    {}
+func (v InputMediaVideo) sealedInputMediaGroup()    {}
+
+func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
+	return nil,nil
+}
+
+// InputMessageContent ...
+//
+//sumtype:decl
+type InputMessageContent interface{ sealedInputMessageContent() }
+
+func (v InputInvoiceMessageContent) sealedInputMessageContent()  {}
+func (v InputVenueMessageContent) sealedInputMessageContent()    {}
+func (v InputLocationMessageContent) sealedInputMessageContent() {}
+func (v InputContactMessageContent) sealedInputMessageContent()  {}
+func (v InputTextMessageContent) sealedInputMessageContent()     {}
+
+func unmarshalInputMessageContent(data []byte) (InputMessageContent, error) {
+	return nil,nil
+}
+
+type MaybeInaccessibleMessage interface{ sealedMaybeInaccessibleMessage() }
+
+func (v Message) sealedMaybeInaccessibleMessage()             {}
+func (v InaccessibleMessage) sealedMaybeInaccessibleMessage() {}
+
+func unmarshalMaybeInaccessibleMessage(data []byte) (MaybeInaccessibleMessage, error) {
 	var disc struct {
 		Key int64 `json:"date"`
 	}
 	if err := json.Unmarshal(data, &disc); err != nil {
-		return err
+		return nil, fmt.Errorf("unmarshaling discriminator for MaybeInaccessibleMessage: %w", err)
 	}
 	switch disc.Key {
 	case 0:
 		var v InaccessibleMessage
 		if err := json.Unmarshal(data, &v); err != nil {
-			return err
+			return nil, fmt.Errorf("unmarshaling InaccessibleMessage: %w", err)
 		}
-		u.InaccessibleMessage = &v
+		return v, nil
 	default:
 		var v Message
 		if err := json.Unmarshal(data, &v); err != nil {
-			return err
+			return nil, fmt.Errorf("unmarshaling Message: %w", err)
 		}
-		u.Message = &v
+		return v, nil
 	}
-	return nil
 }
 {{- end}}

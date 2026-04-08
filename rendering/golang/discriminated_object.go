@@ -3,7 +3,10 @@
 
 package golang
 
-import "github.com/andreychh/tgen/model/explicit"
+import (
+	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/pkg/iters"
+)
 
 type DiscriminatedObject struct {
 	inner explicit.DiscriminatedObject
@@ -23,4 +26,8 @@ func (o DiscriminatedObject) Doc() GoDoc {
 
 func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {
 	return NewDiscriminatedObjectFields(o.inner.Fields())
+}
+
+func (o DiscriminatedObject) Unions() Unions {
+	return Unions{inner: iters.NewMappedSeq(o.inner.Fields().Free(), NewField)}
 }

@@ -17,4 +17,45 @@ func (v {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
         Alias
     }{"{{.Fields.Discriminator.Value.AsString}}", Alias(v)})
 }
+
+{{- if not .Unions.IsEmpty}}
+func (o *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
+	type alias {{.Name.AsString}}
+	var aux struct {
+{{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
+{{- if eq .Type.Depth 1}}
+    {{.Name.AsString}} []json.RawMessage {{.Tag.AsString}}
+{{- else}}
+    {{.Name.AsString}} json.RawMessage {{.Tag.AsString}}
+{{- end}}
+{{- end}}
+		alias
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*o = {{.Name.AsString}}(aux.alias)
+{{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Field*/}}
+	if aux.{{.Name.AsString}} != nil {
+{{- if eq .Type.Depth 1}}
+		result := make([]{{.Type.Name}}, len(aux.{{.Name.AsString}}))
+		for i, union := range aux.{{.Name.AsString}} {
+			u, err := unmarshal{{.Type.Name}}(union)
+			if err != nil {
+				return err
+			}
+			result[i] = u
+		}
+{{- else}}
+		result, err := unmarshal{{.Type.Name}}(aux.{{.Name.AsString}})
+		if err != nil {
+			return err
+		}
+{{- end}}
+		o.{{.Name.AsString}} = result
+	}
+{{- end}}
+	return nil
+}
+{{- end}}
 {{- end}}

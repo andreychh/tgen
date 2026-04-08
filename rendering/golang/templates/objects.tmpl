@@ -6,18 +6,43 @@
 
 package api
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"io"
+)
 
 {{- range .Spec.Objects | objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.Object*/}}
 
 {{- template "object" .}}
 {{- end}}
 
+// Envelope represents the standard Telegram Bot API JSON response envelope.
+type Envelope struct {
+	Ok          bool                `json:"ok"`
+	Result      json.RawMessage     `json:"result,omitempty"`
+	ErrorCode   *int                `json:"error_code,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Parameters  *ResponseParameters `json:"parameters,omitempty"`
+}
+
+type ID int64
+
+type Username string
+
+type True bool
+
+type FileID string
+
+type Upload struct {
+	Name   string
+	Reader io.Reader
+}
+
+
 {{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedObject*/}}
 
 {{- template "discriminated_object" .}}
 {{- end}}
-
 
 // This object describes a message that was deleted or is otherwise inaccessible
 // to the bot.
