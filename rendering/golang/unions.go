@@ -23,6 +23,6 @@ func (u Unions) All() iter.Seq[Field] {
 	})
 }
 
-func (u Unions) IsEmpty() (bool, error) {
-	return iters.IsEmpty(u.All()), nil
+func (u Unions) IsEmpty() bool {
+	return iters.IsEmpty(u.All())
 }

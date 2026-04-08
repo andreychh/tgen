@@ -17,8 +17,8 @@ func (f Field) Name() Name {
 	return NewName(f.inner.Key())
 }
 
-func (f Field) Type() OptionalType {
-	return NewOptionalType(f.inner.Type(), f.inner.Optionality())
+func (f Field) Type() Type {
+	return NewOptionalType(NewExprType(f.inner.Type()), f.inner.Optionality())
 }
 
 func (f Field) Tag() Tag {
