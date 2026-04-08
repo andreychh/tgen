@@ -26,3 +26,23 @@ func NewMergedSeq[A any](seqs ...iter.Seq[A]) iter.Seq[A] {
 		}
 	}
 }
+
+func NewFilteredSeq[A any](seq iter.Seq[A], f func(A) bool) iter.Seq[A] {
+	return func(yield func(A) bool) {
+		for a := range seq {
+			if !f(a) {
+				continue
+			}
+			if !yield(a) {
+				return
+			}
+		}
+	}
+}
+
+func IsEmpty[A any](seq iter.Seq[A]) bool {
+	for range seq {
+		return false
+	}
+	return true
+}

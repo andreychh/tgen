@@ -33,6 +33,10 @@ func NewSpecification(s explicit.Specification) Specification {
 func (s Specification) Objects() iter.Seq[explicit.Object] {
 	return func(yield func(explicit.Object) bool) {
 		for o := range s.inner.Objects() {
+			name, _ := o.Name().AsString()
+			if name == "InputFile" {
+				continue
+			}
 			if !yield(NewObject(o, s.overlay)) {
 				break
 			}

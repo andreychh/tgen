@@ -2,55 +2,36 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedUnion*/}}
-{{- $variants := .Variants | discriminated_variants}}
+{{- $name := .Name.AsString}}
 {{.Doc.AsString}}
-type {{.Name.AsString}} struct {
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
-    {{.Name.AsString}} *{{.Name.AsString}}
+//sumtype:decl
+type {{$name}} interface{ sealed{{$name}}() }
+{{range .Variants | discriminated_variants}}
+func (v {{.Name.AsString}}) sealed{{$name}}() {}
 {{- end}}
-}
+{{- if ne $name "InlineQueryResult"}}
 
-func (u {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
-    var fields []string
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
-    if u.{{.Name.AsString}} != nil {
-        fields = append(fields, "{{.Name.AsString}}")
-    }
+func unmarshal{{$name}}(data []byte) ({{$name}}, error) {
+	var disc struct {
+		Key string `json:"{{.DiscriminatorKey.AsString}}"`
+	}
+	if err := json.Unmarshal(data, &disc); err != nil {
+		return nil, err
+	}
+	switch disc.Key {
+{{- range .Variants | discriminated_variants}}
+{{- $variantName := .Name.AsString}}
+	case "{{.DiscriminatorValue.AsString}}":
+		var v {{$variantName}}
+		if err := json.Unmarshal(data, &v); err != nil {
+			return nil, err
+		}
+		return v, nil
 {{- end}}
-    if len(fields) == 0 {
-        return nil, errors.New("{{.Name.AsString}}: no fields set (expected exactly one)")
-    }
-    if len(fields) > 1 {
-        return nil, fmt.Errorf("{{.Name.AsString}}: multiple fields set (%s)", strings.Join(fields, ", "))
-    }
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
-    if u.{{.Name.AsString}} != nil {
-        return json.Marshal(u.{{.Name.AsString}})
-    }
-{{- end}}
-    return nil, errors.New("{{.Name.AsString}}: internal error")
+	default:
+		return nil, fmt.Errorf("unknown {{$name}}: %q", disc.Key)
+	}
 }
-
-func (u *{{.Name.AsString}}) UnmarshalJSON(data []byte) error {
-    var disc struct {
-        Key string `json:"{{.DiscriminatorKey.AsString}}"`
-    }
-    if err := json.Unmarshal(data, &disc); err != nil {
-        return err
-    }
-    switch disc.Key {
-{{- range $variants}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.DiscriminatedVariant*/}}
-    case "{{.DiscriminatorValue.AsString}}":
-        var v {{.Name.AsString}}
-        if err := json.Unmarshal(data, &v); err != nil {
-            return err
-        }
-        u.{{.Name.AsString}} = &v
 {{- end}}
-    default:
-        return fmt.Errorf("unknown {{.Name.AsString}}: %q", disc.Key)
-    }
-    return nil
-}
 
 {{- end}}

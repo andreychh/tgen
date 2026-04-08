@@ -15,15 +15,6 @@ import (
 	"net/http"
 )
 
-// Envelope represents the standard Telegram Bot API JSON response envelope.
-type Envelope struct {
-	Ok          bool                `json:"ok"`
-	Result      json.RawMessage     `json:"result,omitempty"`
-	ErrorCode   *int                `json:"error_code,omitempty"`
-	Description *string             `json:"description,omitempty"`
-	Parameters  *ResponseParameters `json:"parameters,omitempty"`
-}
-
 // Connection executes Telegram Bot API methods over a transport.
 type Connection interface {
 	// Do sends method with request as the JSON body and decodes the result into

@@ -9,4 +9,6 @@ type {{.Name.AsString}} struct {
     {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
 {{- end}}
 }
+
+{{- template "unmarshal_object" .}}
 {{- end}}

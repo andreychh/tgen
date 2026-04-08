@@ -28,6 +28,59 @@ func NewExprType(t model.Type) ExprType {
 	return ExprType{typ: t}
 }
 
+func (t ExprType) IsUnion() (bool, error) {
+	expr, err := t.typ.AsExpression()
+	if err != nil {
+		return false, fmt.Errorf("getting type expr: %w", err)
+	}
+	for {
+		switch e := expr.(type) {
+		case types.Named:
+			return e.Kind() == types.KindUnion, nil
+		case types.Array:
+			expr = e.Element()
+		default:
+			return false, fmt.Errorf("unexpected type expression %q", expr)
+		}
+	}
+}
+
+func (t ExprType) Depth() (int, error) {
+	expr, err := t.typ.AsExpression()
+	if err != nil {
+		return 0, fmt.Errorf("getting type expr: %w", err)
+	}
+	depth := 0
+	for {
+		switch e := expr.(type) {
+		case types.Named:
+			return depth, nil
+		case types.Array:
+			expr = e.Element()
+			depth += 1
+		default:
+			return 0, fmt.Errorf("unexpected type expression %q", expr)
+		}
+	}
+}
+
+func (t ExprType) Name() (string, error) {
+	expr, err := t.typ.AsExpression()
+	if err != nil {
+		return "", fmt.Errorf("getting type expr: %w", err)
+	}
+	for {
+		switch e := expr.(type) {
+		case types.Named:
+			return e.Name(), nil
+		case types.Array:
+			expr = e.Element()
+		default:
+			return "", fmt.Errorf("unexpected type expression %q", expr)
+		}
+	}
+}
+
 func (t ExprType) AsString() (string, error) {
 	expr, err := t.typ.AsExpression()
 	if err != nil {
