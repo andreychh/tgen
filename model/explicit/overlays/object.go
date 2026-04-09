@@ -36,5 +36,5 @@ func (o Object) Description() model.Description {
 }
 
 func (o Object) Fields() iter.Seq[explicit.Field] {
-	return iters.NewMappedSeq(o.inner.Fields(), o.overlay.Apply)
+	return iters.NewMappedSeq(NewPrioritizedFields(o.inner.Fields()), o.overlay.Apply)
 }

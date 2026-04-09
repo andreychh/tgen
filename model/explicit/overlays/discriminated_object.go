@@ -34,5 +34,5 @@ func (v DiscriminatedObject) Description() model.Description {
 }
 
 func (v DiscriminatedObject) Fields() explicit.Fields {
-	return NewVariantFields(v.inner.Fields(), v.overlay)
+	return NewDiscriminatedObjectFields(v.inner.Fields(), v.overlay)
 }
