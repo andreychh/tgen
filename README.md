@@ -14,9 +14,9 @@ SPDX-License-Identifier: MIT
 -->
 
 **tgen** is a command-line tool that generates ready-to-use API bindings from
-the [Telegram Bot API HTML documentation](https://core.telegram.org/bots/api).
+the [Telegram Bot API HTML documentation][telegram-api].
 
-Instead of relying on manually updated boilerplate, `tgen` parses the specification to generate
+Instead of relying on manually updated boilerplate, tgen parses the specification to generate
 strongly-typed client code.
 
 > [!WARNING]
@@ -44,7 +44,7 @@ strongly-typed client code.
 
 ## Installation
 
-### Using [mise-en-place](https://mise.jdx.dev/)
+### Using [mise-en-place][mise]
 
 If you use mise, install the latest release globally:
 
@@ -63,7 +63,7 @@ go install github.com/andreychh/tgen@latest
 ### Pre-built Binaries
 
 You can download pre-compiled binaries for your operating system (Linux, macOS, Windows) from
-the [Releases page](https://github.com/andreychh/tgen/releases).
+the [Releases page][releases].
 
 ## Usage
 
@@ -163,9 +163,8 @@ func TestSendMessage_Failure(t *testing.T) {
 
 #### Exhaustiveness checking
 
-All union types are sealed interfaces annotated with `//sumtype:decl`. Use
-[go-check-sumtype](https://github.com/alecthomas/go-check-sumtype) (available in
-[golangci-lint](https://golangci-lint.run)) to catch type switches that don't handle all variants.
+All union types are sealed interfaces annotated with `//sumtype:decl`. Use [go-check-sumtype] (
+available in [golangci-lint]) to catch type switches that don't handle all variants.
 
 ## Contributing
 
@@ -175,7 +174,7 @@ new feature — feel free to open a pull request.
 
 ### Getting started
 
-1. Install [mise-en-place](https://mise.jdx.dev/) — the toolchain manager we use.
+1. Install [mise-en-place][mise] — the toolchain manager we use.
 
 2. Set up the toolchain — installs Go, Task, and all other tools declared in `.config/mise.toml`:
 
@@ -196,12 +195,20 @@ new feature — feel free to open a pull request.
    ```
 
    If this fails in your environment for reasons unrelated to your changes,
-   please [open an issue](https://github.com/andreychh/tgen/issues/new).
+   please [open an issue][new-issue].
 
 > [!TIP]
-> [Renovate](https://www.mend.io/renovate/) automatically keeps all dependencies up to date. Once
-> its PRs are merged, run the following to update your local toolchain:
+> [Renovate][renovate] automatically keeps all dependencies up to date. Once its PRs are merged, run
+> the following to update your local toolchain:
 >
 > ```bash
 > mise upgrade
 > ```
+
+[telegram-api]: https://core.telegram.org/bots/api
+[new-issue]: https://github.com/andreychh/tgen/issues/new
+[releases]: https://github.com/andreychh/tgen/releases
+[mise]: https://mise.jdx.dev/
+[renovate]: https://github.com/apps/renovate
+[go-check-sumtype]: https://github.com/alecthomas/go-check-sumtype
+[golangci-lint]: https://golangci-lint.run
