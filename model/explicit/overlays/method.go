@@ -40,5 +40,5 @@ func (m Method) ReturnType() model.Type {
 }
 
 func (m Method) Fields() iter.Seq[explicit.Field] {
-	return iters.NewMappedSeq(m.inner.Fields(), m.overlay.Apply)
+	return iters.NewMappedSeq(NewPrioritizedFields(m.inner.Fields()), m.overlay.Apply)
 }
