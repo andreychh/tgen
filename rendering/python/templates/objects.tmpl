@@ -13,5 +13,9 @@ from pydantic import BaseModel, ConfigDict
 {{template "object" . }}
 {{- end }}
 
+{{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/rendering/python.DiscriminatedObject*/}}
+
+{{template "discriminated_object" . }}
+{{- end }}
 
 {{- end }}
