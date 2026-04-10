@@ -5,7 +5,6 @@
 class {{.Name.AsString}}(BaseModel):
     {{.Doc.AsString}}
     model_config = ConfigDict(
-        extra="forbid",
         alias_generator=lambda s: s.removesuffix("_"),
         populate_by_name=True,
     )
