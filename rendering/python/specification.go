@@ -22,6 +22,18 @@ func (s Specification) Objects() iter.Seq[Object] {
 	return iters.NewMappedSeq(s.inner.Objects(), NewObject)
 }
 
+func (s Specification) DiscriminatedObjects() iter.Seq[DiscriminatedObject] {
+	return func(yield func(DiscriminatedObject) bool) {
+		for u := range s.inner.DiscriminatedUnions() {
+			for v := range u.Variants() {
+				if !yield(NewDiscriminatedObject(v)) {
+					return
+				}
+			}
+		}
+	}
+}
+
 func (s Specification) Release() Release {
 	return NewRelease(s.inner.Release())
 }

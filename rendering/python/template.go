@@ -25,8 +25,9 @@ func (t Template) Value() (*template.Template, error) {
 	return template.New("").
 		Option("missingkey=error").
 		Funcs(template.FuncMap{
-			"objects": slices.Collect[Object],
-			"fields":  slices.Collect[Field],
+			"objects":               slices.Collect[Object],
+			"discriminated_objects": slices.Collect[DiscriminatedObject],
+			"fields":                slices.Collect[Field],
 		}).
 		ParseFS(templates, "templates/*.tmpl")
 }
