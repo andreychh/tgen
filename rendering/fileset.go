@@ -37,9 +37,15 @@ func (f Fileset) Emit(path string) error {
 	return nil
 }
 
-// renderFile writes view to path, creating the file if needed.
+// renderFile writes view to path, creating the file and any missing parent
+// directories if needed.
 func (f Fileset) renderFile(path string, view View) error {
-	file, err := os.Create(filepath.Clean(path))
+	clean := filepath.Clean(path)
+	err := os.MkdirAll(filepath.Dir(clean), 0o750)
+	if err != nil {
+		return fmt.Errorf("creating parent directory: %w", err)
+	}
+	file, err := os.Create(clean)
 	if err != nil {
 		return fmt.Errorf("creating file %q: %w", path, err)
 	}

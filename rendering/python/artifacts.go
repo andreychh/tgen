@@ -29,8 +29,15 @@ func (a Artifacts) Value() (rendering.Artifacts, error) {
 	}
 	ctx := NewGenerationContext(NewSpecification(a.spec), rendering.NewSnapshot(a.snapshot))
 	return rendering.Artifacts{
-		"__init__.py": rendering.NewTemplateView(tmpl, "init", ctx),
-		"objects.py":  rendering.NewTemplateView(tmpl, "objects", ctx),
-		"unions.py":   rendering.NewTemplateView(tmpl, "unions", ctx),
+		"__init__.py":         rendering.NewTemplateView(tmpl, "init", ctx),
+		"types.py":            rendering.NewTemplateView(tmpl, "types", ctx),
+		"method.py":           rendering.NewTemplateView(tmpl, "method_enum", ctx),
+		"methods.py":          rendering.NewTemplateView(tmpl, "methods", ctx),
+		"client.py":           rendering.NewTemplateView(tmpl, "client", ctx),
+		"fake.py":             rendering.NewTemplateView(tmpl, "fake", ctx),
+		"asyncio/__init__.py": rendering.NewTemplateView(tmpl, "asyncio_init", ctx),
+		"asyncio/methods.py":  rendering.NewTemplateView(tmpl, "async_methods", ctx),
+		"asyncio/client.py":   rendering.NewTemplateView(tmpl, "async_client", ctx),
+		"asyncio/fake.py":     rendering.NewTemplateView(tmpl, "async_fake", ctx),
 	}, nil
 }
