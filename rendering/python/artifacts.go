@@ -29,6 +29,8 @@ func (a Artifacts) Value() (rendering.Artifacts, error) {
 	}
 	ctx := NewGenerationContext(NewSpecification(a.spec), rendering.NewSnapshot(a.snapshot))
 	return rendering.Artifacts{
-		"objects.py": rendering.NewTemplateView(tmpl, "objects", ctx),
+		"__init__.py": rendering.NewTemplateView(tmpl, "init", ctx),
+		"objects.py":  rendering.NewTemplateView(tmpl, "objects", ctx),
+		"unions.py":   rendering.NewTemplateView(tmpl, "unions", ctx),
 	}, nil
 }

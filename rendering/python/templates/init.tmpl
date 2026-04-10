@@ -1,0 +1,15 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "init"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.GenerationContext*/}}
+{{- template "header" .}}
+
+from . import objects as _obj, unions as _uni
+from .objects import *
+from .unions import *
+
+_ns = {**vars(_obj), **vars(_uni)}
+for _v in vars(_obj).values():
+    if isinstance(_v, type) and issubclass(_v, BaseModel) and _v.__module__ == _obj.__name__:
+        _v.model_rebuild(_types_namespace=_ns, raise_errors=False)
+{{- end}}
