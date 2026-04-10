@@ -1,0 +1,17 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{define "objects"}} {{/*gotype: github.com/andreychh/tgen/rendering/golang.GenerationContext*/}}
+{{- template "header" .}}
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict
+
+{{- range .Spec.Objects | objects}} {{/*gotype: github.com/andreychh/tgen/rendering/python.Object*/}}
+
+{{template "object" . }}
+{{- end }}
+
+
+{{- end }}
