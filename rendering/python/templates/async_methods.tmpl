@@ -1,0 +1,19 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "async_methods"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.GenerationContext*/}}
+{{- template "header" .}}
+
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+from .client import Connection
+from ..method import Method
+from ..types import *
+
+{{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/rendering/python.Method*/}}
+
+{{template "async_method" .}}
+{{- end}}
+{{- end}}

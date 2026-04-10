@@ -1,0 +1,41 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "client"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.GenerationContext*/}}
+{{- template "header" .}}
+
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+import httpx
+from pydantic import BaseModel, TypeAdapter
+
+from .method import Method
+
+
+class Connection(Protocol):
+    def do(self, method: Method, request: BaseModel, response_type: Any) -> Any: ...
+
+
+class TelegramError(Exception):
+    pass
+
+
+class HTTPConnection:
+    def __init__(self, client: httpx.Client, token: str) -> None:
+        self._client = client
+        self._token = token
+
+    def do(self, method: Method, request: BaseModel, response_type: Any) -> Any:
+        body = request.model_dump(exclude_none=True, by_alias=True)
+        resp = self._client.post(
+            f"https://api.telegram.org/bot{self._token}/{method.value}",
+            json=body,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        if not data["ok"]:
+            raise TelegramError(data.get("description") or "<no description>")
+        return TypeAdapter(response_type).validate_python(data["result"])
+{{- end}}
