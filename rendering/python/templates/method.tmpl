@@ -1,0 +1,18 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "method_fields"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.Method*/}}
+{{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/rendering/python.Field*/}}
+    {{.Name.AsString}}: {{.Annotation.AsString}}
+    {{.Doc.AsString}}
+{{- end}}
+{{- end}}
+
+{{- define "method"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.Method*/}}
+class {{.Name.AsString}}Method(BaseModel):
+    {{.Doc.AsString}}
+{{template "method_fields" .}}
+
+    def call(self, conn: Connection) -> {{.ReturnType.AsString}}:
+        return conn.do(Method.{{.Name.AsString}}, self, {{.ReturnType.AsString}})
+{{- end}}

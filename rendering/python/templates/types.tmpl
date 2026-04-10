@@ -1,0 +1,103 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{define "types"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.GenerationContext*/}}
+{{- template "header" .}}
+
+from __future__ import annotations
+
+from io import IOBase
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+{{- range .Spec.Objects | objects}} {{/*gotype: github.com/andreychh/tgen/rendering/python.Object*/}}
+
+{{template "object" . }}
+{{- end }}
+
+{{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/rendering/python.DiscriminatedObject*/}}
+
+{{template "discriminated_object" . }}
+{{- end }}
+
+class InaccessibleMessage(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=lambda s: s.removesuffix("_"),
+        populate_by_name=True,
+    )
+    chat: Chat
+    message_id: int
+    date: Literal[0]
+
+
+class Upload(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    name: str
+    reader: IOBase
+
+
+type FileID = str
+type ID = int
+type Username = str
+
+{{- range .Spec.DiscriminatedUnions | discriminated_unions}} {{/*gotype: github.com/andreychh/tgen/rendering/python.DiscriminatedUnion*/}}
+{{- if ne .Name.AsString "InlineQueryResult"}}
+
+{{template "discriminated_union" .}}
+{{- end}}
+{{- end}}
+
+type ChatID = ID | Username
+
+type MaybeMessage = Message | Literal[True]
+
+type InputFile = FileID | Upload
+
+type ReplyMarkup = (
+        InlineKeyboardMarkup
+        | ReplyKeyboardMarkup
+        | ReplyKeyboardRemove
+        | ForceReply
+)
+
+type InputMediaGroup = (
+        InputMediaAudio
+        | InputMediaDocument
+        | InputMediaPhoto
+        | InputMediaVideo
+)
+
+type InputMessageContent = (
+        InputTextMessageContent
+        | InputLocationMessageContent
+        | InputVenueMessageContent
+        | InputContactMessageContent
+        | InputInvoiceMessageContent
+)
+
+type MaybeInaccessibleMessage = InaccessibleMessage | Message
+
+type InlineQueryResult = (
+        InlineQueryResultCachedAudio
+        | InlineQueryResultCachedDocument
+        | InlineQueryResultCachedGif
+        | InlineQueryResultCachedMpeg4Gif
+        | InlineQueryResultCachedPhoto
+        | InlineQueryResultCachedSticker
+        | InlineQueryResultCachedVideo
+        | InlineQueryResultCachedVoice
+        | InlineQueryResultArticle
+        | InlineQueryResultAudio
+        | InlineQueryResultContact
+        | InlineQueryResultGame
+        | InlineQueryResultDocument
+        | InlineQueryResultGif
+        | InlineQueryResultLocation
+        | InlineQueryResultMpeg4Gif
+        | InlineQueryResultPhoto
+        | InlineQueryResultVenue
+        | InlineQueryResultVideo
+        | InlineQueryResultVoice
+)
+{{- end }}

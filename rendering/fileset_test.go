@@ -38,6 +38,7 @@ func TestFileset_Emit(t *testing.T) {
 	tests := []struct {
 		name      string
 		emitDir   string
+		setup     func(t *testing.T, dir string)
 		artifacts rendering.Artifacts
 		wantFiles []file
 		wantErr   bool
@@ -75,8 +76,13 @@ func TestFileset_Emit(t *testing.T) {
 		{
 			name:    "returns error when file creation fails",
 			emitDir: ".",
+			setup: func(t *testing.T, dir string) {
+				t.Helper()
+				err := os.WriteFile(filepath.Join(dir, "blocked"), []byte{}, 0o444)
+				require.NoError(t, err, "unexpected error creating blocking file for test setup")
+			},
 			artifacts: rendering.Artifacts{
-				filepath.Join("missing_dir", "impossible.go"): fakeView{content: "this will fail"},
+				filepath.Join("blocked", "impossible.go"): fakeView{content: "this will fail"},
 			},
 			wantErr: true,
 		},
@@ -85,6 +91,9 @@ func TestFileset_Emit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
+			if tt.setup != nil {
+				tt.setup(t, dir)
+			}
 			targetPath := filepath.Join(dir, tt.emitDir)
 			err := rendering.NewFileset(tt.artifacts).Emit(targetPath)
 			if tt.wantErr {
