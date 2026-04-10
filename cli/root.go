@@ -18,5 +18,6 @@ func NewRootCommand() *cobra.Command {
 	}
 	cmd.SetVersionTemplate(NewVersionMessage(metadata).String())
 	cmd.AddCommand(NewGoCommand(metadata))
+	cmd.AddCommand(NewPythonCommand(metadata))
 	return cmd
 }
