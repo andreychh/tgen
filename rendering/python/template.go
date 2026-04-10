@@ -27,6 +27,7 @@ func (t Template) Value() (*template.Template, error) {
 		Funcs(template.FuncMap{
 			"objects":               slices.Collect[Object],
 			"discriminated_objects": slices.Collect[DiscriminatedObject],
+			"discriminated_unions":  slices.Collect[DiscriminatedUnion],
 			"fields":                slices.Collect[Field],
 		}).
 		ParseFS(templates, "templates/*.tmpl")

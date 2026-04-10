@@ -34,6 +34,10 @@ func (s Specification) DiscriminatedObjects() iter.Seq[DiscriminatedObject] {
 	}
 }
 
+func (s Specification) DiscriminatedUnions() iter.Seq[DiscriminatedUnion] {
+	return iters.NewMappedSeq(s.inner.DiscriminatedUnions(), NewDiscriminatedUnion)
+}
+
 func (s Specification) Release() Release {
 	return NewRelease(s.inner.Release())
 }
