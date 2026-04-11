@@ -7,7 +7,7 @@ always_keep_download = false
 legacy_version_file = false
 
 [tools]
-"go" = "1.26.1"
+"go" = "1.26.2"
 "github:caarlos0/svu" = "3.4.0"
 "github:crate-ci/typos" = "1.45.0"
 "github:golangci/golangci-lint" = "2.11.4"
