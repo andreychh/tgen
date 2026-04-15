@@ -12,9 +12,9 @@ import (
 	"github.com/andreychh/tgen/meta"
 	"github.com/andreychh/tgen/model/explicit/gq"
 	"github.com/andreychh/tgen/model/explicit/overlays"
-	"github.com/andreychh/tgen/rendering"
-	"github.com/andreychh/tgen/rendering/golang"
+	"github.com/andreychh/tgen/output"
 	"github.com/andreychh/tgen/source"
+	"github.com/andreychh/tgen/targets/golang"
 	"github.com/spf13/cobra"
 )
 
@@ -68,7 +68,7 @@ func goAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
 		return err
 	}
 	out := cmd.Flag("out").Value.String()
-	err = rendering.NewFileset(artifacts).Emit(out)
+	err = output.NewFileset(artifacts).Emit(out)
 	if err != nil {
 		return fmt.Errorf("generating files in directory %q: %w", out, err)
 	}

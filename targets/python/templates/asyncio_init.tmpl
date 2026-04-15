@@ -1,0 +1,10 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "asyncio_init"}} {{/*gotype: github.com/andreychh/tgen/targets/python.GenerationContext*/}}
+{{- template "header" .}}
+
+from .client import Connection, HTTPConnection, TelegramError
+from .fake import FakeConnection
+from .methods import *
+{{- end}}

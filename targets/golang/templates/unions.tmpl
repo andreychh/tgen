@@ -1,0 +1,146 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "unions"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.GenerationContext*/}}
+{{- template "header" .}}
+
+package api
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+{{- range .Spec.DiscriminatedUnions | discriminated_unions}} {{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedUnion*/}}
+
+{{- template "discriminated_union" .}}
+{{- end}}
+
+// MaybeMessage represents a method return value that is either an edited
+// Message or True for inline messages.
+//
+//sumtype:decl
+type MaybeMessage interface{ sealedMaybeMessage() }
+
+func (v Message) sealedMaybeMessage() {}
+func (v True) sealedMaybeMessage()    {}
+
+func unmarshalMaybeMessage(data []byte) (MaybeMessage, error) {
+	{
+		var v Message
+		if json.Unmarshal(data, &v) == nil {
+			return v, nil
+		}
+	}
+	{
+		var v True
+		if json.Unmarshal(data, &v) == nil {
+			return v, nil
+		}
+	}
+	return nil, fmt.Errorf(
+		"cannot unmarshal %q into any of the MaybeMessage variants",
+		string(data),
+	)
+}
+
+// ChatID represents a chat identifier, either a numeric ID or a username.
+//
+//sumtype:decl
+type ChatID interface{ sealedChatID() }
+
+func (v ID) sealedChatID()       {}
+func (v Username) sealedChatID() {}
+
+func unmarshalChatID(data []byte) (ChatID, error) {
+	return nil, nil
+}
+
+// InputFile represents a file to send, either by file ID or by uploading.
+//
+//sumtype:decl
+type InputFile interface{ sealedInputFile() }
+
+func (v FileID) sealedInputFile() {}
+func (v Upload) sealedInputFile() {}
+
+func unmarshalInputFile(data []byte) (InputFile, error) {
+	return nil, nil
+}
+
+// ReplyMarkup represents a reply markup attached to a message.
+//
+//sumtype:decl
+type ReplyMarkup interface{ sealedReplyMarkup() }
+
+func (v InlineKeyboardMarkup) sealedReplyMarkup() {}
+func (v ReplyKeyboardMarkup) sealedReplyMarkup()  {}
+func (v ReplyKeyboardRemove) sealedReplyMarkup()  {}
+func (v ForceReply) sealedReplyMarkup()           {}
+
+func unmarshalReplyMarkup(data []byte) (ReplyMarkup, error) {
+	return nil, nil
+}
+
+// InputMediaGroup represents a media element in a media group.
+//
+//sumtype:decl
+type InputMediaGroup interface{ sealedInputMediaGroup() }
+
+func (v InputMediaAudio) sealedInputMediaGroup()    {}
+func (v InputMediaDocument) sealedInputMediaGroup() {}
+func (v InputMediaPhoto) sealedInputMediaGroup()    {}
+func (v InputMediaVideo) sealedInputMediaGroup()    {}
+
+func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
+	return nil, nil
+}
+
+// InputMessageContent represents the content of a message to be sent as an
+// inline query result.
+//
+//sumtype:decl
+type InputMessageContent interface{ sealedInputMessageContent() }
+
+func (v InputInvoiceMessageContent) sealedInputMessageContent()  {}
+func (v InputVenueMessageContent) sealedInputMessageContent()    {}
+func (v InputLocationMessageContent) sealedInputMessageContent() {}
+func (v InputContactMessageContent) sealedInputMessageContent()  {}
+func (v InputTextMessageContent) sealedInputMessageContent()     {}
+
+func unmarshalInputMessageContent(data []byte) (InputMessageContent, error) {
+	return nil, nil
+}
+
+// MaybeInaccessibleMessage represents a message that is either accessible or
+// has been deleted and is inaccessible to the bot.
+//
+//sumtype:decl
+type MaybeInaccessibleMessage interface{ sealedMaybeInaccessibleMessage() }
+
+func (v Message) sealedMaybeInaccessibleMessage()             {}
+func (v InaccessibleMessage) sealedMaybeInaccessibleMessage() {}
+
+func unmarshalMaybeInaccessibleMessage(data []byte) (MaybeInaccessibleMessage, error) {
+	var disc struct {
+		Key int64 `json:"date"`
+	}
+	if err := json.Unmarshal(data, &disc); err != nil {
+		return nil, fmt.Errorf("unmarshaling discriminator for MaybeInaccessibleMessage: %w", err)
+	}
+	switch disc.Key {
+	case 0:
+		var v InaccessibleMessage
+		if err := json.Unmarshal(data, &v); err != nil {
+			return nil, fmt.Errorf("unmarshaling InaccessibleMessage: %w", err)
+		}
+		return v, nil
+	default:
+		var v Message
+		if err := json.Unmarshal(data, &v); err != nil {
+			return nil, fmt.Errorf("unmarshaling Message: %w", err)
+		}
+		return v, nil
+	}
+}
+{{- end}}

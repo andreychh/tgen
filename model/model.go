@@ -4,7 +4,7 @@
 // Package model defines the foundational value interfaces shared across all
 // layers of the tgen pipeline: Name, Type, Description, Key, and their
 // companions. Both explicit and implicit layers implement these interfaces;
-// rendering consumes them.
+// targets consumes them.
 package model
 
 import (

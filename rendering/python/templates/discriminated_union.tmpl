@@ -1,9 +1,0 @@
-{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
-{{/*SPDX-License-Identifier: MIT*/}}
-
-{{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/rendering/python.DiscriminatedUnion*/}}
-{{.Name.AsString}} = Annotated[
-    {{.Variants.AsString}},
-    Field(discriminator="{{.DiscriminatorKey.AsString}}"),
-]
-{{- end}}

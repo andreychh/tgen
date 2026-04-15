@@ -1,0 +1,52 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "unmarshal_object"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
+{{- $name := .Name.AsString}}
+{{- if not .Unions.IsEmpty}}
+func (o *{{$name}}) UnmarshalJSON(data []byte) error {
+	type alias {{$name}}
+	var aux struct {
+{{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
+{{- $fieldName := .Name.AsString}}
+{{- $depth := .Type.Depth}}
+{{- $tag := .Tag.AsString}}
+{{- if eq $depth 1}}
+    {{$fieldName}} []json.RawMessage {{$tag}}
+{{- else}}
+    {{$fieldName}} json.RawMessage {{$tag}}
+{{- end}}
+{{- end}}
+		alias
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*o = {{$name}}(aux.alias)
+{{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
+{{- $fieldName := .Name.AsString}}
+{{- $depth := .Type.Depth}}
+{{- $typeName := .Type.Name}}
+	if aux.{{$fieldName}} != nil {
+{{- if eq $depth 1}}
+		result := make([]{{$typeName}}, len(aux.{{$fieldName}}))
+		for i, union := range aux.{{$fieldName}} {
+			u, err := unmarshal{{$typeName}}(union)
+			if err != nil {
+				return err
+			}
+			result[i] = u
+		}
+{{- else}}
+		result, err := unmarshal{{$typeName}}(aux.{{$fieldName}})
+		if err != nil {
+			return err
+		}
+{{- end}}
+		o.{{$fieldName}} = result
+	}
+{{- end}}
+	return nil
+}
+{{- end}}
+{{- end}}
