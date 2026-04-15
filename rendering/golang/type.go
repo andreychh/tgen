@@ -9,4 +9,5 @@ type Type interface {
 	Depth() (int, error)
 	Name() (string, error)
 	AsString() (string, error)
+	Zero() (string, error)
 }

@@ -26,6 +26,17 @@ func (t OptionalType) Depth() (int, error) { return t.inner.Depth() }
 
 func (t OptionalType) Name() (string, error) { return t.inner.Name() }
 
+func (t OptionalType) Zero() (string, error) {
+	opt, err := t.opt.AsBool()
+	if err != nil {
+		return "", fmt.Errorf("getting field optionality: %w", err)
+	}
+	if opt {
+		return zeroNil, nil
+	}
+	return t.inner.Zero()
+}
+
 func (t OptionalType) AsString() (string, error) {
 	str, err := t.inner.AsString()
 	if err != nil {
