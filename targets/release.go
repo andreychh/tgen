@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package output
+package targets
 
 import "github.com/andreychh/tgen/meta"
 

@@ -4,30 +4,47 @@
 package python
 
 import (
+	"embed"
 	"fmt"
+	"slices"
+	"text/template"
 
 	"github.com/andreychh/tgen/meta"
 	"github.com/andreychh/tgen/model/explicit"
 	"github.com/andreychh/tgen/output"
+	"github.com/andreychh/tgen/targets"
 )
 
-// Artifacts assembles the rendering artifacts for the Python code generation target.
-type Artifacts struct {
-	spec     explicit.Specification
-	snapshot meta.Snapshot
+//go:embed templates/*.tmpl
+var templates embed.FS
+
+// Pass assembles the output artifacts for the Python code generation target.
+type Pass struct {
+	context GenerationContext
 }
 
-// NewArtifacts creates an Artifacts for the given specification and snapshot.
-func NewArtifacts(spec explicit.Specification, snapshot meta.Snapshot) Artifacts {
-	return Artifacts{spec: spec, snapshot: snapshot}
+// NewPass creates a Pass for the given specification and snapshot.
+func NewPass(spec explicit.Specification, snapshot meta.Snapshot) Pass {
+	return Pass{context: NewGenerationContext(
+		NewSpecification(spec),
+		targets.NewSnapshot(snapshot),
+	)}
 }
 
-func (a Artifacts) Value() (output.Artifacts, error) {
-	tmpl, err := NewTemplate().Value()
+// Artifacts produces the output artifacts for the Python code generation target.
+func (p Pass) Artifacts() (output.Artifacts, error) {
+	mold := output.NewMold(templates, template.FuncMap{
+		"objects":               slices.Collect[Object],
+		"discriminated_objects": slices.Collect[DiscriminatedObject],
+		"discriminated_unions":  slices.Collect[DiscriminatedUnion],
+		"methods":               slices.Collect[Method],
+		"fields":                slices.Collect[Field],
+	})
+	tmpl, err := mold.Template()
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
-	ctx := NewGenerationContext(NewSpecification(a.spec), output.NewSnapshot(a.snapshot))
+	ctx := p.context
 	return output.Artifacts{
 		"__init__.py":         output.NewTemplateView(tmpl, "init", ctx),
 		"types.py":            output.NewTemplateView(tmpl, "types", ctx),
