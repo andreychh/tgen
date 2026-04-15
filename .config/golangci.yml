@@ -148,12 +148,12 @@ linters:
       rules:
         rendering-no-gq:
           files:
-            - "**/rendering/**/*.go"
+            - "**/targets/**/*.go"
           deny:
             - pkg: "github.com/andreychh/tgen/model/explicit/gq"
-              desc: "rendering must not import GQ implementation details; use model/explicit interfaces"
+              desc: "targets must not import GQ implementation details; use model/explicit interfaces"
             - pkg: "github.com/andreychh/tgen/model/explicit/overlays"
-              desc: "rendering must not import overlay implementation details; use model/explicit interfaces"
+              desc: "targets must not import overlay implementation details; use model/explicit interfaces"
         implicit-no-explicit-impl:
           files:
             - "**/model/implicit/**/*.go"
@@ -164,8 +164,8 @@ linters:
           files:
             - "**/model/**/*.go"
           deny:
-            - pkg: "github.com/andreychh/tgen/rendering"
-              desc: "model layer must not depend on rendering layer"
+            - pkg: "github.com/andreychh/tgen/targets"
+              desc: "model layer must not depend on targets layer"
         literals-no-explicit:
           files:
             - "**/model/literals/**/*.go"

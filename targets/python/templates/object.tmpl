@@ -1,0 +1,15 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "object"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Object*/}}
+class {{.Name.AsString}}(BaseModel):
+    {{.Doc.AsString}}
+    model_config = ConfigDict(
+        alias_generator=lambda s: s.removesuffix("_"),
+        populate_by_name=True,
+    )
+{{range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/python.Field*/}}
+    {{.Name.AsString}}: {{.Annotation.AsString}}
+    {{.Doc.AsString}}
+{{- end}}
+{{- end}}
