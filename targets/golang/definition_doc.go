@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/targets"
 )
 
 type DefinitionDoc struct {
@@ -19,13 +20,13 @@ func NewDefinitionDoc(r model.Reference, d model.Description) DefinitionDoc {
 }
 
 func (d DefinitionDoc) AsString() (string, error) {
-	ref, err := d.ref.AsString()
-	if err != nil {
-		return "", fmt.Errorf("getting reference: %w", err)
-	}
 	desc, err := d.desc.AsString()
 	if err != nil {
 		return "", fmt.Errorf("getting description: %w", err)
 	}
-	return fmt.Sprintf("%s\n\nSee %s#%s", desc, specificationURL, ref), nil
+	url, err := targets.NewTelegramURL(d.ref).AsString()
+	if err != nil {
+		return "", fmt.Errorf("getting url: %w", err)
+	}
+	return fmt.Sprintf("%s\n\nSee %s", desc, url), nil
 }

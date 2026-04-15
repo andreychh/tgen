@@ -3,7 +3,10 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/explicit"
+import (
+	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/targets"
+)
 
 // Release represents the latest release section of the Telegram Bot API
 // specification, adapted for the Go code generation target.
@@ -22,6 +25,6 @@ func (r Release) Version() ReleaseVersion {
 }
 
 // URL returns the URL to the release section on the Telegram Bot API page.
-func (r Release) URL() ReleaseURL {
-	return NewReleaseURL(r.inner.Reference())
+func (r Release) URL() targets.TelegramURL {
+	return targets.NewTelegramURL(r.inner.Reference())
 }

@@ -3,4 +3,3 @@
 
 package python
 
-const specificationURL = "https://core.telegram.org/bots/api"

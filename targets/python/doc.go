@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/targets"
 )
 
 type Doc struct {
@@ -19,13 +20,13 @@ func NewDoc(r model.Reference, d model.Description) Doc {
 }
 
 func (d Doc) AsString() (string, error) {
-	ref, err := d.ref.AsString()
-	if err != nil {
-		return "", fmt.Errorf("getting ref: %w", err)
-	}
 	desc, err := d.decs.AsString()
 	if err != nil {
 		return "", fmt.Errorf("getting decs: %w", err)
 	}
-	return fmt.Sprintf("%s\n\nSee %s#%s", desc, specificationURL, ref), nil
+	url, err := targets.NewTelegramURL(d.ref).AsString()
+	if err != nil {
+		return "", fmt.Errorf("getting url: %w", err)
+	}
+	return fmt.Sprintf("%s\n\nSee %s", desc, url), nil
 }
