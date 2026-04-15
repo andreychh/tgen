@@ -58,12 +58,12 @@ func goAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
 	if err != nil {
 		return fmt.Errorf("parsing HTML from %q: %w", location, err)
 	}
-	artifacts, err := golang.NewArtifacts(
+	artifacts, err := golang.NewPass(
 		overlays.NewSpecification(
 			gq.NewSpecificationFromDocument(doc),
 		),
 		snapshot,
-	).Value()
+	).Artifacts()
 	if err != nil {
 		return err
 	}

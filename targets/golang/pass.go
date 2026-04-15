@@ -23,16 +23,17 @@ type Pass struct {
 	context GenerationContext
 }
 
-// NewGeneration creates a Pass for the given specification and snapshot.
-func NewGeneration(spec explicit.Specification, snapshot meta.Snapshot) Pass {
+// NewPass creates a Pass for the given specification and snapshot.
+func NewPass(spec explicit.Specification, snapshot meta.Snapshot) Pass {
 	return Pass{context: NewGenerationContext(
 		NewSpecification(spec),
 		targets.NewSnapshot(snapshot),
 	)}
 }
 
-func (p Pass) Value() (output.Artifacts, error) {
-	stencil := output.NewStencil(templates, template.FuncMap{
+// Artifacts produces the output artifacts for the Go code generation target.
+func (p Pass) Artifacts() (output.Artifacts, error) {
+	mold := output.NewMold(templates, template.FuncMap{
 		"objects":                slices.Collect[Object],
 		"methods":                slices.Collect[Method],
 		"fields":                 slices.Collect[Field],
@@ -40,7 +41,7 @@ func (p Pass) Value() (output.Artifacts, error) {
 		"discriminated_variants": slices.Collect[DiscriminatedVariant],
 		"discriminated_objects":  slices.Collect[DiscriminatedObject],
 	})
-	tmpl, err := stencil.Template()
+	tmpl, err := mold.Template()
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}

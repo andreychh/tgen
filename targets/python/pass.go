@@ -44,17 +44,16 @@ func (p Pass) Artifacts() (output.Artifacts, error) {
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
-	ctx := p.context
 	return output.Artifacts{
-		"__init__.py":         output.NewTemplateView(tmpl, "init", ctx),
-		"types.py":            output.NewTemplateView(tmpl, "types", ctx),
-		"method.py":           output.NewTemplateView(tmpl, "method_enum", ctx),
-		"methods.py":          output.NewTemplateView(tmpl, "methods", ctx),
-		"client.py":           output.NewTemplateView(tmpl, "client", ctx),
-		"fake.py":             output.NewTemplateView(tmpl, "fake", ctx),
-		"asyncio/__init__.py": output.NewTemplateView(tmpl, "asyncio_init", ctx),
-		"asyncio/methods.py":  output.NewTemplateView(tmpl, "async_methods", ctx),
-		"asyncio/client.py":   output.NewTemplateView(tmpl, "async_client", ctx),
-		"asyncio/fake.py":     output.NewTemplateView(tmpl, "async_fake", ctx),
+		"__init__.py":         output.NewTemplateView(tmpl, "init", p.context),
+		"types.py":            output.NewTemplateView(tmpl, "types", p.context),
+		"method.py":           output.NewTemplateView(tmpl, "method_enum", p.context),
+		"methods.py":          output.NewTemplateView(tmpl, "methods", p.context),
+		"client.py":           output.NewTemplateView(tmpl, "client", p.context),
+		"fake.py":             output.NewTemplateView(tmpl, "fake", p.context),
+		"asyncio/__init__.py": output.NewTemplateView(tmpl, "asyncio_init", p.context),
+		"asyncio/methods.py":  output.NewTemplateView(tmpl, "async_methods", p.context),
+		"asyncio/client.py":   output.NewTemplateView(tmpl, "async_client", p.context),
+		"asyncio/fake.py":     output.NewTemplateView(tmpl, "async_fake", p.context),
 	}, nil
 }
