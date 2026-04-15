@@ -18,13 +18,13 @@ func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsSt
 {{- if and $isUnion (eq $depth 1)}}
 	var resp []json.RawMessage
 	if err := conn.Do(ctx, Method{{$name}}, m, &resp); err != nil {
-		return nil, fmt.Errorf("%s: %w", Method{{$name}}, err)
+		return {{.ReturnType.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
 	}
 	result := make([]{{$ret.Name}}, len(resp))
 	for i, r := range resp {
 		u, err := unmarshal{{$ret.Name}}(r)
 		if err != nil {
-			return nil, err
+			return {{.ReturnType.Zero}}, err
 		}
 		result[i] = u
 	}
@@ -32,17 +32,17 @@ func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsSt
 {{- else if $isUnion}}
 	var resp json.RawMessage
 	if err := conn.Do(ctx, Method{{$name}}, m, &resp); err != nil {
-		return nil, fmt.Errorf("%s: %w", Method{{$name}}, err)
+		return {{.ReturnType.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
 	}
 	result, err := unmarshal{{$ret.Name}}(resp)
 	if err != nil {
-		return nil, err
+		return {{.ReturnType.Zero}}, err
 	}
 	return result, nil
 {{- else}}
 	var resp {{$ret.AsString}}
 	if err := conn.Do(ctx, Method{{$name}}, m, &resp); err != nil {
-		return resp, fmt.Errorf("%s: %w", Method{{$name}}, err)
+		return {{.ReturnType.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
 	}
 	return resp, nil
 {{- end}}

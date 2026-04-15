@@ -20,6 +20,18 @@ var primitives = map[string]string{
 	"True":    "bool",
 }
 
+//nolint:gochecknoglobals // immutable lookup table, not mutable global state
+var zeros = map[string]string{
+	"Integer": "0",
+	"Int":     "0",
+	"Float":   "0",
+	"String":  `""`,
+	"Boolean": "false",
+	"True":    "false",
+}
+
+const zeroNil = "nil"
+
 type ExprType struct {
 	typ model.Type
 }
@@ -87,6 +99,35 @@ func (t ExprType) AsString() (string, error) {
 		return "", fmt.Errorf("getting type expr: %w", err)
 	}
 	return t.render(expr)
+}
+
+func (t ExprType) Zero() (string, error) {
+	depth, err := t.Depth()
+	if err != nil {
+		return "", err
+	}
+	if depth > 0 {
+		return zeroNil, nil
+	}
+	isUnion, err := t.IsUnion()
+	if err != nil {
+		return "", err
+	}
+	if isUnion {
+		return zeroNil, nil
+	}
+	name, err := t.Name()
+	if err != nil {
+		return "", err
+	}
+	if zero, ok := zeros[name]; ok {
+		return zero, nil
+	}
+	formatted, err := NewStringName(name).AsString()
+	if err != nil {
+		return "", err
+	}
+	return formatted + "{}", nil
 }
 
 func (t ExprType) render(expr types.Expression) (string, error) {
