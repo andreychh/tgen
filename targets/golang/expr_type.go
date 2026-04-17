@@ -133,7 +133,7 @@ func (t ExprType) Part() (string, error) {
 		return "", err
 	}
 	if part, ok := parts[name]; ok {
-		return fmt.Sprintf("%s(%%s)", part), nil
+		return part + "(%s)", nil
 	}
 	return "%s", nil
 }
