@@ -18,12 +18,8 @@ func (v {{.Name.AsString}}) MarshalJSON() ([]byte, error) {
     }{"{{.Fields.Discriminator.Value.AsString}}", Alias(v)})
 }
 
-func (o {{.Name.AsString}}) FillForm(f Form, key string) error {
-	data, err := json.Marshal(o)
-	if err != nil {
-		return err
-	}
-	return f.Fill(key, string(data))
+func (o {{.Name.AsString}}) Write(p *MultipartPayload, key string) error {
+    return NewJSONPart(o).Write(p, key)
 }
 
 {{- template "unmarshal_object" .}}

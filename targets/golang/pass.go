@@ -50,6 +50,5 @@ func (p Pass) Artifacts() (output.Artifacts, error) {
 		"unions.go":  output.NewTemplateView(tmpl, "unions", p.context),
 		"methods.go": output.NewTemplateView(tmpl, "methods", p.context),
 		"client.go":  output.NewTemplateView(tmpl, "client", p.context),
-		"fake.go":    output.NewTemplateView(tmpl, "fake", p.context),
 	}, nil
 }

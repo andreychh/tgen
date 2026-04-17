@@ -7,13 +7,9 @@
 package api
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"reflect"
 )
 
 // Method identifies a Telegram Bot API method by its name.
@@ -29,68 +25,4 @@ const (
 
 {{- template "method" .}}
 {{- end}}
-
-type Form interface {
-	Fill(key, value string) error
-	Attach(key string, name string, reader io.Reader) error
-	Seal() (io.Reader, string, error)
-}
-
-type MultipartForm struct {
-	buffer *bytes.Buffer
-	writer *multipart.Writer
-}
-
-func NewMultipartForm(b *bytes.Buffer) MultipartForm {
-	return MultipartForm{buffer: b, writer: multipart.NewWriter(b)}
-}
-
-func NewEmptyMultipartForm() MultipartForm {
-	return NewMultipartForm(&bytes.Buffer{})
-}
-
-func (m MultipartForm) Fill(key, value string) error {
-	return m.writer.WriteField(key, value)
-}
-
-func (m MultipartForm) Attach(key string, name string, reader io.Reader) error {
-	part, err := m.writer.CreateFormFile(key, name)
-	if err != nil {
-		return fmt.Errorf("creating file part: %w", err)
-	}
-	if _, err = io.Copy(part, reader); err != nil {
-		return fmt.Errorf("copying file: %w", err)
-	}
-	return nil
-}
-
-func (m MultipartForm) Seal() (io.Reader, string, error) {
-	if err := m.writer.Close(); err != nil {
-		return nil, "", fmt.Errorf("closing multipart: %w", err)
-	}
-	return io.NopCloser(m.buffer), m.writer.FormDataContentType(), nil
-}
-
-type Primitive[T any] struct {
-	value T
-}
-
-type FormFiller interface {
-	FillForm(f Form, key string) error
-}
-
-func NewPrimitive[T any](value T) Primitive[T] {
-	return Primitive[T]{value: value}
-}
-
-func (p Primitive[T]) FillForm(m Form, key string) error {
-	if v := reflect.ValueOf(p.value); v.Kind() == reflect.String {
-		return m.Fill(key, v.String())
-	}
-	data, err := json.Marshal(p.value)
-	if err != nil {
-		return err
-	}
-	return m.Fill(key, string(data))
-}
 {{- end}}
