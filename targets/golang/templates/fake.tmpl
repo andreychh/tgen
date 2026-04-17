@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 )
 
 // Response represents the outcome of a FakeConnection call — either a value or
@@ -49,7 +50,7 @@ func NewFakeConnection(r Responses) FakeConnection {
 // or populates response with the canned value. It panics if method was not
 // registered in Responses or if the canned value cannot be decoded into
 // response.
-func (c FakeConnection) Do(_ context.Context, method Method, _, response any) error {
+func (c FakeConnection) Do(_ context.Context, method Method, _ io.Reader, _ string, response any) error {
 	resp, ok := c.responses[method]
 	if !ok {
 		panic(fmt.Sprintf("FakeConnection: unexpected method %q", method))

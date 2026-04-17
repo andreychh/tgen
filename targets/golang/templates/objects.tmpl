@@ -28,8 +28,16 @@ type Envelope struct {
 // ID represents a numeric Telegram chat or user identifier.
 type ID int64
 
+func (i ID) FillForm(f Form, key string) error {
+	return NewPrimitive(i).FillForm(f, key)
+}
+
 // Username represents a Telegram username.
 type Username string
+
+func (u Username) FillForm(f Form, key string) error {
+	return NewPrimitive(u).FillForm(f, key)
+}
 
 // True represents the boolean true value in Telegram API responses.
 type True bool
@@ -37,10 +45,18 @@ type True bool
 // FileID represents a Telegram file identifier.
 type FileID string
 
+func (i FileID) FillForm(f Form, key string) error {
+	return NewPrimitive(i).FillForm(f, key)
+}
+
 // Upload represents a file to be uploaded by providing its name and reader.
 type Upload struct {
 	Name   string
 	Reader io.Reader
+}
+
+func (u Upload) FillForm(f Form, key string) error {
+	return f.Attach(key, u.Name, u.Reader)
 }
 
 {{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}

@@ -11,4 +11,12 @@ type {{.Name.AsString}} struct {
 }
 
 {{- template "unmarshal_object" .}}
+
+func (o {{.Name.AsString}}) FillForm(f Form, key string) error {
+	data, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+	return f.Fill(key, string(data))
+}
 {{- end}}
