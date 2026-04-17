@@ -40,6 +40,23 @@ func NewExprType(t model.Type) ExprType {
 	return ExprType{typ: t}
 }
 
+func (t ExprType) IsPrimitive()  (bool, error) {
+	expr, err := t.typ.AsExpression()
+	if err != nil {
+		return false, fmt.Errorf("getting type expr: %w", err)
+	}
+	for {
+		switch e := expr.(type) {
+		case types.Named:
+			return e.Kind() == types.KindPrimitive, nil
+		case types.Array:
+			expr = e.Element()
+		default:
+			return false, fmt.Errorf("unexpected type expression %q", expr)
+		}
+	}
+}
+
 func (t ExprType) IsUnion() (bool, error) {
 	expr, err := t.typ.AsExpression()
 	if err != nil {

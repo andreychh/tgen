@@ -20,11 +20,21 @@ func NewOptionalType(t Type, o model.Optionality) OptionalType {
 	return OptionalType{inner: t, opt: o}
 }
 
-func (t OptionalType) IsUnion() (bool, error) { return t.inner.IsUnion() }
+func (t OptionalType) IsPrimitive() (bool, error) {
+	return t.inner.IsPrimitive()
+}
 
-func (t OptionalType) Depth() (int, error) { return t.inner.Depth() }
+func (t OptionalType) IsUnion() (bool, error) {
+	return t.inner.IsUnion()
+}
 
-func (t OptionalType) Name() (string, error) { return t.inner.Name() }
+func (t OptionalType) Depth() (int, error) {
+	return t.inner.Depth()
+}
+
+func (t OptionalType) Name() (string, error) {
+	return t.inner.Name()
+}
 
 func (t OptionalType) Zero() (string, error) {
 	opt, err := t.opt.AsBool()

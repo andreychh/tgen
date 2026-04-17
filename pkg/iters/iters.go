@@ -46,3 +46,12 @@ func IsEmpty[A any](seq iter.Seq[A]) bool {
 	}
 	return true
 }
+
+func IsAny[A any](seq iter.Seq[A], f func(A) bool) bool {
+	for a := range seq {
+		if f(a) {
+			return true
+		}
+	}
+	return false
+}
