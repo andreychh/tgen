@@ -11,4 +11,5 @@ type Type interface {
 	Name() (string, error)
 	AsString() (string, error)
 	Zero() (string, error)
+	Part() (string, error)
 }
