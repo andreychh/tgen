@@ -14,37 +14,90 @@ type {{$name}}Method struct {
 {{- end}}
 }
 
+{{- if not .IsMultipart}}
 func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsString}}, error) {
+	payload := NewJSONPayload(m)
 {{- if and $isUnion (eq $depth 1)}}
 	var resp []json.RawMessage
-	if err := conn.Do(ctx, Method{{$name}}, m, &resp); err != nil {
-		return {{.ReturnType.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
+{{- else if $isUnion}}
+	var resp json.RawMessage
+{{- else}}
+	var resp {{$ret.AsString}}
+{{- end}}
+	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
+	if err != nil {
+		return {{$ret.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
 	}
+{{- if and $isUnion (eq $depth 1)}}
 	result := make([]{{$ret.Name}}, len(resp))
 	for i, r := range resp {
 		u, err := unmarshal{{$ret.Name}}(r)
 		if err != nil {
-			return {{.ReturnType.Zero}}, err
+			return {{$ret.Zero}}, err
 		}
 		result[i] = u
 	}
 	return result, nil
 {{- else if $isUnion}}
-	var resp json.RawMessage
-	if err := conn.Do(ctx, Method{{$name}}, m, &resp); err != nil {
-		return {{.ReturnType.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
-	}
 	result, err := unmarshal{{$ret.Name}}(resp)
 	if err != nil {
-		return {{.ReturnType.Zero}}, err
+		return {{$ret.Zero}}, err
 	}
 	return result, nil
 {{- else}}
-	var resp {{$ret.AsString}}
-	if err := conn.Do(ctx, Method{{$name}}, m, &resp); err != nil {
-		return {{.ReturnType.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
-	}
 	return resp, nil
 {{- end}}
 }
+{{- else}}
+func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsString}}, error) {
+	payload := NewMultipartPayload()
+{{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
+{{- if .Optional }}
+	if m.{{.Name.AsString}} != nil {
+		err := {{.Part}}.Write(payload, "{{.Key}}");
+		if err != nil {
+			return {{$ret.Zero}}, err
+		}
+	}
+{{- else}}
+	{
+		err := {{.Part}}.Write(payload, "{{.Key}}");
+		if err != nil {
+			return {{$ret.Zero}}, err
+		}
+	}
+{{- end}}
+{{- end}}
+{{- if and $isUnion (eq $depth 1)}}
+	var resp []json.RawMessage
+{{- else if $isUnion}}
+	var resp json.RawMessage
+{{- else}}
+	var resp {{$ret.AsString}}
+{{- end}}
+	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
+	if err != nil {
+		return {{$ret.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
+	}
+{{- if and $isUnion (eq $depth 1)}}
+	result := make([]{{$ret.Name}}, len(resp))
+	for i, r := range resp {
+		u, err := unmarshal{{$ret.Name}}(r)
+		if err != nil {
+			return {{$ret.Zero}}, err
+		}
+		result[i] = u
+	}
+	return result, nil
+{{- else if $isUnion}}
+	result, err := unmarshal{{$ret.Name}}(resp)
+	if err != nil {
+		return {{$ret.Zero}}, err
+	}
+	return result, nil
+{{- else}}
+	return resp, nil
+{{- end}}
+}
+{{- end}}
 {{- end}}

@@ -30,6 +30,16 @@ var zeros = map[string]string{
 	"True":    "false",
 }
 
+//nolint:gochecknoglobals // immutable lookup table, not mutable global state
+var parts = map[string]string{
+	"Integer": "NewInt64Part",
+	"Int":     "NewInt64Part",
+	"Float":   "NewFloat64Part",
+	"String":  "NewStringPart",
+	"Boolean": "NewBoolPart",
+	"True":    "NewBoolPart",
+}
+
 const zeroNil = "nil"
 
 type ExprType struct {
@@ -38,6 +48,23 @@ type ExprType struct {
 
 func NewExprType(t model.Type) ExprType {
 	return ExprType{typ: t}
+}
+
+func (t ExprType) IsPrimitive() (bool, error) {
+	expr, err := t.typ.AsExpression()
+	if err != nil {
+		return false, fmt.Errorf("getting type expr: %w", err)
+	}
+	for {
+		switch e := expr.(type) {
+		case types.Named:
+			return e.Kind() == types.KindPrimitive, nil
+		case types.Array:
+			expr = e.Element()
+		default:
+			return false, fmt.Errorf("unexpected type expression %q", expr)
+		}
+	}
 }
 
 func (t ExprType) IsUnion() (bool, error) {
@@ -91,6 +118,24 @@ func (t ExprType) Name() (string, error) {
 			return "", fmt.Errorf("unexpected type expression %q", expr)
 		}
 	}
+}
+
+func (t ExprType) Part() (string, error) {
+	depth, err := t.Depth()
+	if err != nil {
+		return "", err
+	}
+	if depth > 0 {
+		return "NewJSONPart(%s)", nil
+	}
+	name, err := t.Name()
+	if err != nil {
+		return "", err
+	}
+	if part, ok := parts[name]; ok {
+		return part + "(%s)", nil
+	}
+	return "%s", nil
 }
 
 func (t ExprType) AsString() (string, error) {

@@ -11,4 +11,8 @@ type {{.Name.AsString}} struct {
 }
 
 {{- template "unmarshal_object" .}}
+
+func (o {{.Name.AsString}}) Write(p *MultipartPayload, key string) error {
+	return NewJSONPart(o).Write(p, key)
+}
 {{- end}}

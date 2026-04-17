@@ -3,7 +3,11 @@
 
 package golang
 
-import "github.com/andreychh/tgen/model/explicit"
+import (
+	"fmt"
+
+	"github.com/andreychh/tgen/model/explicit"
+)
 
 type Field struct {
 	inner explicit.Field
@@ -21,10 +25,30 @@ func (f Field) Type() Type {
 	return NewOptionalType(NewExprType(f.inner.Type()), f.inner.Optionality())
 }
 
+func (f Field) Optional() (bool, error) {
+	return f.inner.Optionality().AsBool()
+}
+
+func (f Field) Key() (string, error) {
+	return f.inner.Key().AsString()
+}
+
 func (f Field) Tag() Tag {
 	return NewTag(f.inner.Key(), f.inner.Optionality())
 }
 
 func (f Field) Doc() GoDoc {
 	return NewGoDoc(f.inner.Description())
+}
+
+func (f Field) Part() (string, error) {
+	part, err := f.Type().Part()
+	if err != nil {
+		return "", err
+	}
+	name, err := f.Name().AsString()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(part, "m."+name), err
 }

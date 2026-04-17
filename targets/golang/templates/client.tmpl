@@ -12,7 +12,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 // Connection executes Telegram Bot API methods over a transport.
@@ -20,7 +22,7 @@ type Connection interface {
 	// Do sends method with request as the JSON body and decodes the result into
 	// response. It returns an error if the transport fails or the API reports a
 	// failure.
-	Do(ctx context.Context, method Method, request, response any) error
+	Do(ctx context.Context, method Method, payload Payload, response any) error
 }
 
 // HTTPConnection implements Connection over HTTP using the Telegram Bot API
@@ -40,12 +42,13 @@ func NewHTTPConnection(client *http.Client, token string) HTTPConnection {
 // the result into response. It returns an error if the request cannot be built,
 // the transport fails, the API reports a failure, or the result cannot be
 // decoded.
-func (c HTTPConnection) Do(ctx context.Context, method Method, request, response any) error {
-	body, err := json.Marshal(request)
-	if err != nil {
-		return fmt.Errorf("marshaling request: %w", err)
-	}
-	req, err := c.request(ctx, c.url(method), bytes.NewReader(body))
+func (c HTTPConnection) Do(
+	ctx context.Context,
+	method Method,
+	payload Payload,
+	response any,
+) error {
+	req, err := payload.Request(ctx, http.MethodPost, c.url(method))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
@@ -71,12 +74,84 @@ func (c HTTPConnection) Do(ctx context.Context, method Method, request, response
 	return nil
 }
 
-func (c HTTPConnection) request(
-	ctx context.Context,
-	url string,
-	body io.Reader,
-) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
+func (c HTTPConnection) url(method Method) string {
+	return fmt.Sprintf("https://api.telegram.org/bot%s/%s", c.token, method)
+}
+
+// Response represents the outcome of a FakeConnection call — either a value or
+// an error.
+type Response struct {
+	value any
+	err   error
+}
+
+// Ok creates a Response that returns v as the decoded result.
+func Ok(v any) Response {
+	return Response{value: v, err: nil}
+}
+
+// Err creates a Response that returns e as the method error.
+func Err(e error) Response {
+	return Response{value: nil, err: e}
+}
+
+// Responses maps Method values to canned outcomes for FakeConnection.
+type Responses map[Method]Response
+
+// FakeConnection implements Connection with canned responses for use in tests.
+// Misconfiguration causes a panic rather than an error to prevent silent test
+// failures.
+type FakeConnection struct {
+	responses Responses
+}
+
+// NewFakeConnection creates a FakeConnection that returns the given canned
+// responses.
+func NewFakeConnection(r Responses) FakeConnection {
+	return FakeConnection{responses: r}
+}
+
+// Do returns the canned error for method if the Response was created with Err,
+// or populates response with the canned value. It panics if method was not
+// registered in Responses or if the canned value cannot be decoded into
+// response.
+func (c FakeConnection) Do(_ context.Context, method Method, _ Payload, response any) error {
+	resp, ok := c.responses[method]
+	if !ok {
+		panic(fmt.Sprintf("FakeConnection: unexpected method %q", method))
+	}
+	if resp.err != nil {
+		return resp.err
+	}
+	data, err := json.Marshal(resp.value)
+	if err != nil {
+		panic(fmt.Sprintf("FakeConnection: marshaling response for %q: %v", method, err))
+	}
+	err = json.Unmarshal(data, response)
+	if err != nil {
+		panic(fmt.Sprintf("FakeConnection: unmarshaling response for %q: %v", method, err))
+	}
+	return nil
+}
+
+type Payload interface {
+	Request(ctx context.Context, method, url string) (*http.Request, error)
+}
+
+type JSONPayload struct {
+	value any
+}
+
+func NewJSONPayload(value any) JSONPayload {
+	return JSONPayload{value: value}
+}
+
+func (p JSONPayload) Request(ctx context.Context, method, url string) (*http.Request, error) {
+	data, err := json.Marshal(p.value)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +159,109 @@ func (c HTTPConnection) request(
 	return req, nil
 }
 
-func (c HTTPConnection) url(method Method) string {
-	return fmt.Sprintf("https://api.telegram.org/bot%s/%s", c.token, method)
+type MultipartPayload struct {
+	buffer *bytes.Buffer
+	writer *multipart.Writer
 }
+
+func NewMultipartPayload() *MultipartPayload {
+	b := &bytes.Buffer{}
+	return &MultipartPayload{buffer: b, writer: multipart.NewWriter(b)}
+}
+
+func (m *MultipartPayload) Text(key, value string) error {
+	return m.writer.WriteField(key, value)
+}
+
+func (m *MultipartPayload) File(key, name string, reader io.Reader) error {
+	part, err := m.writer.CreateFormFile(key, name)
+	if err != nil {
+		return fmt.Errorf("creating file part: %w", err)
+	}
+	if _, err = io.Copy(part, reader); err != nil {
+		return fmt.Errorf("copying file: %w", err)
+	}
+	return nil
+}
+
+func (m *MultipartPayload) Request(ctx context.Context, method, url string) (*http.Request, error) {
+	if err := m.writer.Close(); err != nil {
+		return nil, fmt.Errorf("closing multipart: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, m.buffer)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", m.writer.FormDataContentType())
+	return req, nil
+}
+
+type Part interface {
+	Write(p *MultipartPayload, key string) error
+}
+
+type StringPart struct {
+	v string
+}
+
+func NewStringPart[T ~string](v T) StringPart {
+	return StringPart{v: string(v)}
+}
+
+func (s StringPart) Write(p *MultipartPayload, key string) error {
+	return p.Text(key, s.v)
+}
+
+type Int64Part struct {
+	v int64
+}
+
+func NewInt64Part[T ~int64](v T) Int64Part {
+	return Int64Part{v: int64(v)}
+}
+
+func (i Int64Part) Write(p *MultipartPayload, key string) error {
+	return p.Text(key, strconv.FormatInt(i.v, 10))
+}
+
+type Float64Part struct {
+	v float64
+}
+
+func NewFloat64Part[T ~float64](v T) Float64Part {
+	return Float64Part{v: float64(v)}
+}
+
+func (f Float64Part) Write(p *MultipartPayload, key string) error {
+	return p.Text(key, strconv.FormatFloat(f.v, 'f', -1, 64))
+}
+
+type BoolPart struct {
+	v bool
+}
+
+func NewBoolPart[T ~bool](v T) BoolPart {
+	return BoolPart{v: bool(v)}
+}
+
+func (b BoolPart) Write(p *MultipartPayload, key string) error {
+	return p.Text(key, strconv.FormatBool(b.v))
+}
+
+type JSONPart[T any] struct {
+	v T
+}
+
+func NewJSONPart[T any](v T) JSONPart[T] {
+	return JSONPart[T]{v: v}
+}
+
+func (j JSONPart[T]) Write(p *MultipartPayload, key string) error {
+	data, err := json.Marshal(j.v)
+	if err != nil {
+		return err
+	}
+	return p.Text(key, string(data))
+}
+
 {{- end}}

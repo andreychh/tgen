@@ -5,6 +5,7 @@ package golang
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/andreychh/tgen/model"
 )
@@ -20,11 +21,57 @@ func NewOptionalType(t Type, o model.Optionality) OptionalType {
 	return OptionalType{inner: t, opt: o}
 }
 
-func (t OptionalType) IsUnion() (bool, error) { return t.inner.IsUnion() }
+func (t OptionalType) IsPrimitive() (bool, error) {
+	return t.inner.IsPrimitive()
+}
 
-func (t OptionalType) Depth() (int, error) { return t.inner.Depth() }
+func (t OptionalType) IsUnion() (bool, error) {
+	return t.inner.IsUnion()
+}
 
-func (t OptionalType) Name() (string, error) { return t.inner.Name() }
+func (t OptionalType) Depth() (int, error) {
+	return t.inner.Depth()
+}
+
+func (t OptionalType) Name() (string, error) {
+	return t.inner.Name()
+}
+
+func (t OptionalType) Part() (string, error) {
+	part, err := t.inner.Part()
+	if err != nil {
+		return "", err
+	}
+	opt, err := t.opt.AsBool()
+	if err != nil {
+		return "", fmt.Errorf("getting field optionality: %w", err)
+	}
+	if !opt {
+		return part, nil
+	}
+	depth, err := t.inner.Depth()
+	if err != nil {
+		return "", err
+	}
+	if depth > 0 {
+		return part, nil
+	}
+	isUnion, err := t.inner.IsUnion()
+	if err != nil {
+		return "", err
+	}
+	if isUnion {
+		return part, nil
+	}
+	isPrimitive, err := t.inner.IsPrimitive()
+	if err != nil {
+		return "", err
+	}
+	if isPrimitive {
+		return strings.Replace(part, "%s", "*%s", 1), nil
+	}
+	return part, nil
+}
 
 func (t OptionalType) Zero() (string, error) {
 	opt, err := t.opt.AsBool()

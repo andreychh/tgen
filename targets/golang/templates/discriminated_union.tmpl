@@ -5,7 +5,7 @@
 {{- $name := .Name.AsString}}
 {{.Doc.AsString}}
 //sumtype:decl
-type {{$name}} interface{ sealed{{$name}}() }
+type {{$name}} interface{ Part; sealed{{$name}}() }
 {{range .Variants | discriminated_variants}}
 func (v {{.Name.AsString}}) sealed{{$name}}() {}
 {{- end}}
