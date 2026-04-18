@@ -12,4 +12,7 @@ class {{.Name.AsString}}(BaseModel):
     {{.Name.AsString}}: {{.Annotation.AsString}}
     {{.Doc.AsString}}
 {{- end}}
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, self.model_dump_json(exclude_none=True, by_alias=True))
 {{- end}}

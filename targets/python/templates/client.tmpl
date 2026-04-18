@@ -6,16 +6,91 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from io import IOBase
+from typing import Any, Protocol, TypeVar
 
 import httpx
 from pydantic import BaseModel, TypeAdapter
 
 from .method import Method
 
+class Payload(Protocol):
+    def request(self, method: str, url: str) -> httpx.Request: ...
+
+
+class JSONPayload:
+    def __init__(self, model: BaseModel) -> None:
+        self._model = model
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        body = self._model.model_dump(exclude_none=True, by_alias=True)
+        return httpx.Request(method, url, json=body)
+
+
+class MultipartPayload:
+    def __init__(self) -> None:
+        self._data: dict[str, str] = {}
+        self._files: dict[str, tuple[str, IOBase]] = {}
+
+    def text(self, key: str, value: str) -> None:
+        self._data[key] = value
+
+    def file(self, key: str, name: str, reader: IOBase) -> None:
+        self._files[key] = (name, reader)
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        return httpx.Request(method, url, data=self._data, files=self._files)
+
+
+class Part(Protocol):
+    def write(self, payload: MultipartPayload, key: str) -> None: ...
+
+
+class StrPart:
+    def __init__(self, value: str) -> None:
+        self._value = value
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, self._value)
+
+
+class IntPart:
+    def __init__(self, value: int) -> None:
+        self._value = value
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, str(self._value))
+
+
+class FloatPart:
+    def __init__(self, value: float) -> None:
+        self._value = value
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, str(self._value))
+
+
+class BoolPart:
+    def __init__(self, value: bool) -> None:
+        self._value = value
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, "true" if self._value else "false")
+
+
+class ListPart:
+    def __init__(self, value: Any) -> None:
+        self._value = value
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, TypeAdapter(type(self._value)).dump_json(self._value).decode())
+
+
+T = TypeVar("T")
+
 
 class Connection(Protocol):
-    def do(self, method: Method, request: BaseModel, response_type: Any) -> Any: ...
+    def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
 
 
 class TelegramError(Exception):
@@ -27,15 +102,30 @@ class HTTPConnection:
         self._client = client
         self._token = token
 
-    def do(self, method: Method, request: BaseModel, response_type: Any) -> Any:
-        body = request.model_dump(exclude_none=True, by_alias=True)
-        resp = self._client.post(
-            f"https://api.telegram.org/bot{self._token}/{method.value}",
-            json=body,
-        )
+    def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
+        resp = self._client.send(req)
         resp.raise_for_status()
         data = resp.json()
         if not data["ok"]:
             raise TelegramError(data.get("description") or "<no description>")
-        return TypeAdapter(response_type).validate_python(data["result"])
+        return adapter.validate_python(data["result"])
+
+
+type Response = Any | Exception
+
+
+class FakeConnection:
+    def __init__(self, responses: dict[Method, Response]) -> None:
+        self._responses = responses
+
+    def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        if method not in self._responses:
+            raise RuntimeError(f"FakeConnection: unexpected call to {method!r}")
+        match self._responses[method]:
+            case Exception() as e:
+                raise e
+            case value:
+                raw = TypeAdapter(type(value)).dump_python(value, mode="json")
+                return adapter.validate_python(raw)
 {{- end}}
