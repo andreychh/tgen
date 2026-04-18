@@ -2,10 +2,27 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "async_method"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
-class {{.Name.AsString}}Method(BaseModel):
+{{- $name := .Name.AsString}}
+{{- $ret := .ReturnType.AsString}}
+class {{$name}}Method(BaseModel):
     {{.Doc.AsString}}
 {{template "method_fields" .}}
+{{- if not .IsMultipart}}
 
-    async def call(self, conn: Connection) -> {{.ReturnType.AsString}}:
-        return await conn.do(Method.{{.Name.AsString}}, self, {{.ReturnType.AsString}})
+    async def call(self, conn: Connection) -> {{$ret}}:
+        return await conn.do(Method.{{$name}}, JSONPayload(self), TypeAdapter({{$ret}}))
+{{- else}}
+
+    async def call(self, conn: Connection) -> {{$ret}}:
+        payload = MultipartPayload()
+{{- range .Fields | fields}}
+{{- if .Optional}}
+        if self.{{.Name.AsString}} is not None:
+            {{.Part}}.write(payload, "{{.Key}}")
+{{- else}}
+        {{.Part}}.write(payload, "{{.Key}}")
+{{- end}}
+{{- end}}
+        return await conn.do(Method.{{$name}}, payload, TypeAdapter({{$ret}}))
+{{- end}}
 {{- end}}

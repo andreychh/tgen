@@ -6,9 +6,18 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
-from .client import Connection
+from .client import (
+    Connection,
+    JSONPayload,
+    MultipartPayload,
+    StrPart,
+    IntPart,
+    FloatPart,
+    BoolPart,
+    ListPart,
+)
 from ..method import Method
 from ..types import *
 
