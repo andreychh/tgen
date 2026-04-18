@@ -9,10 +9,27 @@
 {{- end}}
 
 {{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
-class {{.Name.AsString}}Method(BaseModel):
+{{- $name := .Name.AsString}}
+{{- $ret := .ReturnType.AsString}}
+class {{$name}}Method(BaseModel):
     {{.Doc.AsString}}
 {{template "method_fields" .}}
+{{- if not .IsMultipart}}
 
-    def call(self, conn: Connection) -> {{.ReturnType.AsString}}:
-        return conn.do(Method.{{.Name.AsString}}, self, {{.ReturnType.AsString}})
+    def call(self, conn: Connection) -> {{$ret}}:
+        return conn.do(Method.{{$name}}, JSONPayload(self), TypeAdapter({{$ret}}))
+{{- else}}
+
+    def call(self, conn: Connection) -> {{$ret}}:
+        payload = MultipartPayload()
+{{- range .Fields | fields}}
+{{- if .Optional}}
+        if self.{{.Name.AsString}} is not None:
+            {{.Part}}.write(payload, "{{.Key}}")
+{{- else}}
+        {{.Part}}.write(payload, "{{.Key}}")
+{{- end}}
+{{- end}}
+        return conn.do(Method.{{$name}}, payload, TypeAdapter({{$ret}}))
+{{- end}}
 {{- end}}
