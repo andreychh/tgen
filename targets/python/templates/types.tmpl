@@ -43,16 +43,25 @@ class Upload(BaseModel):
 
 
 class FileID(RootModel[str]):
+    def __init__(self, value: str) -> None:
+        super().__init__(root=value)
+
     def write(self, payload: MultipartPayload, key: str) -> None:
         StrPart(self.root).write(payload, key)
 
 
 class ID(RootModel[int]):
+    def __init__(self, value: int) -> None:
+        super().__init__(root=value)
+
     def write(self, payload: MultipartPayload, key: str) -> None:
         IntPart(self.root).write(payload, key)
 
 
 class Username(RootModel[str]):
+    def __init__(self, value: str) -> None:
+        super().__init__(root=value)
+
     def write(self, payload: MultipartPayload, key: str) -> None:
         StrPart(self.root).write(payload, key)
 
