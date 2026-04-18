@@ -6,17 +6,30 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Protocol
 
 import httpx
-from pydantic import BaseModel, TypeAdapter
+from pydantic import TypeAdapter
 
-from ..client import TelegramError
+from ..client import (
+    BoolPart,
+    FloatPart,
+    IntPart,
+    JSONPayload,
+    ListPart,
+    MultipartPayload,
+    Part,
+    Payload,
+    Response,
+    StrPart,
+    T,
+    TelegramError,
+)
 from ..method import Method
 
 
 class Connection(Protocol):
-    async def do(self, method: Method, request: BaseModel, response_type: Any) -> Any: ...
+    async def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
 
 
 class HTTPConnection:
@@ -24,15 +37,27 @@ class HTTPConnection:
         self._client = client
         self._token = token
 
-    async def do(self, method: Method, request: BaseModel, response_type: Any) -> Any:
-        body = request.model_dump(exclude_none=True, by_alias=True)
-        resp = await self._client.post(
-            f"https://api.telegram.org/bot{self._token}/{method.value}",
-            json=body,
-        )
+    async def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
+        resp = await self._client.send(req)
         resp.raise_for_status()
         data = resp.json()
         if not data["ok"]:
             raise TelegramError(data.get("description") or "<no description>")
-        return TypeAdapter(response_type).validate_python(data["result"])
+        return adapter.validate_python(data["result"])
+
+
+class FakeConnection:
+    def __init__(self, responses: dict[Method, Response]) -> None:
+        self._responses = responses
+
+    async def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        if method not in self._responses:
+            raise RuntimeError(f"FakeConnection: unexpected call to {method!r}")
+        match self._responses[method]:
+            case Exception() as e:
+                raise e
+            case value:
+                raw = TypeAdapter(type(value)).dump_python(value, mode="json")
+                return adapter.validate_python(raw)
 {{- end}}

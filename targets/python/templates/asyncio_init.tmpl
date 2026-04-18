@@ -4,7 +4,6 @@
 {{- define "asyncio_init"}} {{/*gotype: github.com/andreychh/tgen/targets/python.GenerationContext*/}}
 {{- template "header" .}}
 
-from .client import Connection, HTTPConnection, TelegramError
-from .fake import FakeConnection
+from .client import Connection, FakeConnection, HTTPConnection, TelegramError
 from .methods import *
 {{- end}}

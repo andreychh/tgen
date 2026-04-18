@@ -53,6 +53,5 @@ func (p Pass) Artifacts() (output.Artifacts, error) {
 		"asyncio/__init__.py": output.NewTemplateView(tmpl, "asyncio_init", p.context),
 		"asyncio/methods.py":  output.NewTemplateView(tmpl, "async_methods", p.context),
 		"asyncio/client.py":   output.NewTemplateView(tmpl, "async_client", p.context),
-		"asyncio/fake.py":     output.NewTemplateView(tmpl, "async_fake", p.context),
 	}, nil
 }
