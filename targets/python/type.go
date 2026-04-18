@@ -11,6 +11,16 @@ import (
 )
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
+var parts = map[string]string{
+	"Integer": "IntPart",
+	"Int":     "IntPart",
+	"Float":   "FloatPart",
+	"String":  "StrPart",
+	"Boolean": "BoolPart",
+	"True":    "BoolPart",
+}
+
+//nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var primitives = map[string]string{
 	"Integer": "int",
 	"Int":     "int",
@@ -34,6 +44,46 @@ func (t Type) AsString() (string, error) {
 		return "", fmt.Errorf("getting type expr: %w", err)
 	}
 	return t.render(expr)
+}
+
+func (t Type) Part() (string, error) {
+	expr, err := t.inner.AsExpression()
+	if err != nil {
+		return "", fmt.Errorf("getting type expr: %w", err)
+	}
+	return t.part(expr)
+}
+
+func (t Type) part(expr types.Expression) (string, error) {
+	switch e := expr.(type) {
+	case types.Named:
+		if p, ok := parts[e.Name()]; ok {
+			return p + "(%s)", nil
+		}
+		return "%s", nil
+	case types.Array:
+		return "ListPart(%s)", nil
+	case types.Union:
+		return "", fmt.Errorf("unsupported union %q", expr)
+	}
+	return "", fmt.Errorf("unknown type expression %q", expr)
+}
+
+func (t Type) name() (string, error) {
+	expr, err := t.inner.AsExpression()
+	if err != nil {
+		return "", fmt.Errorf("getting type expr: %w", err)
+	}
+	for {
+		switch e := expr.(type) {
+		case types.Named:
+			return e.Name(), nil
+		case types.Array:
+			expr = e.Element()
+		default:
+			return "", fmt.Errorf("unknown type expression %q", expr)
+		}
+	}
 }
 
 func (t Type) render(expr types.Expression) (string, error) {

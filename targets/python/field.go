@@ -3,7 +3,11 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/explicit"
+import (
+	"fmt"
+
+	"github.com/andreychh/tgen/model/explicit"
+)
 
 type Field struct {
 	inner explicit.Field
@@ -23,4 +27,24 @@ func (f Field) Annotation() Annotation {
 
 func (f Field) Doc() DocString {
 	return NewFieldDocString(f.inner.Description())
+}
+
+func (f Field) Optional() (bool, error) {
+	return f.inner.Optionality().AsBool()
+}
+
+func (f Field) Key() (string, error) {
+	return f.inner.Key().AsString()
+}
+
+func (f Field) Part() (string, error) {
+	part, err := NewType(f.inner.Type()).Part()
+	if err != nil {
+		return "", err
+	}
+	name, err := f.Name().AsString()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(part, "self."+name), nil
 }
