@@ -17,7 +17,7 @@ SPDX-License-Identifier: MIT
 the [Telegram Bot API HTML documentation][telegram-api].
 
 Instead of relying on manually updated boilerplate, tgen parses the specification to generate
-strongly-typed client code.
+strongly-typed client code in Go and Python.
 
 > [!WARNING]
 > **Work in Progress:** This project is in early development. The generated code is currently
@@ -26,10 +26,11 @@ strongly-typed client code.
 ## Features
 
 * **Up-to-Date by Default:** New API methods and standard types are picked up automatically — just
-  run `tgen go` after a new Telegram Bot API release.
+  run `tgen go` or `tgen python` after a new Telegram Bot API release.
 * **Spec-Faithful Naming:** Every name from the Telegram Bot API — methods, types, and fields — is
-  carried over unchanged, adapted only to Go naming conventions (`message_id` → `MessageID`).
-* **Spec-Faithful Types:** Ambiguous spec types become real Go types. The Telegram API describes
+  carried over unchanged, adapted to the target language's naming conventions (`message_id` →
+  `MessageID` in Go, unchanged in Python).
+* **Spec-Faithful Types:** Ambiguous spec types become real types. The Telegram API describes
   `chat_id` as `Integer or String`. Instead of collapsing this into `any`, tgen generates a proper
   union type with explicit variants:
 
@@ -67,7 +68,7 @@ the [Releases page][releases].
 
 ## Usage
 
-tgen uses subcommands to target specific languages — currently only go is available.
+tgen uses subcommands to target specific languages: `go` and `python`.
 
 ### Fetch from the web
 
@@ -76,6 +77,7 @@ files to `./api`:
 
 ```bash
 tgen go --out ./api
+tgen python --out ./api
 ```
 
 ### Use a local file
@@ -85,20 +87,25 @@ flag. This is recommended to ensure build reproducibility and avoid network issu
 
 ```bash
 # Download the specification
-curl -o api.html https://core.telegram.org/bots/api
+curl -o ./api.html https://core.telegram.org/bots/api
 
-# Generate the code
+# Generate Go bindings
 tgen go -s ./api.html -o ./api
+
+# Generate Python bindings
+tgen python -s ./api.html -o ./api
 ```
 
 ## Generated API
 
 ### Go
 
-The generated API follows a consistent pattern: each Telegram Bot API method is a struct you
-populate with parameters and call directly on a `Connection` to get a typed response. You can
-replace `HTTPConnection` with any implementation to add retries, proxy requests, or inject
-`FakeConnection` in tests:
+Each Telegram Bot API method is a struct you populate with parameters and call directly on a
+`Connection` to get a typed response. You can replace `HTTPConnection` with any implementation to
+add retries, proxy requests, or inject `FakeConnection` in tests.
+
+The following script checks bot permissions, sends a release photo with an inline button, and reacts
+to the sent message.
 
 ```go
 package main
@@ -112,18 +119,67 @@ import (
 	"my-awesome-bot/api"
 )
 
+var (
+	token  = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+	chatID = -1001122334455
+)
+
 func main() {
-	conn := api.NewHTTPConnection(http.DefaultClient, os.Getenv("BOT_TOKEN"))
+	conn := api.NewHTTPConnection(http.DefaultClient, token)
 	ctx := context.Background()
 
-	msg, err := api.SendMessageMethod{
-		ChatID: api.Username("@news"),
-		Text:   "Hello from tgen!",
+	bot, err := api.GetMeMethod{}.Call(ctx, conn)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// ChatID accepts a numeric ID or a channel username interchangeably:
+	// chat := api.Username("@mychannel")
+	chat := api.ID(chatID)
+
+	member, err := api.GetChatMemberMethod{ChatID: chat, UserID: bot.ID}.Call(ctx, conn)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// ChatMember is a sealed union — each variant carries the fields for that role.
+	switch member.(type) {
+	case api.ChatMemberAdministrator, api.ChatMemberOwner:
+		// allowed to post
+	default:
+		log.Fatalln("bot needs admin rights to post in this chat")
+	}
+
+	cover, err := os.Open("cover.jpg")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer cover.Close()
+
+	msg, err := api.SendPhotoMethod{
+		ChatID: chat,
+		// Use api.FileID("...") to reuse a photo already on Telegram servers.
+		Photo:   api.Upload{Name: "cover.jpg", Reader: cover},
+		Caption: new("v2.0 is out! Faster, smaller, better."),
+		ReplyMarkup: api.InlineKeyboardMarkup{
+			InlineKeyboard: [][]api.InlineKeyboardButton{
+				{{Text: "What's new", URL: new("https://github.com/you/proj/releases")}},
+			},
+		},
 	}.Call(ctx, conn)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	log.Printf("Sent message %d\n", msg.MessageID)
+
+	// ReactionTypeEmoji satisfies ReactionType — Type: "emoji" is set automatically.
+	_, err = api.SetMessageReactionMethod{
+		ChatID:    api.ID(msg.Chat.ID),
+		MessageID: msg.MessageID,
+		Reaction:  []api.ReactionType{api.ReactionTypeEmoji{Emoji: "🎉"}},
+	}.Call(ctx, conn)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 ```
 
@@ -163,8 +219,135 @@ func TestSendMessage_Failure(t *testing.T) {
 
 #### Exhaustiveness checking
 
-All union types are sealed interfaces annotated with `//sumtype:decl`. Use [go-check-sumtype] (
-available in [golangci-lint]) to catch type switches that don't handle all variants.
+All union types are sealed interfaces annotated with `//sumtype:decl`. Use [go-check-sumtype]
+(available in [golangci-lint]) to catch type switches that don't cover all variants.
+
+### Python
+
+Each Telegram Bot API method is a pydantic model you instantiate with parameters and call directly
+on a `Connection` to get a typed response. You can replace `HTTPConnection` with any implementation
+to add retries, proxy requests, or inject `FakeConnection` in tests.
+
+**Dependencies:** `pip install pydantic httpx`
+
+The following script checks bot permissions, sends a release photo with an inline button, and reacts
+to the sent message.
+
+```python
+import sys
+
+import httpx
+
+from api import (
+    ChatMemberAdministrator,
+    ChatMemberOwner,
+    GetChatMemberMethod,
+    GetMeMethod,
+    HTTPConnection,
+    ID,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    ReactionTypeEmoji,
+    SendPhotoMethod,
+    SetMessageReactionMethod,
+    Upload,
+)
+
+TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+CHAT_ID = -1001122334455
+
+
+def main():
+    conn = HTTPConnection(httpx.Client(timeout=30), TOKEN)
+
+    bot = GetMeMethod().call(conn)
+
+    # ChatID accepts a numeric ID or a channel username interchangeably:
+    # chat = Username("@mychannel")
+    chat = ID(CHAT_ID)
+
+    member = GetChatMemberMethod(chat_id=chat, user_id=bot.id).call(conn)
+
+    # ChatMember is a discriminated union — each variant carries the fields for that role.
+    match member:
+        case ChatMemberAdministrator() | ChatMemberOwner():
+            pass  # allowed to post
+        case _:
+            sys.exit("bot needs admin rights to post in this chat")
+
+    with open("cover.jpg", "rb") as cover:
+        msg = SendPhotoMethod(
+            chat_id=chat,
+            # Pass FileID("...") to reuse a photo already on Telegram servers.
+            photo=Upload(name="cover.jpg", reader=cover),
+            caption="v2.0 is out! Faster, smaller, better.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[[
+                    InlineKeyboardButton(
+                        text="What's new →",
+                        url="https://github.com/you/proj/releases",
+                    )
+                ]]
+            ),
+        ).call(conn)
+
+    # ReactionTypeEmoji is a discriminated union — type="emoji" is set automatically.
+    SetMessageReactionMethod(
+        chat_id=ID(msg.chat.id),
+        message_id=msg.message_id,
+        reaction=[ReactionTypeEmoji(emoji="🎉")],
+    ).call(conn)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+#### Async client
+
+An async equivalent is available in the `api.asyncio` subpackage. Swap `api.HTTPConnection` for
+`api.asyncio.HTTPConnection` (backed by `httpx.AsyncClient`) and `await` each `.call()`.
+
+```python
+from api.asyncio import HTTPConnection
+
+
+async def main():
+    conn = HTTPConnection(httpx.AsyncClient(timeout=30), TOKEN)
+    bot = await GetMeMethod().call(conn)
+    ...
+```
+
+#### Testing
+
+`FakeConnection` provides canned responses for unit tests. Pass a value directly for a successful
+result or an exception instance to simulate a failure.
+
+```python
+def test_send_message():
+    conn = FakeConnection({
+        Method.SendMessage: Message(message_id=42),
+    })
+
+    msg = SendMessageMethod(
+        chat_id=ID(-1001122334455),
+        text="Hello from tgen!",
+    ).call(conn)
+
+    assert msg.message_id == 42, "SendMessage must return the sent message"
+
+
+def test_send_message_failure():
+    conn = FakeConnection({
+        Method.SendMessage: TelegramError("unauthorized"),
+    })
+
+    with pytest.raises(TelegramError, match="unauthorized"):
+        SendMessageMethod(
+            chat_id=ID(-1001122334455),
+            text="Hello from tgen!",
+        ).call(conn)
+```
 
 ## Contributing
 
