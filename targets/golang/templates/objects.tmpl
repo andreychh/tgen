@@ -16,15 +16,6 @@ import (
 {{- template "object" .}}
 {{- end}}
 
-// Envelope represents the standard Telegram Bot API JSON response envelope.
-type Envelope struct {
-	Ok          bool                `json:"ok"`
-	Result      json.RawMessage     `json:"result,omitempty"`
-	ErrorCode   *int                `json:"error_code,omitempty"`
-	Description *string             `json:"description,omitempty"`
-	Parameters  *ResponseParameters `json:"parameters,omitempty"`
-}
-
 // ID represents a numeric Telegram chat or user identifier.
 type ID int64
 

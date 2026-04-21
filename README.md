@@ -112,6 +112,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -130,6 +131,10 @@ func main() {
 
 	bot, err := api.GetMeMethod{}.Call(ctx, conn)
 	if err != nil {
+		// api.Error carries the numeric code, description, and optional ResponseParameters.
+		if tgErr, ok := errors.AsType[*api.Error](err); ok {
+			log.Fatalf("telegram %d: %s\n", tgErr.Code, tgErr.Description)
+		}
 		log.Fatalln(err)
 	}
 
@@ -250,6 +255,7 @@ from api import (
     ReactionTypeEmoji,
     SendPhotoMethod,
     SetMessageReactionMethod,
+    Error,
     Upload,
 )
 
@@ -260,7 +266,11 @@ CHAT_ID = -1001122334455
 def main():
     conn = HTTPConnection(httpx.Client(timeout=30), TOKEN)
 
-    bot = GetMeMethod().call(conn)
+    try:
+        bot = GetMeMethod().call(conn)
+    except Error as e:
+        # Error carries the numeric code, description, and optional ResponseParameters.
+        sys.exit(f"telegram {e.code}: {e.description}")
 
     # ChatID accepts a numeric ID or a channel username interchangeably:
     # chat = Username("@mychannel")
@@ -284,7 +294,7 @@ def main():
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[[
                     InlineKeyboardButton(
-                        text="What's new →",
+                        text="What's new",
                         url="https://github.com/you/proj/releases",
                     )
                 ]]
@@ -339,10 +349,10 @@ def test_send_message():
 
 def test_send_message_failure():
     conn = FakeConnection({
-        Method.SendMessage: TelegramError("unauthorized"),
+        Method.SendMessage: Error(401, "Unauthorized"),
     })
 
-    with pytest.raises(TelegramError, match="unauthorized"):
+    with pytest.raises(Error, match="Unauthorized"):
         SendMessageMethod(
             chat_id=ID(-1001122334455),
             text="Hello from tgen!",
