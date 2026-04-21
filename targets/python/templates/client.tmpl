@@ -13,6 +13,7 @@ import httpx
 from pydantic import BaseModel, TypeAdapter
 
 from .method import Method
+from .types import ResponseParameters
 
 class Payload(Protocol):
     def request(self, method: str, url: str) -> httpx.Request: ...
@@ -93,8 +94,20 @@ class Connection(Protocol):
     def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
 
 
-class TelegramError(Exception):
-    pass
+class Envelope(BaseModel):
+    ok: bool
+    result: Any = None
+    error_code: int = 0
+    description: str = "<no description>"
+    parameters: ResponseParameters | None = None
+
+
+class Error(Exception):
+    def __init__(self, code: int, description: str, parameters: ResponseParameters | None = None) -> None:
+        super().__init__(description)
+        self.code = code
+        self.description = description
+        self.parameters = parameters
 
 
 class HTTPConnection:
@@ -106,10 +119,10 @@ class HTTPConnection:
         req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
         resp = self._client.send(req)
         resp.raise_for_status()
-        data = resp.json()
-        if not data["ok"]:
-            raise TelegramError(data.get("description") or "<no description>")
-        return adapter.validate_python(data["result"])
+        envelope = Envelope.model_validate(resp.json())
+        if not envelope.ok:
+            raise Error(envelope.error_code, envelope.description, envelope.parameters)
+        return adapter.validate_python(envelope.result)
 
 
 type Response = Any | Exception

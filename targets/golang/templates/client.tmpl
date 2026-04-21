@@ -62,11 +62,15 @@ func (c HTTPConnection) Do(
 		return fmt.Errorf("decoding envelope: %w", err)
 	}
 	if !envelope.Ok {
+		code := 0
+		if envelope.ErrorCode != nil {
+			code = *envelope.ErrorCode
+		}
 		desc := "<no description>"
 		if envelope.Description != nil {
 			desc = *envelope.Description
 		}
-		return fmt.Errorf("telegram error: %s", desc)
+		return &Error{Code: code, Description: desc, Parameters: envelope.Parameters}
 	}
 	if err = json.Unmarshal(envelope.Result, response); err != nil {
 		return fmt.Errorf("decoding result: %w", err)
@@ -76,6 +80,27 @@ func (c HTTPConnection) Do(
 
 func (c HTTPConnection) url(method Method) string {
 	return fmt.Sprintf("https://api.telegram.org/bot%s/%s", c.token, method)
+}
+
+// Envelope represents the standard Telegram Bot API JSON response envelope.
+type Envelope struct {
+	Ok          bool                `json:"ok"`
+	Result      json.RawMessage     `json:"result,omitempty"`
+	ErrorCode   *int                `json:"error_code,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Parameters  *ResponseParameters `json:"parameters,omitempty"`
+}
+
+// Error represents a failure response from the Telegram Bot API.
+type Error struct {
+	Code        int
+	Description string
+	Parameters  *ResponseParameters
+}
+
+// Error returns a string combining the error code and description.
+func (e *Error) Error() string {
+	return fmt.Sprintf("telegram %d: %s", e.Code, e.Description)
 }
 
 // Response represents the outcome of a FakeConnection call — either a value or
