@@ -11,7 +11,7 @@ import (
 )
 
 var discriminatorValueRegex = regexp.MustCompile(
-	"always \u201c([^\u201d]+)\u201d|must be ([a-z][a-z0-9_]*)\\s*$",
+	"[Aa]lways (?:\u201c([^\u201d]+)\u201d|(\\d+)\\.)|must be ([a-z][a-z0-9_]*)\\s*$",
 )
 
 // DiscriminatorValue represents the fixed value of a discriminator field,
@@ -26,14 +26,16 @@ func NewDiscriminatorValue(td gq.Selection) DiscriminatorValue {
 }
 
 // AsString returns the discriminator value extracted from the description.
-// Returns an error if no always-quoted or must-be value is found.
+// Returns an error if no always-quoted, always-numeric, or must-be value is found.
 func (v DiscriminatorValue) AsString() (string, error) {
 	match := discriminatorValueRegex.FindStringSubmatch(v.td.Text())
 	if match == nil {
 		return "", errors.New("no discriminator value in description")
 	}
-	if match[1] != "" {
-		return match[1], nil
+	for _, m := range match[1:] {
+		if m != "" {
+			return m, nil
+		}
 	}
-	return match[2], nil
+	return "", errors.New("no discriminator value in description")
 }

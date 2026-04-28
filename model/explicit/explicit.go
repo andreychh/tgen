@@ -17,6 +17,7 @@ import (
 type Specification interface {
 	Objects() iter.Seq[Object]
 	Methods() iter.Seq[Method]
+	DiscriminatedObjects() iter.Seq[DiscriminatedObject]
 	DiscriminatedUnions() iter.Seq[DiscriminatedUnion]
 	Release() Release
 }
