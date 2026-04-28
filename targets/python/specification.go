@@ -23,15 +23,7 @@ func (s Specification) Objects() iter.Seq[Object] {
 }
 
 func (s Specification) DiscriminatedObjects() iter.Seq[DiscriminatedObject] {
-	return func(yield func(DiscriminatedObject) bool) {
-		for u := range s.inner.DiscriminatedUnions() {
-			for v := range u.Variants() {
-				if !yield(NewDiscriminatedObject(v)) {
-					return
-				}
-			}
-		}
-	}
+	return iters.NewMappedSeq(s.inner.DiscriminatedObjects(), NewDiscriminatedObject)
 }
 
 func (s Specification) DiscriminatedUnions() iter.Seq[DiscriminatedUnion] {

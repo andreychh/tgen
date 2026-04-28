@@ -54,6 +54,23 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 	}
 }
 
+func (s Specification) DiscriminatedObjects() iter.Seq[explicit.DiscriminatedObject] {
+	return func(yield func(explicit.DiscriminatedObject) bool) {
+		for obj := range s.inner.DiscriminatedObjects() {
+			name, _ := obj.Name().AsString()
+			// InaccessibleMessage uses an integer discriminator (date == 0),
+			// which the current string-only discriminator system cannot represent.
+			// It is hardcoded in the template until typed discriminators are supported.
+			if name == "InaccessibleMessage" {
+				continue
+			}
+			if !yield(NewDiscriminatedObject(obj, s.overlay)) {
+				break
+			}
+		}
+	}
+}
+
 func (s Specification) DiscriminatedUnions() iter.Seq[explicit.DiscriminatedUnion] {
 	return iters.NewMappedSeq(
 		s.inner.DiscriminatedUnions(),
