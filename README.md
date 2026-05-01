@@ -19,10 +19,6 @@ the [Telegram Bot API HTML documentation][telegram-api].
 Instead of relying on manually updated boilerplate, tgen parses the specification to generate
 strongly-typed client code in Go and Python.
 
-> [!WARNING]
-> **Work in Progress:** This project is in early development. The generated code is currently
-> incomplete and may not be fully functional. The API is subject to breaking changes.
-
 ## Features
 
 * **Up-to-Date by Default:** New API methods and standard types are picked up automatically — just
