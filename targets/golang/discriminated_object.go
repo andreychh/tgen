@@ -28,6 +28,19 @@ func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {
 	return NewDiscriminatedObjectFields(o.inner.Fields())
 }
 
+func (o DiscriminatedObject) HasInputFile() (bool, error) {
+	for f := range o.Fields().Free() {
+		ok, err := f.IsInputFile()
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (o DiscriminatedObject) Unions() Unions {
 	return Unions{inner: iters.NewMappedSeq(o.inner.Fields().Free(), NewField)}
 }
