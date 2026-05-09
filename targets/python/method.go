@@ -33,13 +33,3 @@ func (m Method) ReturnType() Type {
 func (m Method) Fields() iter.Seq[Field] {
 	return iters.NewMappedSeq(m.inner.Fields(), NewField)
 }
-
-func (m Method) IsMultipart() bool {
-	return iters.IsAny(m.inner.Fields(), func(f explicit.Field) bool {
-		name, err := NewType(f.Type()).name()
-		if err != nil {
-			return false
-		}
-		return name == "InputFile"
-	})
-}

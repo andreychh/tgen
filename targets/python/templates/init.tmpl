@@ -4,7 +4,7 @@
 {{- define "init"}} {{/*gotype: github.com/andreychh/tgen/targets/python.GenerationContext*/}}
 {{- template "header" .}}
 
-from .client import Connection, HTTPConnection, TelegramError
+from .client import Connection, HTTPConnection, Error
 from .method import Method
 from .methods import *
 from .types import *

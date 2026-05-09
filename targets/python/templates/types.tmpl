@@ -6,12 +6,13 @@
 
 from __future__ import annotations
 
+import json
 from io import IOBase
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
-from .client import IntPart, MultipartPayload, StrPart
+from .payload import IntPart, MultipartPayload, StrPart
 
 {{- range .Spec.Objects | objects}} {{/*gotype: github.com/andreychh/tgen/targets/python.Object*/}}
 
@@ -32,19 +33,31 @@ class InaccessibleMessage(BaseModel):
     message_id: int
     date: Literal[0]
 
+    def form_json(self, _: MultipartPayload) -> str:
+        return self.model_dump_json(exclude_none=True, by_alias=True)
+
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.text(key, self.form_json(payload))
 
 class Upload(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str
+    name: str = ""
     reader: IOBase
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.file(key, self.name, self.reader)
+    def attach(self, payload: MultipartPayload) -> str:
+        key = payload.attach_key()
+        self.write(payload, key)
+        return f"attach://{key}"
 
+    def write(self, payload: MultipartPayload, key: str) -> None:
+        payload.file(key, self.name or "file", self.reader)
 
 class FileID(RootModel[str]):
     def __init__(self, value: str) -> None:
         super().__init__(root=value)
+
+    def attach(self, payload: MultipartPayload) -> str:
+        return self.root
 
     def write(self, payload: MultipartPayload, key: str) -> None:
         StrPart(self.root).write(payload, key)

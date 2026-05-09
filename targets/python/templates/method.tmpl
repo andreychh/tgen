@@ -14,11 +14,6 @@
 class {{$name}}Method(BaseModel):
     {{.Doc.AsString}}
 {{template "method_fields" .}}
-{{- if not .IsMultipart}}
-
-    def call(self, conn: Connection) -> {{$ret}}:
-        return conn.do(Method.{{$name}}, JSONPayload(self), TypeAdapter({{$ret}}))
-{{- else}}
 
     def call(self, conn: Connection) -> {{$ret}}:
         payload = MultipartPayload()
@@ -31,5 +26,4 @@ class {{$name}}Method(BaseModel):
 {{- end}}
 {{- end}}
         return conn.do(Method.{{$name}}, payload, TypeAdapter({{$ret}}))
-{{- end}}
 {{- end}}

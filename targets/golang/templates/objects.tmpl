@@ -51,6 +51,9 @@ type Upload struct {
 }
 
 func (u Upload) Write(p *MultipartPayload, key string) error {
+	if u.Name == "" {
+		u.Name = "file"
+	}
 	return p.File(key, u.Name, u.Reader)
 }
 

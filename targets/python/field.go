@@ -37,6 +37,14 @@ func (f Field) Key() (string, error) {
 	return f.inner.Key().AsString()
 }
 
+func (f Field) IsInputFile() (bool, error) {
+	name, err := NewType(f.inner.Type()).name()
+	if err != nil {
+		return false, err
+	}
+	return name == "InputFile", nil
+}
+
 func (f Field) Part() (string, error) {
 	part, err := NewType(f.inner.Type()).Part()
 	if err != nil {

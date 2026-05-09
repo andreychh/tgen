@@ -55,13 +55,18 @@ func (t Type) Part() (string, error) {
 }
 
 func (t Type) part(expr types.Expression) (string, error) {
-	switch e := expr.(type) {
+	switch expr := expr.(type) {
 	case types.Named:
-		if p, ok := parts[e.Name()]; ok {
+		if p, ok := parts[expr.Name()]; ok {
 			return p + "(%s)", nil
 		}
 		return "%s", nil
 	case types.Array:
+		if n, ok := expr.Element().(types.Named); ok {
+			if _, ok := parts[n.Name()]; !ok {
+				return "ListFormJsonPart(%s)", nil
+			}
+		}
 		return "ListPart(%s)", nil
 	case types.Union:
 		return "", fmt.Errorf("unsupported union %q", expr)
