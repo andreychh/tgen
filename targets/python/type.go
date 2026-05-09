@@ -62,6 +62,11 @@ func (t Type) part(expr types.Expression) (string, error) {
 		}
 		return "%s", nil
 	case types.Array:
+		if n, ok := e.Element().(types.Named); ok {
+			if _, ok := parts[n.Name()]; !ok {
+				return "ListFormJsonPart(%s)", nil
+			}
+		}
 		return "ListPart(%s)", nil
 	case types.Union:
 		return "", fmt.Errorf("unsupported union %q", expr)
