@@ -59,7 +59,11 @@ func unmarshalChatID(data []byte) (ChatID, error) {
 // InputFile represents a file to send, either by file ID or by uploading.
 //
 //sumtype:decl
-type InputFile interface{ Part; sealedInputFile() }
+type InputFile interface {
+    Part
+    Attach(p *MultipartPayload) (string, error)
+    sealedInputFile()
+}
 
 func (v FileID) sealedInputFile() {}
 func (v Upload) sealedInputFile() {}
@@ -71,7 +75,7 @@ func unmarshalInputFile(data []byte) (InputFile, error) {
 // ReplyMarkup represents a reply markup attached to a message.
 //
 //sumtype:decl
-type ReplyMarkup interface{ Part; sealedReplyMarkup() }
+type ReplyMarkup interface{ Part; FormJSON; sealedReplyMarkup() }
 
 func (v InlineKeyboardMarkup) sealedReplyMarkup() {}
 func (v ReplyKeyboardMarkup) sealedReplyMarkup()  {}
@@ -85,7 +89,7 @@ func unmarshalReplyMarkup(data []byte) (ReplyMarkup, error) {
 // InputMediaGroup represents a media element in a media group.
 //
 //sumtype:decl
-type InputMediaGroup interface{ Part; sealedInputMediaGroup() }
+type InputMediaGroup interface{ Part; FormJSON; sealedInputMediaGroup() }
 
 func (v InputMediaAudio) sealedInputMediaGroup()    {}
 func (v InputMediaDocument) sealedInputMediaGroup() {}
@@ -100,7 +104,7 @@ func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
 // inline query result.
 //
 //sumtype:decl
-type InputMessageContent interface{ Part; sealedInputMessageContent() }
+type InputMessageContent interface{ Part; FormJSON; sealedInputMessageContent() }
 
 func (v InputInvoiceMessageContent) sealedInputMessageContent()  {}
 func (v InputVenueMessageContent) sealedInputMessageContent()    {}

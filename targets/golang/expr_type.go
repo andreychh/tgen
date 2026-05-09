@@ -125,12 +125,15 @@ func (t ExprType) Part() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if depth > 0 {
-		return "NewJSONPart(%s)", nil
-	}
 	name, err := t.Name()
 	if err != nil {
 		return "", err
+	}
+	if depth > 0 {
+		if _, ok := parts[name]; ok {
+			return "NewJSONPart(%s)", nil
+		}
+		return "NewSlicePart(%s)", nil
 	}
 	if part, ok := parts[name]; ok {
 		return part + "(%s)", nil

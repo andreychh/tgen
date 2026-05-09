@@ -40,6 +40,10 @@ func (i FileID) Write(p *MultipartPayload, key string) error {
 	return NewStringPart(i).Write(p, key)
 }
 
+func (i FileID) Attach(_ *MultipartPayload) (string, error) {
+	return string(i), nil
+}
+
 // Upload represents a file to be uploaded by providing its name and reader.
 type Upload struct {
 	Name   string
@@ -48,6 +52,14 @@ type Upload struct {
 
 func (u Upload) Write(p *MultipartPayload, key string) error {
 	return p.File(key, u.Name, u.Reader)
+}
+
+func (u Upload) Attach(p *MultipartPayload) (string, error) {
+	key := p.AttachKey()
+	if err := u.Write(p, key); err != nil {
+		return "", err
+	}
+	return "attach://" + key, nil
 }
 
 {{- range .Spec.DiscriminatedObjects | discriminated_objects}} {{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}

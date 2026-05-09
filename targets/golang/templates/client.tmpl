@@ -38,8 +38,8 @@ func NewHTTPConnection(client *http.Client, token string) HTTPConnection {
 	return HTTPConnection{client: client, token: token}
 }
 
-// Do marshals request as JSON, sends a POST to the Telegram API, and decodes
-// the result into response. It returns an error if the request cannot be built,
+// Do sends a multipart/form-data POST to the Telegram API and decodes the
+// result into response. It returns an error if the request cannot be built,
 // the transport fails, the API reports a failure, or the result cannot be
 // decoded.
 func (c HTTPConnection) Do(
@@ -159,46 +159,40 @@ func (c FakeConnection) Do(_ context.Context, method Method, _ Payload, response
 	return nil
 }
 
+// Payload produces an HTTP request from accumulated method fields.
 type Payload interface {
 	Request(ctx context.Context, method, url string) (*http.Request, error)
 }
 
-type JSONPayload struct {
-	value any
-}
-
-func NewJSONPayload(value any) JSONPayload {
-	return JSONPayload{value: value}
-}
-
-func (p JSONPayload) Request(ctx context.Context, method, url string) (*http.Request, error) {
-	data, err := json.Marshal(p.value)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	return req, nil
-}
-
+// MultipartPayload builds a multipart/form-data request body.
 type MultipartPayload struct {
-	buffer *bytes.Buffer
-	writer *multipart.Writer
+	buffer   *bytes.Buffer
+	writer   *multipart.Writer
+	counter  int
+	modified bool
 }
 
+// NewMultipartPayload creates an empty MultipartPayload.
 func NewMultipartPayload() *MultipartPayload {
 	b := &bytes.Buffer{}
 	return &MultipartPayload{buffer: b, writer: multipart.NewWriter(b)}
 }
 
+func (m *MultipartPayload) AttachKey() string {
+	key := fmt.Sprintf("attachment_%d", m.counter)
+	m.counter++
+	return key
+}
+
+// Text adds a plain-text form part.
 func (m *MultipartPayload) Text(key, value string) error {
+	m.modified = true
 	return m.writer.WriteField(key, value)
 }
 
+// File adds a binary file form part.
 func (m *MultipartPayload) File(key, name string, reader io.Reader) error {
+	m.modified = true
 	part, err := m.writer.CreateFormFile(key, name)
 	if err != nil {
 		return fmt.Errorf("creating file part: %w", err)
@@ -213,6 +207,9 @@ func (m *MultipartPayload) Request(ctx context.Context, method, url string) (*ht
 	if err := m.writer.Close(); err != nil {
 		return nil, fmt.Errorf("closing multipart: %w", err)
 	}
+	if !m.modified {
+		return http.NewRequestWithContext(ctx, method, url, http.NoBody)
+	}
 	req, err := http.NewRequestWithContext(ctx, method, url, m.buffer)
 	if err != nil {
 		return nil, err
@@ -221,8 +218,14 @@ func (m *MultipartPayload) Request(ctx context.Context, method, url string) (*ht
 	return req, nil
 }
 
+// Part writes a single method field into a Form.
 type Part interface {
 	Write(p *MultipartPayload, key string) error
+}
+
+// FormJSON encodes a value as JSON, resolving any InputFile references into p.
+type FormJSON interface {
+	JSON(p *MultipartPayload) ([]byte, error)
 }
 
 type StringPart struct {
@@ -283,6 +286,30 @@ func NewJSONPart[T any](v T) JSONPart[T] {
 
 func (j JSONPart[T]) Write(p *MultipartPayload, key string) error {
 	data, err := json.Marshal(j.v)
+	if err != nil {
+		return err
+	}
+	return p.Text(key, string(data))
+}
+
+type SlicePart[T FormJSON] struct {
+	v []T
+}
+
+func NewSlicePart[T FormJSON](v []T) SlicePart[T] {
+	return SlicePart[T]{v: v}
+}
+
+func (s SlicePart[T]) Write(p *MultipartPayload, key string) error {
+	parts := make([]json.RawMessage, len(s.v))
+	for i, el := range s.v {
+		data, err := el.JSON(p)
+		if err != nil {
+			return err
+		}
+		parts[i] = data
+	}
+	data, err := json.Marshal(parts)
 	if err != nil {
 		return err
 	}

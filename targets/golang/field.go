@@ -41,6 +41,14 @@ func (f Field) Doc() GoDoc {
 	return NewGoDoc(f.inner.Description())
 }
 
+func (f Field) IsInputFile() (bool, error) {
+	name, err := f.Type().Name()
+	if err != nil {
+		return false, err
+	}
+	return name == "InputFile", nil
+}
+
 func (f Field) Part() (string, error) {
 	part, err := f.Type().Part()
 	if err != nil {

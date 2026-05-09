@@ -30,6 +30,19 @@ func (o Object) Fields() iter.Seq[Field] {
 	return iters.NewMappedSeq(o.inner.Fields(), NewField)
 }
 
+func (o Object) HasInputFile() (bool, error) {
+	for f := range o.Fields() {
+		ok, err := f.IsInputFile()
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (o Object) Unions() Unions {
 	return Unions{inner: o.Fields()}
 }

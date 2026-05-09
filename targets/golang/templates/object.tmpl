@@ -12,7 +12,60 @@ type {{.Name.AsString}} struct {
 
 {{- template "unmarshal_object" .}}
 
+{{- if .HasInputFile}}
+func (o {{.Name.AsString}}) JSON(p *MultipartPayload) ([]byte, error) {
+	type Alias {{.Name.AsString}}
+{{- range .Fields | fields}}
+{{- if .IsInputFile}}
+{{- if .Optional}}
+	var {{.Key}} *string
+	if o.{{.Name.AsString}} != nil {
+		ref, err := o.{{.Name.AsString}}.Attach(p)
+		if err != nil {
+			return nil, err
+		}
+		{{.Key}} = &ref
+	}
+{{- else}}
+	{{.Key}}, err := o.{{.Name.AsString}}.Attach(p)
+	if err != nil {
+		return nil, err
+	}
+{{- end}}
+{{- end}}
+{{- end}}
+	return json.Marshal(struct {
+{{- range .Fields | fields}}
+{{- if .IsInputFile}}
+{{- if .Optional}}
+		{{.Name.AsString}} *string {{.Tag.AsString}}
+{{- else}}
+		{{.Name.AsString}} string {{.Tag.AsString}}
+{{- end}}
+{{- end}}
+{{- end}}
+		Alias
+	}{
+{{- range .Fields | fields}}
+{{- if .IsInputFile}}
+		{{.Name.AsString}}: {{.Key}},
+{{- end}}
+{{- end}}
+		Alias: Alias(o),
+	})
+}
+{{- else}}
+
+func (o {{.Name.AsString}}) JSON(_ *MultipartPayload) ([]byte, error) {
+	return json.Marshal(o)
+}
+{{- end}}
+
 func (o {{.Name.AsString}}) Write(p *MultipartPayload, key string) error {
-	return NewJSONPart(o).Write(p, key)
+	data, err := o.JSON(p)
+	if err != nil {
+		return err
+	}
+	return p.Text(key, string(data))
 }
 {{- end}}
