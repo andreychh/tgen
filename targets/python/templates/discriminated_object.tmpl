@@ -14,7 +14,38 @@ class {{.Name.AsString}}(BaseModel):
     {{.Name.AsString}}: {{.Annotation.AsString}}
     {{.Doc.AsString}}
 {{- end}}
+{{- if .HasInputFile}}
+
+    def form_json(self, payload: MultipartPayload) -> str:
+        data = self.model_dump(
+            mode="json",
+            exclude={
+{{- range .Fields.Free | fields}}
+{{- if .IsInputFile}}
+                "{{.Name.AsString}}",
+{{- end}}
+{{- end}}
+            },
+            exclude_none=True,
+            by_alias=True,
+        )
+{{- range .Fields.Free | fields}}
+{{- if .IsInputFile}}
+{{- if .Optional}}
+        if self.{{.Name.AsString}} is not None:
+            data["{{.Key}}"] = self.{{.Name.AsString}}.attach(payload)
+{{- else}}
+        data["{{.Key}}"] = self.{{.Name.AsString}}.attach(payload)
+{{- end}}
+{{- end}}
+{{- end}}
+        return json.dumps(data)
+{{- else}}
+
+    def form_json(self, _: MultipartPayload) -> str:
+        return self.model_dump_json(exclude_none=True, by_alias=True)
+{{- end}}
 
     def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, self.model_dump_json(exclude_none=True, by_alias=True))
+        payload.text(key, self.form_json(payload))
 {{- end}}

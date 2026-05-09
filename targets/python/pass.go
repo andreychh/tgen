@@ -50,6 +50,7 @@ func (p Pass) Artifacts() (output.Artifacts, error) {
 		"method.py":           output.NewTemplateView(tmpl, "method_enum", p.context),
 		"methods.py":          output.NewTemplateView(tmpl, "methods", p.context),
 		"client.py":           output.NewTemplateView(tmpl, "client", p.context),
+		"payload.py":          output.NewTemplateView(tmpl, "payload", p.context),
 		"asyncio/__init__.py": output.NewTemplateView(tmpl, "asyncio_init", p.context),
 		"asyncio/methods.py":  output.NewTemplateView(tmpl, "async_methods", p.context),
 		"asyncio/client.py":   output.NewTemplateView(tmpl, "async_client", p.context),

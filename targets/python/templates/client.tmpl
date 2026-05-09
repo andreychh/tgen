@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-from io import IOBase
 from typing import Any, Protocol, TypeVar
 
 import httpx
@@ -15,79 +14,11 @@ from pydantic import BaseModel, TypeAdapter
 from .method import Method
 from .types import ResponseParameters
 
+T = TypeVar("T")
+
+
 class Payload(Protocol):
     def request(self, method: str, url: str) -> httpx.Request: ...
-
-
-class JSONPayload:
-    def __init__(self, model: BaseModel) -> None:
-        self._model = model
-
-    def request(self, method: str, url: str) -> httpx.Request:
-        body = self._model.model_dump(exclude_none=True, by_alias=True)
-        return httpx.Request(method, url, json=body)
-
-
-class MultipartPayload:
-    def __init__(self) -> None:
-        self._data: dict[str, str] = {}
-        self._files: dict[str, tuple[str, IOBase]] = {}
-
-    def text(self, key: str, value: str) -> None:
-        self._data[key] = value
-
-    def file(self, key: str, name: str, reader: IOBase) -> None:
-        self._files[key] = (name, reader)
-
-    def request(self, method: str, url: str) -> httpx.Request:
-        return httpx.Request(method, url, data=self._data, files=self._files)
-
-
-class Part(Protocol):
-    def write(self, payload: MultipartPayload, key: str) -> None: ...
-
-
-class StrPart:
-    def __init__(self, value: str) -> None:
-        self._value = value
-
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, self._value)
-
-
-class IntPart:
-    def __init__(self, value: int) -> None:
-        self._value = value
-
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, str(self._value))
-
-
-class FloatPart:
-    def __init__(self, value: float) -> None:
-        self._value = value
-
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, str(self._value))
-
-
-class BoolPart:
-    def __init__(self, value: bool) -> None:
-        self._value = value
-
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, "true" if self._value else "false")
-
-
-class ListPart:
-    def __init__(self, value: Any) -> None:
-        self._value = value
-
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, TypeAdapter(type(self._value)).dump_json(self._value).decode())
-
-
-T = TypeVar("T")
 
 
 class Connection(Protocol):
@@ -118,7 +49,6 @@ class HTTPConnection:
     def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
         req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
         resp = self._client.send(req)
-        resp.raise_for_status()
         envelope = Envelope.model_validate(resp.json())
         if not envelope.ok:
             raise Error(envelope.error_code, envelope.description, envelope.parameters)
@@ -132,7 +62,7 @@ class FakeConnection:
     def __init__(self, responses: dict[Method, Response]) -> None:
         self._responses = responses
 
-    def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
+    def do(self, method: Method, _: Payload, adapter: TypeAdapter[T]) -> T:
         if method not in self._responses:
             raise RuntimeError(f"FakeConnection: unexpected call to {method!r}")
         match self._responses[method]:
