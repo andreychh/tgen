@@ -4,15 +4,15 @@
 package golang
 
 import (
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type DiscriminatedObject struct {
-	inner explicit.DiscriminatedObject
+	inner spec.DiscriminatedObject
 }
 
-func NewDiscriminatedObject(v explicit.DiscriminatedObject) DiscriminatedObject {
+func NewDiscriminatedObject(v spec.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: v}
 }
 

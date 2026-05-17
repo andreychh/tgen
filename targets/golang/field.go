@@ -7,14 +7,14 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 )
 
 type Field struct {
-	inner explicit.Field
+	inner spec.Field
 }
 
-func NewField(f explicit.Field) Field {
+func NewField(f spec.Field) Field {
 	return Field{inner: f}
 }
 

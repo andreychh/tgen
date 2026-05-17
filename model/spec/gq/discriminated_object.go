@@ -5,7 +5,7 @@ package gq
 
 import (
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -24,7 +24,7 @@ func (o DiscriminatedObject) Name() (model.Name, error) {
 	return NewName(o.h4).Value()
 }
 
-func (o DiscriminatedObject) Fields() explicit.Fields {
+func (o DiscriminatedObject) Fields() spec.Fields {
 	return NewDiscriminatedObjectFields(o.root, o.h4)
 }
 

@@ -6,7 +6,7 @@ package gq
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -24,8 +24,8 @@ func NewDiscriminatedObjectFields(root, h4 gq.Selection) DiscriminatedObjectFiel
 
 // Free returns the fields of the variant that appear in the generated struct,
 // excluding the discriminator field.
-func (f DiscriminatedObjectFields) Free() iter.Seq[explicit.Field] {
-	return func(yield func(explicit.Field) bool) {
+func (f DiscriminatedObjectFields) Free() iter.Seq[spec.Field] {
+	return func(yield func(spec.Field) bool) {
 		seq := f.h4.
 			Until("h3, h4, hr").
 			Find("table tbody tr").
@@ -41,7 +41,7 @@ func (f DiscriminatedObjectFields) Free() iter.Seq[explicit.Field] {
 	}
 }
 
-func (f DiscriminatedObjectFields) Discriminator() explicit.Discriminator {
+func (f DiscriminatedObjectFields) Discriminator() spec.Discriminator {
 	for tr := range f.h4.Until("h3, h4, hr").Find("table tbody tr").All() {
 		if NewFieldRow(tr).Kind() == FieldKindDiscriminator {
 			return NewDiscriminator(tr)

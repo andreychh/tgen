@@ -6,15 +6,15 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Method struct {
-	inner explicit.Method
+	inner spec.Method
 }
 
-func NewMethod(o explicit.Method) Method {
+func NewMethod(o spec.Method) Method {
 	return Method{inner: o}
 }
 

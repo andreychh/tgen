@@ -6,15 +6,15 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Specification struct {
-	inner explicit.Specification
+	inner spec.Specification
 }
 
-func NewSpecification(s explicit.Specification) Specification {
+func NewSpecification(s spec.Specification) Specification {
 	return Specification{inner: s}
 }
 

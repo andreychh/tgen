@@ -3,7 +3,7 @@
 
 package overlays
 
-import "github.com/andreychh/tgen/model/explicit"
+import "github.com/andreychh/tgen/model/spec"
 
 // Sequential represents an Overlay that applies multiple overlays in order.
 type Sequential struct {
@@ -15,7 +15,7 @@ func NewSequential(items ...Overlay) Sequential {
 	return Sequential{items: items}
 }
 
-func (o Sequential) Apply(f explicit.Field) explicit.Field {
+func (o Sequential) Apply(f spec.Field) spec.Field {
 	for _, item := range o.items {
 		f = item.Apply(f)
 	}

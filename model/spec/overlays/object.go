@@ -7,19 +7,19 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 // Object represents an enriched Telegram Bot API object definition.
 type Object struct {
-	inner   explicit.Object
+	inner   spec.Object
 	overlay Overlay
 }
 
 // NewObject constructs an Object from a parsed object with the given overlay
 // applied to its fields.
-func NewObject(o explicit.Object, overlay Overlay) Object {
+func NewObject(o spec.Object, overlay Overlay) Object {
 	return Object{inner: o, overlay: overlay}
 }
 
@@ -35,6 +35,6 @@ func (o Object) Description() model.Description {
 	return o.inner.Description()
 }
 
-func (o Object) Fields() iter.Seq[explicit.Field] {
+func (o Object) Fields() iter.Seq[spec.Field] {
 	return iters.NewMappedSeq(NewPrioritizedFields(o.inner.Fields()), o.overlay.Apply)
 }

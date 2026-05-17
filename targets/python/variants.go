@@ -8,14 +8,14 @@ import (
 	"iter"
 	"strings"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 )
 
 type Variants struct {
-	inner iter.Seq[explicit.DiscriminatedObject]
+	inner iter.Seq[spec.DiscriminatedObject]
 }
 
-func NewVariants(s iter.Seq[explicit.DiscriminatedObject]) Variants {
+func NewVariants(s iter.Seq[spec.DiscriminatedObject]) Variants {
 	return Variants{inner: s}
 }
 

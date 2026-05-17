@@ -10,8 +10,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/meta"
-	"github.com/andreychh/tgen/model/explicit/gq"
-	"github.com/andreychh/tgen/model/explicit/overlays"
+	"github.com/andreychh/tgen/model/spec/gq"
+	"github.com/andreychh/tgen/model/spec/overlays"
 	"github.com/andreychh/tgen/output"
 	"github.com/andreychh/tgen/source"
 	"github.com/andreychh/tgen/targets/python"

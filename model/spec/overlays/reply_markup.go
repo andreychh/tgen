@@ -4,7 +4,7 @@
 package overlays
 
 import (
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -12,7 +12,7 @@ import (
 // union with ReplyMarkup.
 type ReplyMarkup struct{}
 
-func (o ReplyMarkup) Apply(field explicit.Field) explicit.Field {
+func (o ReplyMarkup) Apply(field spec.Field) spec.Field {
 	expr, err := field.Type()
 	if err != nil {
 		return field

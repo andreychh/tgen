@@ -7,7 +7,7 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -56,8 +56,8 @@ func (u DiscriminatedUnion) DiscriminatorKey() (model.Key, error) {
 // navigating from the document root.
 //
 //nolint:varnamelen // <h4> is the standard HTML heading element name
-func (u DiscriminatedUnion) Variants() iter.Seq[explicit.DiscriminatedObject] {
-	return func(yield func(explicit.DiscriminatedObject) bool) {
+func (u DiscriminatedUnion) Variants() iter.Seq[spec.DiscriminatedObject] {
+	return func(yield func(spec.DiscriminatedObject) bool) {
 		for li := range u.h4.Until("h3, h4, hr").Find("ul li").All() {
 			h4 := u.root.
 				Find("div#dev_page_content h4").

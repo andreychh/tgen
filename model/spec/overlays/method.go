@@ -7,20 +7,20 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/model/types"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 // Method represents an enriched Telegram Bot API method definition.
 type Method struct {
-	inner   explicit.Method
+	inner   spec.Method
 	overlay Overlay
 }
 
 // NewMethod constructs a Method from a parsed method with the given overlay
 // applied to its fields.
-func NewMethod(m explicit.Method, o Overlay) Method {
+func NewMethod(m spec.Method, o Overlay) Method {
 	return Method{inner: NewMaybeMessage(m), overlay: o}
 }
 
@@ -40,6 +40,6 @@ func (m Method) ReturnType() (types.Expression, error) {
 	return m.inner.ReturnType()
 }
 
-func (m Method) Fields() iter.Seq[explicit.Field] {
+func (m Method) Fields() iter.Seq[spec.Field] {
 	return iters.NewMappedSeq(NewPrioritizedFields(m.inner.Fields()), m.overlay.Apply)
 }

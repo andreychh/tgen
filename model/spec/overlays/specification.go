@@ -6,19 +6,19 @@ package overlays
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 // Specification represents the Telegram Bot API specification with field and
 // method type overlays applied.
 type Specification struct {
-	inner   explicit.Specification
+	inner   spec.Specification
 	overlay Overlay
 }
 
 // NewSpecification constructs a Specification from a parsed specification.
-func NewSpecification(s explicit.Specification) Specification {
+func NewSpecification(s spec.Specification) Specification {
 	return Specification{
 		inner: s,
 		overlay: NewSequential(
@@ -30,8 +30,8 @@ func NewSpecification(s explicit.Specification) Specification {
 	}
 }
 
-func (s Specification) Objects() iter.Seq[explicit.Object] {
-	return func(yield func(explicit.Object) bool) {
+func (s Specification) Objects() iter.Seq[spec.Object] {
+	return func(yield func(spec.Object) bool) {
 		for o := range s.inner.Objects() {
 			name, _ := o.Name()
 			if name == "InputFile" {
@@ -44,8 +44,8 @@ func (s Specification) Objects() iter.Seq[explicit.Object] {
 	}
 }
 
-func (s Specification) Methods() iter.Seq[explicit.Method] {
-	return func(yield func(explicit.Method) bool) {
+func (s Specification) Methods() iter.Seq[spec.Method] {
+	return func(yield func(spec.Method) bool) {
 		for m := range s.inner.Methods() {
 			if !yield(NewMethod(m, s.overlay)) {
 				break
@@ -54,8 +54,8 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 	}
 }
 
-func (s Specification) DiscriminatedObjects() iter.Seq[explicit.DiscriminatedObject] {
-	return func(yield func(explicit.DiscriminatedObject) bool) {
+func (s Specification) DiscriminatedObjects() iter.Seq[spec.DiscriminatedObject] {
+	return func(yield func(spec.DiscriminatedObject) bool) {
 		for obj := range s.inner.DiscriminatedObjects() {
 			name, _ := obj.Name()
 			// InaccessibleMessage uses an integer discriminator (date == 0),
@@ -71,15 +71,15 @@ func (s Specification) DiscriminatedObjects() iter.Seq[explicit.DiscriminatedObj
 	}
 }
 
-func (s Specification) DiscriminatedUnions() iter.Seq[explicit.DiscriminatedUnion] {
+func (s Specification) DiscriminatedUnions() iter.Seq[spec.DiscriminatedUnion] {
 	return iters.NewMappedSeq(
 		s.inner.DiscriminatedUnions(),
-		func(d explicit.DiscriminatedUnion) explicit.DiscriminatedUnion {
+		func(d spec.DiscriminatedUnion) spec.DiscriminatedUnion {
 			return NewDiscriminatedUnion(d, s.overlay)
 		},
 	)
 }
 
-func (s Specification) Release() explicit.Release {
+func (s Specification) Release() spec.Release {
 	return s.inner.Release()
 }

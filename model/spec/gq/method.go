@@ -7,7 +7,7 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/model/types"
 	"github.com/andreychh/tgen/pkg/gq"
 )
@@ -38,8 +38,8 @@ func (m Method) ReturnType() (types.Expression, error) {
 	return NewReturnType(m.root, m.h4).Value()
 }
 
-func (m Method) Fields() iter.Seq[explicit.Field] {
-	return func(yield func(explicit.Field) bool) {
+func (m Method) Fields() iter.Seq[spec.Field] {
+	return func(yield func(spec.Field) bool) {
 		seq := m.h4.
 			Until("h3, h4, hr").
 			Find("table tbody tr").

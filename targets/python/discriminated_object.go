@@ -3,13 +3,13 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/explicit"
+import "github.com/andreychh/tgen/model/spec"
 
 type DiscriminatedObject struct {
-	inner explicit.DiscriminatedObject
+	inner spec.DiscriminatedObject
 }
 
-func NewDiscriminatedObject(v explicit.DiscriminatedObject) DiscriminatedObject {
+func NewDiscriminatedObject(v spec.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: v}
 }
 

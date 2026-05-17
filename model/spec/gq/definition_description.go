@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-// Package gq implements the explicit interfaces by extracting data from the
+// Package gq implements the spec interfaces by extracting data from the
 // Telegram Bot API HTML page using goquery selections. It is the only package
 // in the pipeline that reads raw HTML; assembled other packages work with the
-// explicit interfaces.
+// spec interfaces.
 package gq
 
 import (

@@ -6,15 +6,15 @@ package python
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Object struct {
-	inner explicit.Object
+	inner spec.Object
 }
 
-func NewObject(o explicit.Object) Object {
+func NewObject(o spec.Object) Object {
 	return Object{inner: o}
 }
 

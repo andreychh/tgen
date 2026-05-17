@@ -6,7 +6,7 @@ package overlays
 import (
 	"slices"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -14,7 +14,7 @@ import (
 // String-with-sending-files-link field types with InputFile.
 type InputFile struct{}
 
-func (o InputFile) Apply(field explicit.Field) explicit.Field {
+func (o InputFile) Apply(field spec.Field) spec.Field {
 	expr, err := field.Type()
 	if err != nil {
 		return field

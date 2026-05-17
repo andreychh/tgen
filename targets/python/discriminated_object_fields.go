@@ -6,19 +6,19 @@ package python
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 // DiscriminatedObjectFields groups the free fields and discriminator of a
 // variant for Python code generation.
 type DiscriminatedObjectFields struct {
-	inner explicit.Fields
+	inner spec.Fields
 }
 
 // NewDiscriminatedObjectFields constructs a DiscriminatedObjectFields from
 // parsed variant fields.
-func NewDiscriminatedObjectFields(f explicit.Fields) DiscriminatedObjectFields {
+func NewDiscriminatedObjectFields(f spec.Fields) DiscriminatedObjectFields {
 	return DiscriminatedObjectFields{inner: f}
 }
 

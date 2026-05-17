@@ -5,19 +5,19 @@ package overlays
 
 import (
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 )
 
 // DiscriminatedObject represents an enriched discriminated variant with
 // overlay applied to its free fields.
 type DiscriminatedObject struct {
-	inner   explicit.DiscriminatedObject
+	inner   spec.DiscriminatedObject
 	overlay Overlay
 }
 
 // NewDiscriminatedObject constructs a DiscriminatedObject from a parsed
 // variant with the given overlay applied to its free fields.
-func NewDiscriminatedObject(v explicit.DiscriminatedObject, o Overlay) DiscriminatedObject {
+func NewDiscriminatedObject(v spec.DiscriminatedObject, o Overlay) DiscriminatedObject {
 	return DiscriminatedObject{inner: v, overlay: o}
 }
 
@@ -33,6 +33,6 @@ func (v DiscriminatedObject) Description() model.Description {
 	return v.inner.Description()
 }
 
-func (v DiscriminatedObject) Fields() explicit.Fields {
+func (v DiscriminatedObject) Fields() spec.Fields {
 	return NewDiscriminatedObjectFields(v.inner.Fields(), v.overlay)
 }

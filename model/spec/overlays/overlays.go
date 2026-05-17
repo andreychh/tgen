@@ -8,26 +8,26 @@ package overlays
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 // Overlay represents a conditional field transformation applied during
 // parsing.
 type Overlay interface {
-	Apply(f explicit.Field) explicit.Field
+	Apply(f spec.Field) spec.Field
 }
 
-func NewPrioritizedFields(seq iter.Seq[explicit.Field]) iter.Seq[explicit.Field] {
+func NewPrioritizedFields(seq iter.Seq[spec.Field]) iter.Seq[spec.Field] {
 	return iters.NewMergedSeq(
-		iters.NewFilteredSeq(seq, func(f explicit.Field) bool {
+		iters.NewFilteredSeq(seq, func(f spec.Field) bool {
 			opt, err := f.Optionality()
 			if err != nil {
 				return true
 			}
 			return !bool(opt)
 		}),
-		iters.NewFilteredSeq(seq, func(f explicit.Field) bool {
+		iters.NewFilteredSeq(seq, func(f spec.Field) bool {
 			opt, err := f.Optionality()
 			if err != nil {
 				return false

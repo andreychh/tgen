@@ -7,7 +7,7 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -31,8 +31,8 @@ func (o Object) Description() model.Description {
 	return NewDefinitionDescription(o.h4)
 }
 
-func (o Object) Fields() iter.Seq[explicit.Field] {
-	return func(yield func(explicit.Field) bool) {
+func (o Object) Fields() iter.Seq[spec.Field] {
+	return func(yield func(spec.Field) bool) {
 		seq := o.h4.
 			Until("h3, h4, hr").
 			Find("table tbody tr").

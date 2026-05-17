@@ -7,7 +7,7 @@ import (
 	"iter"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -24,8 +24,8 @@ func NewSpecificationFromDocument(doc *goquery.Document) Specification {
 	return NewSpecification(gq.NewNormSelection(doc.Selection))
 }
 
-func (s Specification) Objects() iter.Seq[explicit.Object] {
-	return func(yield func(explicit.Object) bool) {
+func (s Specification) Objects() iter.Seq[spec.Object] {
+	return func(yield func(spec.Object) bool) {
 		seq := s.root.
 			Find("div#dev_page_content h4").
 			FilterFunc(func(h4 gq.Selection) bool {
@@ -40,8 +40,8 @@ func (s Specification) Objects() iter.Seq[explicit.Object] {
 	}
 }
 
-func (s Specification) Methods() iter.Seq[explicit.Method] {
-	return func(yield func(explicit.Method) bool) {
+func (s Specification) Methods() iter.Seq[spec.Method] {
+	return func(yield func(spec.Method) bool) {
 		seq := s.root.
 			Find("div#dev_page_content h4").
 			FilterFunc(func(h4 gq.Selection) bool {
@@ -56,8 +56,8 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 	}
 }
 
-func (s Specification) DiscriminatedObjects() iter.Seq[explicit.DiscriminatedObject] {
-	return func(yield func(explicit.DiscriminatedObject) bool) {
+func (s Specification) DiscriminatedObjects() iter.Seq[spec.DiscriminatedObject] {
+	return func(yield func(spec.DiscriminatedObject) bool) {
 		seq := s.root.
 			Find("div#dev_page_content h4").
 			FilterFunc(func(h4 gq.Selection) bool {
@@ -72,8 +72,8 @@ func (s Specification) DiscriminatedObjects() iter.Seq[explicit.DiscriminatedObj
 	}
 }
 
-func (s Specification) DiscriminatedUnions() iter.Seq[explicit.DiscriminatedUnion] {
-	return func(yield func(explicit.DiscriminatedUnion) bool) {
+func (s Specification) DiscriminatedUnions() iter.Seq[spec.DiscriminatedUnion] {
+	return func(yield func(spec.DiscriminatedUnion) bool) {
 		seq := s.root.
 			Find("div#dev_page_content h4").
 			FilterFunc(func(h4 gq.Selection) bool {
@@ -88,6 +88,6 @@ func (s Specification) DiscriminatedUnions() iter.Seq[explicit.DiscriminatedUnio
 	}
 }
 
-func (s Specification) Release() explicit.Release {
+func (s Specification) Release() spec.Release {
 	return NewRelease(s.root.Find("div#dev_page_content h4").At(0))
 }

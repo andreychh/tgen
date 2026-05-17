@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-// Package explicit defines the domain interfaces for data that comes directly
+// Package spec defines the domain interfaces for data that comes directly
 // from the Telegram Bot API specification: objects, methods, unions, fields,
 // and their structural relationships. Concrete implementations live in the gq
 // and overlays subpackages.
-package explicit
+package spec
 
 import (
 	"iter"

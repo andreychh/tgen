@@ -7,18 +7,18 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/spec"
 	"github.com/andreychh/tgen/model/types"
 )
 
-// MaybeMessage represents a explicit.Method overlay that replaces
+// MaybeMessage represents a spec.Method overlay that replaces
 // Message-or-True return types with MaybeMessage.
 type MaybeMessage struct {
-	inner explicit.Method
+	inner spec.Method
 }
 
 // NewMaybeMessage constructs a MaybeMessage from m.
-func NewMaybeMessage(m explicit.Method) MaybeMessage {
+func NewMaybeMessage(m spec.Method) MaybeMessage {
 	return MaybeMessage{inner: m}
 }
 
@@ -48,6 +48,6 @@ func (r MaybeMessage) ReturnType() (types.Expression, error) {
 	return types.NewNamed("MaybeMessage", types.KindUnion), nil
 }
 
-func (r MaybeMessage) Fields() iter.Seq[explicit.Field] {
+func (r MaybeMessage) Fields() iter.Seq[spec.Field] {
 	return r.inner.Fields()
 }
