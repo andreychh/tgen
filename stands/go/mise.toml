@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+# yaml-language-server: $schema=https://mise.jdx.dev/schema/mise.json
+
+[tools]
+"go" = "1.26.0"

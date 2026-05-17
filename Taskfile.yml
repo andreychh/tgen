@@ -123,6 +123,24 @@ tasks:
     cmds:
       - go run .
 
+  # --- Stands ---
+
+  stands:
+    desc: Generate code for all targets
+    deps:
+      - stands:go
+      - stands:python
+
+  stands:go:
+    desc: Generate Go client code into stands/go/api
+    cmds:
+      - go run . go -o stands/go/api
+
+  stands:python:
+    desc: Generate Python client code into stands/python/api
+    cmds:
+      - go run . python -o stands/python/api
+
   # --- Release ---
 
   release:patch:
