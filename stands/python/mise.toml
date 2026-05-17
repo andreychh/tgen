@@ -5,3 +5,7 @@
 [tools]
 "python" = "3.13"
 "pipx:mypy" = "1.15.0"
+
+[tasks.check]
+description = "Verify the generated Python code passes type checking"
+run = "mypy api/"

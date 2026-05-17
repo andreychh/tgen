@@ -126,20 +126,44 @@ tasks:
   # --- Stands ---
 
   stands:
-    desc: Generate code for all targets
+    desc: Generate and verify all targets
     deps:
       - stands:go
       - stands:python
 
   stands:go:
+    desc: Generate and verify Go stand
+    deps:
+      - stands:go:generate
+      - stands:go:check
+
+  stands:go:generate:
     desc: Generate Go client code into stands/go/api
     cmds:
       - go run . go -o stands/go/api
 
+  stands:go:check:
+    desc: Verify the generated Go code compiles
+    dir: stands/go
+    cmds:
+      - mise run check
+
   stands:python:
+    desc: Generate and verify Python stand
+    deps:
+      - stands:python:generate
+      - stands:python:check
+
+  stands:python:generate:
     desc: Generate Python client code into stands/python/api
     cmds:
       - go run . python -o stands/python/api
+
+  stands:python:check:
+    desc: Verify the generated Python code passes type checking
+    dir: stands/python
+    cmds:
+      - mise run check
 
   # --- Release ---
 

@@ -4,3 +4,8 @@
 
 [tools]
 "go" = "1.26.0"
+
+[tasks.check]
+description = "Verify the generated Go code compiles"
+dir = "api"
+run = "go build ./..."
