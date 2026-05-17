@@ -133,9 +133,9 @@ tasks:
 
   stands:go:
     desc: Generate and verify Go stand
-    deps:
-      - stands:go:generate
-      - stands:go:check
+    cmds:
+      - task: stands:go:generate
+      - task: stands:go:check
 
   stands:go:generate:
     desc: Generate Go client code into stands/go/api
@@ -146,13 +146,14 @@ tasks:
     desc: Verify the generated Go code compiles
     dir: stands/go
     cmds:
+      - mise trust --quiet
       - mise run check
 
   stands:python:
     desc: Generate and verify Python stand
-    deps:
-      - stands:python:generate
-      - stands:python:check
+    cmds:
+      - task: stands:python:generate
+      - task: stands:python:check
 
   stands:python:generate:
     desc: Generate Python client code into stands/python/api
@@ -163,12 +164,14 @@ tasks:
     desc: Create venv and install Python stand dependencies
     dir: stands/python
     cmds:
+      - mise trust --quiet
       - mise run setup
 
   stands:python:check:
     desc: Verify the generated Python code passes type checking
     dir: stands/python
     cmds:
+      - mise trust --quiet
       - mise run check
 
   # --- Release ---
