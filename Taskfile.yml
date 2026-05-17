@@ -125,49 +125,86 @@ tasks:
 
   # --- Stands ---
 
-  stands:
-    desc: Generate and verify all targets
+  stands:generate:
+    desc: Generate code for all stands
     deps:
-      - stands:go
-      - stands:python
+      - stands:generate:go
+      - stands:generate:python
 
-  stands:go:
-    desc: Generate and verify Go stand
-    cmds:
-      - task: stands:go:generate
-      - task: stands:go:check
+  stands:test:
+    desc: Generate and verify all stands
+    deps:
+      - stands:test:go
+      - stands:test:python
 
-  stands:go:generate:
+  stands:ci:
+    desc: Full CI scenario for all stands (generate, diff, check)
+    deps:
+      - stands:ci:go
+      - stands:ci:python
+
+  stands:generate:go:
     desc: Generate Go client code into stands/go/api
     cmds:
       - go run . go -o stands/go/api
 
-  stands:go:check:
+  stands:generate:python:
+    desc: Generate Python client code into stands/python/api
+    cmds:
+      - go run . python -o stands/python/api
+
+  stands:test:go:
+    desc: Generate and verify Go stand
+    cmds:
+      - task: stands:generate:go
+      - task: stands:check:go
+
+  stands:test:python:
+    desc: Generate and verify Python stand
+    cmds:
+      - task: stands:generate:python
+      - task: stands:check:python
+
+  stands:ci:go:
+    desc: Full CI scenario for Go stand (generate, diff, check)
+    cmds:
+      - task: stands:generate:go
+      - task: stands:diff:go
+      - task: stands:check:go
+
+  stands:ci:python:
+    desc: Full CI scenario for Python stand (generate, diff, check)
+    cmds:
+      - task: stands:generate:python
+      - task: stands:diff:python
+      - task: stands:check:python
+
+  stands:diff:go:
+    internal: true
+    cmds:
+      - |
+        if ! git diff --exit-code stands/go/api/; then
+          echo "stands/go/api/ is out of sync — run 'task stands:generate:go' and commit the result"
+          exit 1
+        fi
+
+  stands:diff:python:
+    internal: true
+    cmds:
+      - |
+        if ! git diff --exit-code stands/python/api/; then
+          echo "stands/python/api/ is out of sync — run 'task stands:generate:python' and commit the result"
+          exit 1
+        fi
+
+  stands:check:go:
     desc: Verify the generated Go code compiles
     dir: stands/go
     cmds:
       - mise trust --quiet
       - mise run check
 
-  stands:python:
-    desc: Generate and verify Python stand
-    cmds:
-      - task: stands:python:generate
-      - task: stands:python:check
-
-  stands:python:generate:
-    desc: Generate Python client code into stands/python/api
-    cmds:
-      - go run . python -o stands/python/api
-
-  stands:python:setup:
-    desc: Create venv and install Python stand dependencies
-    dir: stands/python
-    cmds:
-      - mise trust --quiet
-      - mise run setup
-
-  stands:python:check:
+  stands:check:python:
     desc: Verify the generated Python code passes type checking
     dir: stands/python
     cmds:
