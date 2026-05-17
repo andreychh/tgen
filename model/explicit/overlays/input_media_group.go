@@ -20,6 +20,7 @@ func (o InputMediaGroup) Apply(field explicit.Field) explicit.Field {
 	if !expr.Equals(types.NewArray(types.NewUnion(
 		types.NewNamed("InputMediaAudio", types.KindObject),
 		types.NewNamed("InputMediaDocument", types.KindObject),
+		types.NewNamed("InputMediaLivePhoto", types.KindObject),
 		types.NewNamed("InputMediaPhoto", types.KindObject),
 		types.NewNamed("InputMediaVideo", types.KindObject),
 	))) {
