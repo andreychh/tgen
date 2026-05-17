@@ -93,6 +93,7 @@ type InputMediaGroup interface{ Part; FormJSON; sealedInputMediaGroup() }
 
 func (v InputMediaAudio) sealedInputMediaGroup()    {}
 func (v InputMediaDocument) sealedInputMediaGroup() {}
+func (v InputMediaLivePhoto) sealedInputMediaGroup() {}
 func (v InputMediaPhoto) sealedInputMediaGroup()    {}
 func (v InputMediaVideo) sealedInputMediaGroup()    {}
 
