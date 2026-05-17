@@ -12,8 +12,14 @@ vars:
 tasks:
   default:
     deps:
+      - check
+
+  check:
+    desc: Run all checks (lint, test, stands)
+    deps:
       - lint
       - test
+      - stands:test
 
   clean:
     desc: Remove build artifacts and cache
