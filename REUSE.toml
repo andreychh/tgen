@@ -6,6 +6,12 @@ path = [
     "**/*.json",
     "**/.gitignore",
     "go.sum",
+    "stands/python/uv.lock",
 ]
+SPDX-FileCopyrightText = "2026 Andrey Chernykh"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["stands/**/api/**"]
 SPDX-FileCopyrightText = "2026 Andrey Chernykh"
 SPDX-License-Identifier = "MIT"

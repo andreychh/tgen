@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+# yaml-language-server: $schema=https://mise.jdx.dev/schema/mise.json
+
+[tools]
+"python"              = "3.13"
+"github:astral-sh/uv" = "0.10.7"
+
+[tasks.setup]
+description = "Create venv and install dependencies"
+run = "uv sync --python $(mise which python)"
+
+[tasks.check]
+description = "Verify the generated Python code passes type checking"
+depends = ["setup"]
+run = "uv run mypy api/"

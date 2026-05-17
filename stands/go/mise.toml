@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+# yaml-language-server: $schema=https://mise.jdx.dev/schema/mise.json
+
+[tools]
+"go" = "1.26.3"
+
+[tasks.check]
+description = "Verify the generated Go code compiles"
+dir = "api"
+run = "go build ./..."
