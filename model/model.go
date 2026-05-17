@@ -5,19 +5,11 @@
 // of the tgen pipeline: Name, Type, Description, Key, and their companions.
 package model
 
-import (
-	"time"
-
-	"github.com/andreychh/tgen/model/types"
-)
+import "time"
 
 type Name string
 
 type Reference string
-
-type Type interface {
-	AsExpression() (types.Expression, error)
-}
 
 type Optionality bool
 

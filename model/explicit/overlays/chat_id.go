@@ -13,7 +13,7 @@ import (
 type ChatID struct{}
 
 func (o ChatID) Apply(field explicit.Field) explicit.Field {
-	expr, err := field.Type().AsExpression()
+	expr, err := field.Type()
 	if err != nil {
 		return field
 	}

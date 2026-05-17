@@ -15,7 +15,7 @@ import (
 type InputFile struct{}
 
 func (o InputFile) Apply(field explicit.Field) explicit.Field {
-	expr, err := field.Type().AsExpression()
+	expr, err := field.Type()
 	if err != nil {
 		return field
 	}

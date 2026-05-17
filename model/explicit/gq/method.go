@@ -8,6 +8,7 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/types"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -33,8 +34,8 @@ func (m Method) Description() model.Description {
 	return NewDefinitionDescription(m.h4)
 }
 
-func (m Method) ReturnType() model.Type {
-	return NewReturnType(m.root, m.h4)
+func (m Method) ReturnType() (types.Expression, error) {
+	return NewReturnType(m.root, m.h4).Value()
 }
 
 func (m Method) Fields() iter.Seq[explicit.Field] {

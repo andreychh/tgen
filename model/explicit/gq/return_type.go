@@ -40,10 +40,10 @@ func NewReturnType(root, h4 gq.Selection) ReturnType {
 	return ReturnType{root: root, h4: h4}
 }
 
-// AsExpression parses the method description and returns the return type
-// expression. Returns an error if no description paragraphs are found or the
-// return type cannot be extracted.
-func (t ReturnType) AsExpression() (types.Expression, error) {
+// Value parses the method description and returns the return type expression.
+// Returns an error if no description paragraphs are found or the return type
+// cannot be extracted.
+func (t ReturnType) Value() (types.Expression, error) {
 	var parts []string
 	for node := range t.h4.Until("h3, h4, hr").Filter("p").All() {
 		text := node.Text()

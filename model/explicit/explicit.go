@@ -11,6 +11,7 @@ import (
 	"iter"
 
 	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/types"
 )
 
 // Specification represents the full Telegram Bot API specification.
@@ -33,7 +34,7 @@ type Method interface {
 	Reference() (model.Reference, error)
 	Name() (model.Name, error)
 	Description() model.Description
-	ReturnType() model.Type
+	ReturnType() (types.Expression, error)
 	Fields() iter.Seq[Field]
 }
 
@@ -64,7 +65,7 @@ type Discriminator interface {
 
 type Field interface {
 	Key() (model.Key, error)
-	Type() model.Type
+	Type() (types.Expression, error)
 	Optionality() (model.Optionality, error)
 	Description() model.Description
 }

@@ -41,7 +41,7 @@ func NewType(c Catalog, s TypeSource) Type {
 	return Type{catalog: c, source: s}
 }
 
-func (t Type) AsExpression() (Expression, error) {
+func (t Type) Value() (Expression, error) {
 	value, err := t.source.AsString()
 	if err != nil {
 		return nil, err

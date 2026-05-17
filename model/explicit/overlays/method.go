@@ -8,6 +8,7 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/types"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
@@ -35,7 +36,7 @@ func (m Method) Description() model.Description {
 	return m.inner.Description()
 }
 
-func (m Method) ReturnType() model.Type {
+func (m Method) ReturnType() (types.Expression, error) {
 	return m.inner.ReturnType()
 }
 

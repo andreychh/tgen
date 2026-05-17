@@ -21,8 +21,8 @@ func (f MethodField) Key() (model.Key, error) {
 	return NewKey(f.tr.Find("td").At(0)).Value()
 }
 
-func (f MethodField) Type() model.Type {
-	return types.NewType(NewCatalog(f.root), NewType(f.tr.Find("td").At(1)))
+func (f MethodField) Type() (types.Expression, error) {
+	return types.NewType(NewCatalog(f.root), NewType(f.tr.Find("td").At(1))).Value()
 }
 
 func (f MethodField) Optionality() (model.Optionality, error) {

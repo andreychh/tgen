@@ -8,7 +8,6 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/explicit"
-	"github.com/andreychh/tgen/model/literals"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -35,18 +34,18 @@ func (r MaybeMessage) Description() model.Description {
 	return r.inner.Description()
 }
 
-func (r MaybeMessage) ReturnType() model.Type {
-	expr, err := r.inner.ReturnType().AsExpression()
+func (r MaybeMessage) ReturnType() (types.Expression, error) {
+	expr, err := r.inner.ReturnType()
 	if err != nil {
-		return r.inner.ReturnType()
+		return nil, err
 	}
 	if !expr.Equals(types.NewUnion(
 		types.NewNamed("Message", types.KindObject),
 		types.NewNamed("True", types.KindPrimitive),
 	)) {
-		return r.inner.ReturnType()
+		return expr, nil
 	}
-	return literals.NewType(types.NewNamed("MaybeMessage", types.KindUnion))
+	return types.NewNamed("MaybeMessage", types.KindUnion), nil
 }
 
 func (r MaybeMessage) Fields() iter.Seq[explicit.Field] {

@@ -6,7 +6,6 @@ package overlays
 import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/explicit"
-	"github.com/andreychh/tgen/model/literals"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -32,8 +31,8 @@ func (f Modified) Key() (model.Key, error) {
 	return f.origin.Key()
 }
 
-func (f Modified) Type() model.Type {
-	return literals.NewType(f.expr)
+func (f Modified) Type() (types.Expression, error) {
+	return f.expr, nil
 }
 
 func (f Modified) Optionality() (model.Optionality, error) {
