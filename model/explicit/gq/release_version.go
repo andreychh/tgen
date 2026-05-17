@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -21,7 +22,8 @@ func NewReleaseVersion(strong gq.Selection) ReleaseVersion {
 	return ReleaseVersion{strong: strong}
 }
 
-func (v ReleaseVersion) AsString() (string, error) {
+// Value returns the Bot API version number extracted from the strong element.
+func (v ReleaseVersion) Value() (model.ReleaseVersion, error) {
 	if v.strong.IsEmpty() {
 		return "", errors.New("release version not found")
 	}
@@ -30,5 +32,5 @@ func (v ReleaseVersion) AsString() (string, error) {
 	if len(matches) != 2 {
 		return "", fmt.Errorf("release version %q contains invalid characters", val)
 	}
-	return matches[1], nil
+	return model.ReleaseVersion(matches[1]), nil
 }

@@ -23,11 +23,11 @@ func NewMethod(m explicit.Method, o Overlay) Method {
 	return Method{inner: NewMaybeMessage(m), overlay: o}
 }
 
-func (m Method) Reference() model.Reference {
+func (m Method) Reference() (model.Reference, error) {
 	return m.inner.Reference()
 }
 
-func (m Method) Name() model.Name {
+func (m Method) Name() (model.Name, error) {
 	return m.inner.Name()
 }
 

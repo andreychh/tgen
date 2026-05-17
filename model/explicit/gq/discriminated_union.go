@@ -24,12 +24,12 @@ func NewDiscriminatedUnion(root, h4 gq.Selection) DiscriminatedUnion {
 	return DiscriminatedUnion{root: root, h4: h4}
 }
 
-func (u DiscriminatedUnion) Reference() model.Reference {
-	return NewDefinitionReference(u.h4.Find("a.anchor"))
+func (u DiscriminatedUnion) Reference() (model.Reference, error) {
+	return NewDefinitionReference(u.h4.Find("a.anchor")).Value()
 }
 
-func (u DiscriminatedUnion) Name() model.Name {
-	return NewName(u.h4)
+func (u DiscriminatedUnion) Name() (model.Name, error) {
+	return NewName(u.h4).Value()
 }
 
 func (u DiscriminatedUnion) Description() model.Description {
@@ -40,7 +40,7 @@ func (u DiscriminatedUnion) Description() model.Description {
 // (e.g. "type" for ReactionType).
 //
 //nolint:varnamelen // <h4> is the standard HTML heading element name
-func (u DiscriminatedUnion) DiscriminatorKey() model.Key {
+func (u DiscriminatedUnion) DiscriminatorKey() (model.Key, error) {
 	li := u.h4.Until("h3, h4, hr").Find("ul li").At(0)
 	h4 := u.root.
 		Find("div#dev_page_content h4").

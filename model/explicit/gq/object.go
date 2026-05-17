@@ -19,12 +19,12 @@ func NewObject(root, h4 gq.Selection) Object {
 	return Object{root: root, h4: h4}
 }
 
-func (o Object) Reference() model.Reference {
-	return NewDefinitionReference(o.h4.Find("a.anchor"))
+func (o Object) Reference() (model.Reference, error) {
+	return NewDefinitionReference(o.h4.Find("a.anchor")).Value()
 }
 
-func (o Object) Name() model.Name {
-	return NewName(o.h4)
+func (o Object) Name() (model.Name, error) {
+	return NewName(o.h4).Value()
 }
 
 func (o Object) Description() model.Description {

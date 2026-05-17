@@ -23,11 +23,11 @@ func NewMaybeMessage(m explicit.Method) MaybeMessage {
 	return MaybeMessage{inner: m}
 }
 
-func (r MaybeMessage) Reference() model.Reference {
+func (r MaybeMessage) Reference() (model.Reference, error) {
 	return r.inner.Reference()
 }
 
-func (r MaybeMessage) Name() model.Name {
+func (r MaybeMessage) Name() (model.Name, error) {
 	return r.inner.Name()
 }
 

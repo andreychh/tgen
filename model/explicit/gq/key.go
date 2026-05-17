@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -21,7 +22,8 @@ func NewKey(td gq.Selection) Key {
 	return Key{td: td}
 }
 
-func (k Key) AsString() (string, error) {
+// Value returns the field key extracted from the td cell.
+func (k Key) Value() (model.Key, error) {
 	if k.td.IsEmpty() {
 		return "", errors.New("field key not found")
 	}
@@ -29,5 +31,5 @@ func (k Key) AsString() (string, error) {
 	if !keyRegex.MatchString(key) {
 		return "", fmt.Errorf("field key %q contains invalid characters", key)
 	}
-	return key, nil
+	return model.Key(key), nil
 }

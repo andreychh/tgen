@@ -24,11 +24,11 @@ func NewDiscriminatedUnion(u explicit.DiscriminatedUnion, o Overlay) Discriminat
 	return DiscriminatedUnion{inner: u, overlay: o}
 }
 
-func (u DiscriminatedUnion) Reference() model.Reference {
+func (u DiscriminatedUnion) Reference() (model.Reference, error) {
 	return u.inner.Reference()
 }
 
-func (u DiscriminatedUnion) Name() model.Name {
+func (u DiscriminatedUnion) Name() (model.Name, error) {
 	return u.inner.Name()
 }
 
@@ -36,7 +36,7 @@ func (u DiscriminatedUnion) Description() model.Description {
 	return u.inner.Description()
 }
 
-func (u DiscriminatedUnion) DiscriminatorKey() model.Key {
+func (u DiscriminatedUnion) DiscriminatorKey() (model.Key, error) {
 	return u.inner.DiscriminatorKey()
 }
 

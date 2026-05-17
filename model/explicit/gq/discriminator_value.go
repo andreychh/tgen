@@ -7,6 +7,7 @@ import (
 	"errors"
 	"regexp"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -25,16 +26,16 @@ func NewDiscriminatorValue(td gq.Selection) DiscriminatorValue {
 	return DiscriminatorValue{td: td}
 }
 
-// AsString returns the discriminator value extracted from the description.
+// Value returns the discriminator value extracted from the description.
 // Returns an error if no always-quoted, always-numeric, or must-be value is found.
-func (v DiscriminatorValue) AsString() (string, error) {
+func (v DiscriminatorValue) Value() (model.DiscriminatorValue, error) {
 	match := discriminatorValueRegex.FindStringSubmatch(v.td.Text())
 	if match == nil {
 		return "", errors.New("no discriminator value in description")
 	}
 	for _, m := range match[1:] {
 		if m != "" {
-			return m, nil
+			return model.DiscriminatorValue(m), nil
 		}
 	}
 	return "", errors.New("no discriminator value in description")

@@ -21,12 +21,12 @@ func NewMethod(root, h4 gq.Selection) Method {
 	return Method{root: root, h4: h4}
 }
 
-func (m Method) Reference() model.Reference {
-	return NewDefinitionReference(m.h4.Find("a.anchor"))
+func (m Method) Reference() (model.Reference, error) {
+	return NewDefinitionReference(m.h4.Find("a.anchor")).Value()
 }
 
-func (m Method) Name() model.Name {
-	return NewName(m.h4)
+func (m Method) Name() (model.Name, error) {
+	return NewName(m.h4).Value()
 }
 
 func (m Method) Description() model.Description {

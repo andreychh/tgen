@@ -17,16 +17,16 @@ func NewObjectField(root, tr gq.Selection) ObjectField {
 	return ObjectField{root: root, tr: tr}
 }
 
-func (f ObjectField) Key() model.Key {
-	return NewKey(f.tr.Find("td").At(0))
+func (f ObjectField) Key() (model.Key, error) {
+	return NewKey(f.tr.Find("td").At(0)).Value()
 }
 
 func (f ObjectField) Type() model.Type {
 	return types.NewType(NewCatalog(f.root), NewType(f.tr.Find("td").At(1)))
 }
 
-func (f ObjectField) Optionality() model.Optionality {
-	return NewObjectFieldOptionality(f.tr.Find("td").At(2))
+func (f ObjectField) Optionality() (model.Optionality, error) {
+	return NewObjectFieldOptionality(f.tr.Find("td").At(2)).Value()
 }
 
 func (f ObjectField) Description() model.Description {

@@ -16,19 +16,19 @@ func NewRelease(h4 gq.Selection) Release {
 	return Release{h4: h4}
 }
 
-func (r Release) Reference() model.Reference {
-	return NewReleaseReference(r.h4.Find("a.anchor"))
+func (r Release) Reference() (model.Reference, error) {
+	return NewReleaseReference(r.h4.Find("a.anchor")).Value()
 }
 
-func (r Release) Version() model.ReleaseVersion {
+func (r Release) Version() (model.ReleaseVersion, error) {
 	return NewReleaseVersion(r.h4.
 		Until("h3, h4, hr").
 		Filter("p").
 		Find("strong").
 		At(0),
-	)
+	).Value()
 }
 
-func (r Release) Date() model.ReleaseDate {
-	return NewReleaseDate(r.h4.Find("a.anchor"))
+func (r Release) Date() (model.ReleaseDate, error) {
+	return NewReleaseDate(r.h4.Find("a.anchor")).Value()
 }

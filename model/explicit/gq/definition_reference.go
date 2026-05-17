@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -22,7 +23,8 @@ func NewDefinitionReference(a gq.Selection) DefinitionReference {
 	return DefinitionReference{a: a}
 }
 
-func (r DefinitionReference) AsString() (string, error) {
+// Value returns the definition reference extracted from the anchor href.
+func (r DefinitionReference) Value() (model.Reference, error) {
 	if r.a.IsEmpty() {
 		return "", errors.New("definition ref not found")
 	}
@@ -30,5 +32,5 @@ func (r DefinitionReference) AsString() (string, error) {
 	if !definitionRefRegex.MatchString(href) {
 		return "", fmt.Errorf("definition ref %q contains invalid characters", href)
 	}
-	return strings.TrimPrefix(href, "#"), nil
+	return model.Reference(strings.TrimPrefix(href, "#")), nil
 }

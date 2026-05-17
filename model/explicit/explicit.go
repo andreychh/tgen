@@ -23,31 +23,31 @@ type Specification interface {
 }
 
 type Object interface {
-	Reference() model.Reference
-	Name() model.Name
+	Reference() (model.Reference, error)
+	Name() (model.Name, error)
 	Description() model.Description
 	Fields() iter.Seq[Field]
 }
 
 type Method interface {
-	Reference() model.Reference
-	Name() model.Name
+	Reference() (model.Reference, error)
+	Name() (model.Name, error)
 	Description() model.Description
 	ReturnType() model.Type
 	Fields() iter.Seq[Field]
 }
 
 type DiscriminatedUnion interface {
-	Reference() model.Reference
-	Name() model.Name
+	Reference() (model.Reference, error)
+	Name() (model.Name, error)
 	Description() model.Description
-	DiscriminatorKey() model.Key
+	DiscriminatorKey() (model.Key, error)
 	Variants() iter.Seq[DiscriminatedObject]
 }
 
 type DiscriminatedObject interface {
-	Reference() model.Reference
-	Name() model.Name
+	Reference() (model.Reference, error)
+	Name() (model.Name, error)
 	Description() model.Description
 	Fields() Fields
 }
@@ -58,19 +58,19 @@ type Fields interface {
 }
 
 type Discriminator interface {
-	Key() model.Key
-	Value() model.DiscriminatorValue
+	Key() (model.Key, error)
+	Value() (model.DiscriminatorValue, error)
 }
 
 type Field interface {
-	Key() model.Key
+	Key() (model.Key, error)
 	Type() model.Type
-	Optionality() model.Optionality
+	Optionality() (model.Optionality, error)
 	Description() model.Description
 }
 
 type Release interface {
-	Reference() model.Reference
-	Version() model.ReleaseVersion
-	Date() model.ReleaseDate
+	Reference() (model.Reference, error)
+	Version() (model.ReleaseVersion, error)
+	Date() (model.ReleaseDate, error)
 }

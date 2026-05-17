@@ -21,11 +21,11 @@ func NewDiscriminatedObject(v explicit.DiscriminatedObject, o Overlay) Discrimin
 	return DiscriminatedObject{inner: v, overlay: o}
 }
 
-func (v DiscriminatedObject) Reference() model.Reference {
+func (v DiscriminatedObject) Reference() (model.Reference, error) {
 	return v.inner.Reference()
 }
 
-func (v DiscriminatedObject) Name() model.Name {
+func (v DiscriminatedObject) Name() (model.Name, error) {
 	return v.inner.Name()
 }
 

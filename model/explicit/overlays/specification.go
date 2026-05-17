@@ -33,7 +33,7 @@ func NewSpecification(s explicit.Specification) Specification {
 func (s Specification) Objects() iter.Seq[explicit.Object] {
 	return func(yield func(explicit.Object) bool) {
 		for o := range s.inner.Objects() {
-			name, _ := o.Name().AsString()
+			name, _ := o.Name()
 			if name == "InputFile" {
 				continue
 			}
@@ -57,7 +57,7 @@ func (s Specification) Methods() iter.Seq[explicit.Method] {
 func (s Specification) DiscriminatedObjects() iter.Seq[explicit.DiscriminatedObject] {
 	return func(yield func(explicit.DiscriminatedObject) bool) {
 		for obj := range s.inner.DiscriminatedObjects() {
-			name, _ := obj.Name().AsString()
+			name, _ := obj.Name()
 			// InaccessibleMessage uses an integer discriminator (date == 0),
 			// which the current string-only discriminator system cannot represent.
 			// It is hardcoded in the template until typed discriminators are supported.

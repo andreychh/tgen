@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -22,7 +23,8 @@ func NewReleaseReference(a gq.Selection) ReleaseReference {
 	return ReleaseReference{a: a}
 }
 
-func (r ReleaseReference) AsString() (string, error) {
+// Value returns the release reference extracted from the anchor href.
+func (r ReleaseReference) Value() (model.Reference, error) {
 	if r.a.IsEmpty() {
 		return "", errors.New("release reference not found")
 	}
@@ -30,5 +32,5 @@ func (r ReleaseReference) AsString() (string, error) {
 	if !releaseRefRegex.MatchString(val) {
 		return "", fmt.Errorf("release reference %q contains invalid characters", val)
 	}
-	return strings.TrimPrefix(val, "#"), nil
+	return model.Reference(strings.TrimPrefix(val, "#")), nil
 }

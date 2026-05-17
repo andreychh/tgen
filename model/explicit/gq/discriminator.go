@@ -20,11 +20,11 @@ func NewDiscriminator(tr gq.Selection) Discriminator {
 }
 
 // Key returns the field key of the discriminator field.
-func (d Discriminator) Key() model.Key {
-	return NewKey(d.tr.Find("td").At(0))
+func (d Discriminator) Key() (model.Key, error) {
+	return NewKey(d.tr.Find("td").At(0)).Value()
 }
 
 // Value returns the discriminator value from the field description.
-func (d Discriminator) Value() model.DiscriminatorValue {
-	return NewDiscriminatorValue(d.tr.Find("td").At(2))
+func (d Discriminator) Value() (model.DiscriminatorValue, error) {
+	return NewDiscriminatorValue(d.tr.Find("td").At(2)).Value()
 }

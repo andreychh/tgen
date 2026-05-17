@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -18,9 +19,10 @@ func NewObjectFieldOptionality(td gq.Selection) ObjectFieldOptionality {
 	return ObjectFieldOptionality{td: td}
 }
 
-func (o ObjectFieldOptionality) AsBool() (bool, error) {
+// Value returns whether the object field is optional.
+func (o ObjectFieldOptionality) Value() (model.Optionality, error) {
 	if o.td.IsEmpty() {
 		return false, errors.New("description column not found")
 	}
-	return strings.HasPrefix(o.td.Text(), "Optional. "), nil
+	return model.Optionality(strings.HasPrefix(o.td.Text(), "Optional. ")), nil
 }

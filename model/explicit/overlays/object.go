@@ -23,11 +23,11 @@ func NewObject(o explicit.Object, overlay Overlay) Object {
 	return Object{inner: o, overlay: overlay}
 }
 
-func (o Object) Reference() model.Reference {
+func (o Object) Reference() (model.Reference, error) {
 	return o.inner.Reference()
 }
 
-func (o Object) Name() model.Name {
+func (o Object) Name() (model.Name, error) {
 	return o.inner.Name()
 }
 

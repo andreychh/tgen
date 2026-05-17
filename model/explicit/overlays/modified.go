@@ -28,7 +28,7 @@ func NewDescribed(f explicit.Field, e types.Expression, d model.Description) Mod
 	return Modified{origin: f, expr: e, desc: d}
 }
 
-func (f Modified) Key() model.Key {
+func (f Modified) Key() (model.Key, error) {
 	return f.origin.Key()
 }
 
@@ -36,7 +36,7 @@ func (f Modified) Type() model.Type {
 	return literals.NewType(f.expr)
 }
 
-func (f Modified) Optionality() model.Optionality {
+func (f Modified) Optionality() (model.Optionality, error) {
 	return f.origin.Optionality()
 }
 

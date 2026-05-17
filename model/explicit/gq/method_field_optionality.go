@@ -6,6 +6,7 @@ package gq
 import (
 	"errors"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -17,9 +18,10 @@ func NewMethodFieldOptionality(td gq.Selection) MethodFieldOptionality {
 	return MethodFieldOptionality{td: td}
 }
 
-func (o MethodFieldOptionality) AsBool() (bool, error) {
+// Value returns whether the method field is optional.
+func (o MethodFieldOptionality) Value() (model.Optionality, error) {
 	if o.td.IsEmpty() {
 		return false, errors.New("required column not found")
 	}
-	return o.td.Text() == "Optional", nil
+	return model.Optionality(o.td.Text() == "Optional"), nil
 }

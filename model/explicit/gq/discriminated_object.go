@@ -20,16 +20,16 @@ func NewDiscriminatedObject(root, h4 gq.Selection) DiscriminatedObject {
 	return DiscriminatedObject{root: root, h4: h4}
 }
 
-func (o DiscriminatedObject) Name() model.Name {
-	return NewName(o.h4)
+func (o DiscriminatedObject) Name() (model.Name, error) {
+	return NewName(o.h4).Value()
 }
 
 func (o DiscriminatedObject) Fields() explicit.Fields {
 	return NewDiscriminatedObjectFields(o.root, o.h4)
 }
 
-func (o DiscriminatedObject) Reference() model.Reference {
-	return NewDefinitionReference(o.h4.Find("a.anchor"))
+func (o DiscriminatedObject) Reference() (model.Reference, error) {
+	return NewDefinitionReference(o.h4.Find("a.anchor")).Value()
 }
 
 func (o DiscriminatedObject) Description() model.Description {

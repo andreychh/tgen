@@ -21,18 +21,18 @@ type Overlay interface {
 func NewPrioritizedFields(seq iter.Seq[explicit.Field]) iter.Seq[explicit.Field] {
 	return iters.NewMergedSeq(
 		iters.NewFilteredSeq(seq, func(f explicit.Field) bool {
-			opt, err := f.Optionality().AsBool()
+			opt, err := f.Optionality()
 			if err != nil {
 				return true
 			}
-			return !opt
+			return !bool(opt)
 		}),
 		iters.NewFilteredSeq(seq, func(f explicit.Field) bool {
-			opt, err := f.Optionality().AsBool()
+			opt, err := f.Optionality()
 			if err != nil {
 				return false
 			}
-			return opt
+			return bool(opt)
 		}),
 	)
 }

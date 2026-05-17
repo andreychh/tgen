@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -19,14 +20,15 @@ func NewReleaseDate(a gq.Selection) ReleaseDate {
 	return ReleaseDate{a: a}
 }
 
-func (d ReleaseDate) AsTime() (time.Time, error) {
+// Value returns the release date parsed from the anchor href.
+func (d ReleaseDate) Value() (model.ReleaseDate, error) {
 	if d.a.IsEmpty() {
-		return time.Time{}, errors.New("release date not found")
+		return model.ReleaseDate{}, errors.New("release date not found")
 	}
 	val, _ := d.a.Attr("href")
 	parsed, err := time.Parse("#January-2-2006", val)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("parsing release date: %w", err)
+		return model.ReleaseDate{}, fmt.Errorf("parsing release date: %w", err)
 	}
-	return parsed, nil
+	return model.ReleaseDate(parsed), nil
 }

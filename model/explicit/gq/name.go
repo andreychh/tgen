@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/pkg/gq"
 )
 
@@ -22,7 +23,8 @@ func NewName(h4 gq.Selection) Name {
 	return Name{h4: h4}
 }
 
-func (n Name) AsString() (string, error) {
+// Value returns the definition name extracted from the h4 heading.
+func (n Name) Value() (model.Name, error) {
 	if n.h4.IsEmpty() {
 		return "", errors.New("definition name not found")
 	}
@@ -30,5 +32,5 @@ func (n Name) AsString() (string, error) {
 	if !definitionNameRegex.MatchString(name) {
 		return "", fmt.Errorf("definition name %q contains invalid characters", name)
 	}
-	return name, nil
+	return model.Name(name), nil
 }
