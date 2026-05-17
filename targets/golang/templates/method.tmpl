@@ -2,23 +2,23 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
-{{- $name := .Name.AsString}}
+{{- $name := .Name.Value}}
 {{- $ret := .ReturnType}}
 {{- $isUnion := $ret.IsUnion}}
 {{- $depth := $ret.Depth}}
-{{.Doc.AsString}}
+{{.Doc.Value}}
 type {{$name}}Method struct {
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-    {{.Doc.AsString}}
-    {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
+    {{.Doc.Value}}
+    {{.Name.Value}} {{.Type.Value}} {{.Tag.Value}}
 {{- end}}
 }
 
-func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsString}}, error) {
+func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.Value}}, error) {
 	payload := NewMultipartPayload()
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
 {{- if .Optional}}
-	if m.{{.Name.AsString}} != nil {
+	if m.{{.Name.Value}} != nil {
 		if err := {{.Part}}.Write(payload, "{{.Key}}"); err != nil {
 			return {{$ret.Zero}}, err
 		}
@@ -34,7 +34,7 @@ func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsSt
 {{- else if $isUnion}}
 	var resp json.RawMessage
 {{- else}}
-	var resp {{$ret.AsString}}
+	var resp {{$ret.Value}}
 {{- end}}
 	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
 	if err != nil {

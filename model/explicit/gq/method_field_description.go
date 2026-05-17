@@ -17,7 +17,7 @@ func NewMethodFieldDescription(td gq.Selection) MethodFieldDescription {
 	return MethodFieldDescription{td: td}
 }
 
-func (d MethodFieldDescription) AsString() (string, error) {
+func (d MethodFieldDescription) Value() (string, error) {
 	if d.td.IsEmpty() {
 		return "", errors.New("description column not found")
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 type Stringable interface {
-	AsString() (string, error)
+	Value() (string, error)
 }
 
 type DocString struct {
@@ -36,8 +36,8 @@ const (
 	docQuotes = `"""`
 )
 
-func (d DocString) AsString() (string, error) {
-	desc, err := d.description.AsString()
+func (d DocString) Value() (string, error) {
+	desc, err := d.description.Value()
 	if err != nil {
 		return "", err
 	}

@@ -22,7 +22,7 @@ func NewDefinitionDescription(h4 gq.Selection) DefinitionDescription {
 	return DefinitionDescription{h4: h4}
 }
 
-func (d DefinitionDescription) AsString() (string, error) {
+func (d DefinitionDescription) Value() (string, error) {
 	nodes := d.h4.
 		Until("h3, h4, hr").
 		Filter("p, blockquote")

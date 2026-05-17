@@ -20,11 +20,19 @@ func NewRelease(r explicit.Release) Release {
 }
 
 // Version returns the Bot API version.
-func (r Release) Version() ReleaseVersion {
-	return NewReleaseVersion(r.inner.Version())
+func (r Release) Version() (ReleaseVersion, error) {
+	ver, err := r.inner.Version()
+	if err != nil {
+		return ReleaseVersion{}, err
+	}
+	return NewReleaseVersion(ver), nil
 }
 
 // URL returns the URL to the release section on the Telegram Bot API page.
-func (r Release) URL() targets.TelegramURL {
-	return targets.NewTelegramURL(r.inner.Reference())
+func (r Release) URL() (targets.TelegramURL, error) {
+	ref, err := r.inner.Reference()
+	if err != nil {
+		return targets.TelegramURL{}, err
+	}
+	return targets.NewTelegramURL(ref), nil
 }

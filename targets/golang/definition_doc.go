@@ -19,12 +19,12 @@ func NewDefinitionDoc(r model.Reference, d model.Description) DefinitionDoc {
 	return DefinitionDoc{ref: r, desc: d}
 }
 
-func (d DefinitionDoc) AsString() (string, error) {
-	desc, err := d.desc.AsString()
+func (d DefinitionDoc) Value() (string, error) {
+	desc, err := d.desc.Value()
 	if err != nil {
 		return "", fmt.Errorf("getting description: %w", err)
 	}
-	url, err := targets.NewTelegramURL(d.ref).AsString()
+	url, err := targets.NewTelegramURL(d.ref).Value()
 	if err != nil {
 		return "", fmt.Errorf("getting url: %w", err)
 	}

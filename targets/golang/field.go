@@ -6,6 +6,7 @@ package golang
 import (
 	"fmt"
 
+	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/explicit"
 )
 
@@ -17,24 +18,52 @@ func NewField(f explicit.Field) Field {
 	return Field{inner: f}
 }
 
-func (f Field) Name() Name {
-	return NewName(f.inner.Key())
+func (f Field) Name() (Name, error) {
+	key, err := f.inner.Key()
+	if err != nil {
+		return Name{}, err
+	}
+	return NewName(model.Name(key)), nil
 }
 
-func (f Field) Type() Type {
-	return NewOptionalType(NewExprType(f.inner.Type()), f.inner.Optionality())
+func (f Field) Type() (Type, error) {
+	expr, err := f.inner.Type()
+	if err != nil {
+		return nil, err
+	}
+	opt, err := f.inner.Optionality()
+	if err != nil {
+		return nil, err
+	}
+	return NewOptionalType(NewExprType(expr), opt), nil
 }
 
 func (f Field) Optional() (bool, error) {
-	return f.inner.Optionality().AsBool()
+	opt, err := f.inner.Optionality()
+	if err != nil {
+		return false, err
+	}
+	return bool(opt), nil
 }
 
 func (f Field) Key() (string, error) {
-	return f.inner.Key().AsString()
+	key, err := f.inner.Key()
+	if err != nil {
+		return "", err
+	}
+	return string(key), nil
 }
 
-func (f Field) Tag() Tag {
-	return NewTag(f.inner.Key(), f.inner.Optionality())
+func (f Field) Tag() (Tag, error) {
+	key, err := f.inner.Key()
+	if err != nil {
+		return Tag{}, err
+	}
+	opt, err := f.inner.Optionality()
+	if err != nil {
+		return Tag{}, err
+	}
+	return NewTag(key, opt), nil
 }
 
 func (f Field) Doc() GoDoc {
@@ -42,7 +71,11 @@ func (f Field) Doc() GoDoc {
 }
 
 func (f Field) IsInputFile() (bool, error) {
-	name, err := f.Type().Name()
+	typ, err := f.Type()
+	if err != nil {
+		return false, err
+	}
+	name, err := typ.Name()
 	if err != nil {
 		return false, err
 	}
@@ -50,13 +83,21 @@ func (f Field) IsInputFile() (bool, error) {
 }
 
 func (f Field) Part() (string, error) {
-	part, err := f.Type().Part()
+	typ, err := f.Type()
 	if err != nil {
 		return "", err
 	}
-	name, err := f.Name().AsString()
+	part, err := typ.Part()
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(part, "m."+name), err
+	n, err := f.Name()
+	if err != nil {
+		return "", err
+	}
+	name, err := n.Value()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(part, "m."+name), nil
 }

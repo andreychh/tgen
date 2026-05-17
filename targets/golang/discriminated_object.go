@@ -16,12 +16,20 @@ func NewDiscriminatedObject(v explicit.DiscriminatedObject) DiscriminatedObject 
 	return DiscriminatedObject{inner: v}
 }
 
-func (o DiscriminatedObject) Name() Name {
-	return NewName(o.inner.Name())
+func (o DiscriminatedObject) Name() (Name, error) {
+	name, err := o.inner.Name()
+	if err != nil {
+		return Name{}, err
+	}
+	return NewName(name), nil
 }
 
-func (o DiscriminatedObject) Doc() GoDoc {
-	return NewGoDoc(NewDefinitionDoc(o.inner.Reference(), o.inner.Description()))
+func (o DiscriminatedObject) Doc() (GoDoc, error) {
+	ref, err := o.inner.Reference()
+	if err != nil {
+		return GoDoc{}, err
+	}
+	return NewGoDoc(NewDefinitionDoc(ref, o.inner.Description())), nil
 }
 
 func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {

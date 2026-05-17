@@ -6,7 +6,6 @@ package python
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -31,27 +30,19 @@ var primitives = map[string]string{
 }
 
 type Type struct {
-	inner model.Type
+	inner types.Expression
 }
 
-func NewType(t model.Type) Type {
+func NewType(t types.Expression) Type {
 	return Type{inner: t}
 }
 
-func (t Type) AsString() (string, error) {
-	expr, err := t.inner.AsExpression()
-	if err != nil {
-		return "", fmt.Errorf("getting type expr: %w", err)
-	}
-	return t.render(expr)
+func (t Type) Value() (string, error) {
+	return t.render(t.inner)
 }
 
 func (t Type) Part() (string, error) {
-	expr, err := t.inner.AsExpression()
-	if err != nil {
-		return "", fmt.Errorf("getting type expr: %w", err)
-	}
-	return t.part(expr)
+	return t.part(t.inner)
 }
 
 func (t Type) part(expr types.Expression) (string, error) {
@@ -75,10 +66,7 @@ func (t Type) part(expr types.Expression) (string, error) {
 }
 
 func (t Type) name() (string, error) {
-	expr, err := t.inner.AsExpression()
-	if err != nil {
-		return "", fmt.Errorf("getting type expr: %w", err)
-	}
+	expr := t.inner
 	for {
 		switch e := expr.(type) {
 		case types.Named:
@@ -96,7 +84,7 @@ func (t Type) render(expr types.Expression) (string, error) {
 	case types.Named:
 		p, ok := primitives[expr.Name()]
 		if !ok {
-			return NewStringClassName(expr.Name()).AsString()
+			return NewStringClassName(expr.Name()).Value()
 		}
 		return p, nil
 	case types.Array:

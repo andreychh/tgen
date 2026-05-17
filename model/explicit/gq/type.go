@@ -21,7 +21,7 @@ func NewType(td gq.Selection) Type {
 	return Type{td: td}
 }
 
-func (t Type) AsString() (string, error) {
+func (t Type) Value() (string, error) {
 	if t.td.IsEmpty() {
 		return "", errors.New("field type not found")
 	}

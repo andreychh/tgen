@@ -10,7 +10,7 @@ import (
 )
 
 type TypeSource interface {
-	AsString() (string, error)
+	Value() (string, error)
 }
 
 // Type builds an expression tree from a field type source.
@@ -42,7 +42,7 @@ func NewType(c Catalog, s TypeSource) Type {
 }
 
 func (t Type) Value() (Expression, error) {
-	value, err := t.source.AsString()
+	value, err := t.source.Value()
 	if err != nil {
 		return nil, err
 	}

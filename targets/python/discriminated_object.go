@@ -13,12 +13,20 @@ func NewDiscriminatedObject(v explicit.DiscriminatedObject) DiscriminatedObject 
 	return DiscriminatedObject{inner: v}
 }
 
-func (o DiscriminatedObject) Name() ClassName {
-	return NewClassName(o.inner.Name())
+func (o DiscriminatedObject) Name() (ClassName, error) {
+	name, err := o.inner.Name()
+	if err != nil {
+		return ClassName{}, err
+	}
+	return NewClassName(name), nil
 }
 
-func (o DiscriminatedObject) Doc() DocString {
-	return NewClassDocString(o.inner.Reference(), o.inner.Description())
+func (o DiscriminatedObject) Doc() (DocString, error) {
+	ref, err := o.inner.Reference()
+	if err != nil {
+		return DocString{}, err
+	}
+	return NewClassDocString(ref, o.inner.Description()), nil
 }
 
 func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {

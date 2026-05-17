@@ -20,11 +20,8 @@ func NewFieldName(n model.Name) FieldName {
 	return FieldName{inner: n}
 }
 
-func (n FieldName) AsString() (string, error) {
-	name, err := n.inner.AsString()
-	if err != nil {
-		return "", err
-	}
+func (n FieldName) Value() (string, error) {
+	name := string(n.inner)
 	if keywords[name] {
 		return name + "_", nil
 	}

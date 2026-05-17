@@ -19,10 +19,14 @@ func NewVariants(s iter.Seq[explicit.DiscriminatedObject]) Variants {
 	return Variants{inner: s}
 }
 
-func (v Variants) AsString() (string, error) {
+func (v Variants) Value() (string, error) {
 	var names []string
 	for o := range v.inner {
-		name, err := NewClassName(o.Name()).AsString()
+		objName, err := o.Name()
+		if err != nil {
+			return "", fmt.Errorf("variant name: %w", err)
+		}
+		name, err := NewClassName(objName).Value()
 		if err != nil {
 			return "", fmt.Errorf("variant name: %w", err)
 		}

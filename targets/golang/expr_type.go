@@ -6,7 +6,6 @@ package golang
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -52,18 +51,15 @@ var parts = map[string]string{
 const zeroNil = "nil"
 
 type ExprType struct {
-	typ model.Type
+	typ types.Expression
 }
 
-func NewExprType(t model.Type) ExprType {
+func NewExprType(t types.Expression) ExprType {
 	return ExprType{typ: t}
 }
 
 func (t ExprType) IsPrimitive() (bool, error) {
-	expr, err := t.typ.AsExpression()
-	if err != nil {
-		return false, fmt.Errorf("getting type expr: %w", err)
-	}
+	expr := t.typ
 	for {
 		switch e := expr.(type) {
 		case types.Named:
@@ -77,10 +73,7 @@ func (t ExprType) IsPrimitive() (bool, error) {
 }
 
 func (t ExprType) IsUnion() (bool, error) {
-	expr, err := t.typ.AsExpression()
-	if err != nil {
-		return false, fmt.Errorf("getting type expr: %w", err)
-	}
+	expr := t.typ
 	for {
 		switch e := expr.(type) {
 		case types.Named:
@@ -94,10 +87,7 @@ func (t ExprType) IsUnion() (bool, error) {
 }
 
 func (t ExprType) Depth() (int, error) {
-	expr, err := t.typ.AsExpression()
-	if err != nil {
-		return 0, fmt.Errorf("getting type expr: %w", err)
-	}
+	expr := t.typ
 	depth := 0
 	for {
 		switch e := expr.(type) {
@@ -113,10 +103,7 @@ func (t ExprType) Depth() (int, error) {
 }
 
 func (t ExprType) Name() (string, error) {
-	expr, err := t.typ.AsExpression()
-	if err != nil {
-		return "", fmt.Errorf("getting type expr: %w", err)
-	}
+	expr := t.typ
 	for {
 		switch e := expr.(type) {
 		case types.Named:
@@ -150,12 +137,8 @@ func (t ExprType) Part() (string, error) {
 	return "%s", nil
 }
 
-func (t ExprType) AsString() (string, error) {
-	expr, err := t.typ.AsExpression()
-	if err != nil {
-		return "", fmt.Errorf("getting type expr: %w", err)
-	}
-	return t.render(expr)
+func (t ExprType) Value() (string, error) {
+	return t.render(t.typ)
 }
 
 func (t ExprType) Zero() (string, error) {
@@ -180,7 +163,7 @@ func (t ExprType) Zero() (string, error) {
 	if zero, ok := zeros[name]; ok {
 		return zero, nil
 	}
-	formatted, err := NewStringName(name).AsString()
+	formatted, err := NewStringName(name).Value()
 	if err != nil {
 		return "", err
 	}
@@ -192,7 +175,7 @@ func (t ExprType) render(expr types.Expression) (string, error) {
 	case types.Named:
 		p, ok := primitives[expr.Name()]
 		if !ok {
-			return NewStringName(expr.Name()).AsString()
+			return NewStringName(expr.Name()).Value()
 		}
 		return p, nil
 	case types.Array:

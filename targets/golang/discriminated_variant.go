@@ -17,10 +17,18 @@ func NewDiscriminatedVariant(v explicit.DiscriminatedObject) DiscriminatedVarian
 }
 
 // Name returns the Go field name for this variant in the union struct.
-func (v DiscriminatedVariant) Name() Name {
-	return NewName(v.inner.Name())
+func (v DiscriminatedVariant) Name() (Name, error) {
+	name, err := v.inner.Name()
+	if err != nil {
+		return Name{}, err
+	}
+	return NewName(name), nil
 }
 
-func (v DiscriminatedVariant) DiscriminatorValue() DiscriminatorValue {
-	return NewDiscriminatorValue(v.inner.Fields().Discriminator().Value())
+func (v DiscriminatedVariant) DiscriminatorValue() (DiscriminatorValue, error) {
+	val, err := v.inner.Fields().Discriminator().Value()
+	if err != nil {
+		return DiscriminatorValue{}, err
+	}
+	return NewDiscriminatorValue(val), nil
 }

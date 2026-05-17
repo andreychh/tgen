@@ -18,7 +18,7 @@ func NewObjectFieldDescription(td gq.Selection) ObjectFieldDescription {
 	return ObjectFieldDescription{td: td}
 }
 
-func (d ObjectFieldDescription) AsString() (string, error) {
+func (d ObjectFieldDescription) Value() (string, error) {
 	if d.td.IsEmpty() {
 		return "", errors.New("description column not found")
 	}

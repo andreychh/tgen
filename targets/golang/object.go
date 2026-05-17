@@ -18,12 +18,20 @@ func NewObject(o explicit.Object) Object {
 	return Object{inner: o}
 }
 
-func (o Object) Name() Name {
-	return NewName(o.inner.Name())
+func (o Object) Name() (Name, error) {
+	name, err := o.inner.Name()
+	if err != nil {
+		return Name{}, err
+	}
+	return NewName(name), nil
 }
 
-func (o Object) Doc() GoDoc {
-	return NewGoDoc(NewDefinitionDoc(o.inner.Reference(), o.inner.Description()))
+func (o Object) Doc() (GoDoc, error) {
+	ref, err := o.inner.Reference()
+	if err != nil {
+		return GoDoc{}, err
+	}
+	return NewGoDoc(NewDefinitionDoc(ref, o.inner.Description())), nil
 }
 
 func (o Object) Fields() iter.Seq[Field] {

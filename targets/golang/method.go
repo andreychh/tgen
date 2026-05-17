@@ -18,16 +18,28 @@ func NewMethod(o explicit.Method) Method {
 	return Method{inner: o}
 }
 
-func (m Method) Name() Name {
-	return NewName(m.inner.Name())
+func (m Method) Name() (Name, error) {
+	name, err := m.inner.Name()
+	if err != nil {
+		return Name{}, err
+	}
+	return NewName(name), nil
 }
 
-func (m Method) Doc() GoDoc {
-	return NewGoDoc(NewDefinitionDoc(m.inner.Reference(), m.inner.Description()))
+func (m Method) Doc() (GoDoc, error) {
+	ref, err := m.inner.Reference()
+	if err != nil {
+		return GoDoc{}, err
+	}
+	return NewGoDoc(NewDefinitionDoc(ref, m.inner.Description())), nil
 }
 
-func (m Method) ReturnType() Type {
-	return NewExprType(m.inner.ReturnType())
+func (m Method) ReturnType() (Type, error) {
+	expr, err := m.inner.ReturnType()
+	if err != nil {
+		return nil, err
+	}
+	return NewExprType(expr), nil
 }
 
 func (m Method) Fields() iter.Seq[Field] {

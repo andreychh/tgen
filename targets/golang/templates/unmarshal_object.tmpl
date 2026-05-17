@@ -2,15 +2,15 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "unmarshal_object"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
-{{- $name := .Name.AsString}}
+{{- $name := .Name.Value}}
 {{- if not .Unions.IsEmpty}}
 func (o *{{$name}}) UnmarshalJSON(data []byte) error {
 	type alias {{$name}}
 	var aux struct {
 {{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-{{- $fieldName := .Name.AsString}}
+{{- $fieldName := .Name.Value}}
 {{- $depth := .Type.Depth}}
-{{- $tag := .Tag.AsString}}
+{{- $tag := .Tag.Value}}
 {{- if eq $depth 1}}
     {{$fieldName}} []json.RawMessage {{$tag}}
 {{- else}}
@@ -24,7 +24,7 @@ func (o *{{$name}}) UnmarshalJSON(data []byte) error {
 	}
 	*o = {{$name}}(aux.alias)
 {{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-{{- $fieldName := .Name.AsString}}
+{{- $fieldName := .Name.Value}}
 {{- $depth := .Type.Depth}}
 {{- $typeName := .Type.Name}}
 	if aux.{{$fieldName}} != nil {

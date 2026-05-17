@@ -14,7 +14,7 @@ type Reference string
 type Optionality bool
 
 type Description interface {
-	AsString() (string, error)
+	Value() (string, error)
 	Links() ([]string, error)
 }
 

@@ -16,7 +16,6 @@ func NewReleaseVersion(v model.ReleaseVersion) ReleaseVersion {
 	return ReleaseVersion{inner: v}
 }
 
-// AsString returns the Bot API version string (e.g., "9.5").
-func (v ReleaseVersion) AsString() (string, error) {
-	return v.inner.AsString()
+func (v ReleaseVersion) Value() (string, error) {
+	return string(v.inner), nil
 }

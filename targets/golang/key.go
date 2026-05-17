@@ -16,6 +16,6 @@ func NewKey(k model.Key) Key {
 }
 
 // AsString returns the key as a Go identifier string.
-func (k Key) AsString() (string, error) {
-	return k.inner.AsString()
+func (k Key) Value() (string, error) {
+	return string(k.inner), nil
 }

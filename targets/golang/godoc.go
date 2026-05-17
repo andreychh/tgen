@@ -10,7 +10,7 @@ import (
 )
 
 type Stringable interface {
-	AsString() (string, error)
+	Value() (string, error)
 }
 
 type GoDoc struct {
@@ -21,8 +21,8 @@ func NewGoDoc(s Stringable) GoDoc {
 	return GoDoc{inner: s}
 }
 
-func (d GoDoc) AsString() (string, error) {
-	text, err := d.inner.AsString()
+func (d GoDoc) Value() (string, error) {
+	text, err := d.inner.Value()
 	if err != nil {
 		return "", err
 	}

@@ -4,7 +4,6 @@
 package golang
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/andreychh/tgen/model"
@@ -42,11 +41,7 @@ func (t OptionalType) Part() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	opt, err := t.opt.AsBool()
-	if err != nil {
-		return "", fmt.Errorf("getting field optionality: %w", err)
-	}
-	if !opt {
+	if !bool(t.opt) {
 		return part, nil
 	}
 	depth, err := t.inner.Depth()
@@ -74,18 +69,14 @@ func (t OptionalType) Part() (string, error) {
 }
 
 func (t OptionalType) Zero() (string, error) {
-	opt, err := t.opt.AsBool()
-	if err != nil {
-		return "", fmt.Errorf("getting field optionality: %w", err)
-	}
-	if opt {
+	if bool(t.opt) {
 		return zeroNil, nil
 	}
 	return t.inner.Zero()
 }
 
-func (t OptionalType) AsString() (string, error) {
-	str, err := t.inner.AsString()
+func (t OptionalType) Value() (string, error) {
+	str, err := t.inner.Value()
 	if err != nil {
 		return "", err
 	}
@@ -97,11 +88,7 @@ func (t OptionalType) AsString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	opt, err := t.opt.AsBool()
-	if err != nil {
-		return "", fmt.Errorf("getting field optionality: %w", err)
-	}
-	if !opt || depth > 0 || isUnion {
+	if !bool(t.opt) || depth > 0 || isUnion {
 		return str, nil
 	}
 	return "*" + str, nil

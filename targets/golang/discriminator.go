@@ -16,11 +16,19 @@ func NewDiscriminator(d explicit.Discriminator) Discriminator {
 }
 
 // Key returns the discriminator field key (e.g. type from type="emoji").
-func (d Discriminator) Key() Key {
-	return NewKey(d.inner.Key())
+func (d Discriminator) Key() (Key, error) {
+	key, err := d.inner.Key()
+	if err != nil {
+		return Key{}, err
+	}
+	return NewKey(key), nil
 }
 
 // Value returns the fixed discriminator value for this variant (e.g. "emoji").
-func (d Discriminator) Value() DiscriminatorValue {
-	return NewDiscriminatorValue(d.inner.Value())
+func (d Discriminator) Value() (DiscriminatorValue, error) {
+	val, err := d.inner.Value()
+	if err != nil {
+		return DiscriminatorValue{}, err
+	}
+	return NewDiscriminatorValue(val), nil
 }

@@ -16,6 +16,6 @@ func NewDiscriminatorValue(v model.DiscriminatorValue) DiscriminatorValue {
 }
 
 // AsString returns the discriminator value as a string.
-func (v DiscriminatorValue) AsString() (string, error) {
-	return v.inner.AsString()
+func (v DiscriminatorValue) Value() (string, error) {
+	return string(v.inner), nil
 }
