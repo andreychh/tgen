@@ -159,6 +159,12 @@ tasks:
     cmds:
       - go run . python -o stands/python/api
 
+  stands:python:setup:
+    desc: Create venv and install Python stand dependencies
+    dir: stands/python
+    cmds:
+      - mise run setup
+
   stands:python:check:
     desc: Verify the generated Python code passes type checking
     dir: stands/python
