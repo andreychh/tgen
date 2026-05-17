@@ -10,34 +10,43 @@ import (
 	"github.com/andreychh/tgen/model/types"
 )
 
+const (
+	typeInteger = "Integer"
+	typeInt     = "Int"
+	typeFloat   = "Float"
+	typeString  = "String"
+	typeBoolean = "Boolean"
+	typeTrue    = "True"
+)
+
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var primitives = map[string]string{
-	"Integer": "int64",
-	"Int":     "int64",
-	"Float":   "float64",
-	"String":  "string",
-	"Boolean": "bool",
-	"True":    "bool",
+	typeInteger: "int64",
+	typeInt:     "int64",
+	typeFloat:   "float64",
+	typeString:  "string",
+	typeBoolean: "bool",
+	typeTrue:    "bool",
 }
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var zeros = map[string]string{
-	"Integer": "0",
-	"Int":     "0",
-	"Float":   "0",
-	"String":  `""`,
-	"Boolean": "false",
-	"True":    "false",
+	typeInteger: "0",
+	typeInt:     "0",
+	typeFloat:   "0",
+	typeString:  `""`,
+	typeBoolean: "false",
+	typeTrue:    "false",
 }
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var parts = map[string]string{
-	"Integer": "NewInt64Part",
-	"Int":     "NewInt64Part",
-	"Float":   "NewFloat64Part",
-	"String":  "NewStringPart",
-	"Boolean": "NewBoolPart",
-	"True":    "NewBoolPart",
+	typeInteger: "NewInt64Part",
+	typeInt:     "NewInt64Part",
+	typeFloat:   "NewFloat64Part",
+	typeString:  "NewStringPart",
+	typeBoolean: "NewBoolPart",
+	typeTrue:    "NewBoolPart",
 }
 
 const zeroNil = "nil"
