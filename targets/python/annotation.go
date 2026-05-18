@@ -3,27 +3,26 @@
 
 package python
 
-import "github.com/andreychh/tgen/model"
+import (
+	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/ir"
+)
 
 type Annotation struct {
-	typ      model.Type
-	optional model.Optionality
+	typ ir.Type
+	opt model.Optionality
 }
 
-func NewAnnotation(t model.Type, o model.Optionality) Annotation {
-	return Annotation{typ: t, optional: o}
+func NewAnnotation(t ir.Type, o model.Optionality) Annotation {
+	return Annotation{typ: t, opt: o}
 }
 
-func (a Annotation) AsString() (string, error) {
-	typ, err := NewType(a.typ).AsString()
+func (a Annotation) Value() (string, error) {
+	typ, err := NewType(a.typ).Value()
 	if err != nil {
 		return "", err
 	}
-	opt, err := a.optional.AsBool()
-	if err != nil {
-		return "", err
-	}
-	if !opt {
+	if !a.opt {
 		return typ, nil
 	}
 	return typ + " | None = None", nil

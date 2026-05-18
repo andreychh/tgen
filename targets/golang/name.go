@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/literals"
 	"github.com/iancoleman/strcase"
 )
 
@@ -27,18 +26,14 @@ func NewName(n model.Name) Name {
 	return Name{inner: n}
 }
 
-func NewStringName(s string) Name {
-	return NewName(literals.NewName(s))
+func NewNameFromKey(k model.Key) Name {
+	return NewName(model.Name(k))
 }
 
-func (n Name) AsString() (string, error) {
-	val, err := n.inner.AsString()
-	if err != nil {
-		return "", err
-	}
-	camel := strcase.ToCamel(val)
+func (n Name) Value() string {
+	camel := strcase.ToCamel(string(n.inner))
 	for wrong, right := range acronyms {
 		camel = strings.ReplaceAll(camel, wrong, right)
 	}
-	return camel, nil
+	return camel
 }

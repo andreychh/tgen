@@ -4,7 +4,7 @@
 {{- define "unions"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.GenerationContext*/}}
 {{- template "header" .}}
 
-package api
+package {{.PackageName}}
 
 import (
     "encoding/json"
@@ -148,4 +148,35 @@ func unmarshalMaybeInaccessibleMessage(data []byte) (MaybeInaccessibleMessage, e
 		return v, nil
 	}
 }
+
+// This object represents one result of an inline query. Telegram clients
+// currently support results of the following 20 types:
+//
+// Note: All URLs passed in inline query results will be available to end users
+// and therefore must be assumed to be public.
+//
+// See https://core.telegram.org/bots/api#inlinequeryresult
+//sumtype:decl
+type InlineQueryResult interface{ Part; FormJSON; sealedInlineQueryResult() }
+
+func (v InlineQueryResultCachedAudio) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedDocument) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedGif) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedMpeg4Gif) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedPhoto) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedSticker) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedVideo) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedVoice) sealedInlineQueryResult() {}
+func (v InlineQueryResultArticle) sealedInlineQueryResult() {}
+func (v InlineQueryResultAudio) sealedInlineQueryResult() {}
+func (v InlineQueryResultContact) sealedInlineQueryResult() {}
+func (v InlineQueryResultGame) sealedInlineQueryResult() {}
+func (v InlineQueryResultDocument) sealedInlineQueryResult() {}
+func (v InlineQueryResultGif) sealedInlineQueryResult() {}
+func (v InlineQueryResultLocation) sealedInlineQueryResult() {}
+func (v InlineQueryResultMpeg4Gif) sealedInlineQueryResult() {}
+func (v InlineQueryResultPhoto) sealedInlineQueryResult() {}
+func (v InlineQueryResultVenue) sealedInlineQueryResult() {}
+func (v InlineQueryResultVideo) sealedInlineQueryResult() {}
+func (v InlineQueryResultVoice) sealedInlineQueryResult() {}
 {{- end}}

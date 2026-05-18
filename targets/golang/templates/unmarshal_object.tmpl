@@ -2,16 +2,16 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "unmarshal_object"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
-{{- $name := .Name.AsString}}
+{{- $name := .Name}}
 {{- if not .Unions.IsEmpty}}
 func (o *{{$name}}) UnmarshalJSON(data []byte) error {
 	type alias {{$name}}
 	var aux struct {
 {{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-{{- $fieldName := .Name.AsString}}
-{{- $depth := .Type.Depth}}
-{{- $tag := .Tag.AsString}}
-{{- if eq $depth 1}}
+{{- $fieldName := .Name}}
+{{- $shape := .Type.Shape}}
+{{- $tag := .Tag}}
+{{- if eq $shape "union_array"}}
     {{$fieldName}} []json.RawMessage {{$tag}}
 {{- else}}
     {{$fieldName}} json.RawMessage {{$tag}}
@@ -24,11 +24,11 @@ func (o *{{$name}}) UnmarshalJSON(data []byte) error {
 	}
 	*o = {{$name}}(aux.alias)
 {{- range .Unions.All | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-{{- $fieldName := .Name.AsString}}
-{{- $depth := .Type.Depth}}
+{{- $fieldName := .Name}}
+{{- $shape := .Type.Shape}}
 {{- $typeName := .Type.Name}}
 	if aux.{{$fieldName}} != nil {
-{{- if eq $depth 1}}
+{{- if eq $shape "union_array"}}
 		result := make([]{{$typeName}}, len(aux.{{$fieldName}}))
 		for i, union := range aux.{{$fieldName}} {
 			u, err := unmarshal{{$typeName}}(union)

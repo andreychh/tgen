@@ -15,7 +15,7 @@ jobs:
       matrix:
         target:
           - go
-          # - python  # TODO #182 #183: fix template bugs first
+          - python
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     permissions:

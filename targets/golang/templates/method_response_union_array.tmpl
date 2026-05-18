@@ -1,0 +1,21 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "method_response_union_array"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+{{- $name := .Name}}
+{{- $ret := .ReturnType}}
+	var resp []json.RawMessage
+	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
+	if err != nil {
+		return {{$ret.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
+	}
+	result := make([]{{$ret.Name}}, len(resp))
+	for i, r := range resp {
+		u, err := unmarshal{{$ret.Name}}(r)
+		if err != nil {
+			return {{$ret.Zero}}, err
+		}
+		result[i] = u
+	}
+	return result, nil
+{{- end}}

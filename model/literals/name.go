@@ -13,6 +13,6 @@ func NewName(value string) Name {
 	return Name{value: value}
 }
 
-func (n Name) AsString() (string, error) {
+func (n Name) Value() (string, error) {
 	return n.value, nil
 }

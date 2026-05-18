@@ -9,6 +9,6 @@ from enum import Enum
 
 class Method(str, Enum):
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
-    {{.Name.AsString}} = "{{.Name.AsString}}"
+    {{.Name}} = "{{.Name}}"
 {{- end}}
 {{- end}}

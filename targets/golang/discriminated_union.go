@@ -6,33 +6,49 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
-// DiscriminatedUnion represents a discriminated union from the explicit spec for Go code generation.
+// DiscriminatedUnion represents a discriminated union for Go code generation.
 type DiscriminatedUnion struct {
-	inner explicit.DiscriminatedUnion
+	inner ir.DiscriminatedUnion
 }
 
-// NewDiscriminatedUnion constructs an DiscriminatedUnion from an explicit discriminated union.
-func NewDiscriminatedUnion(u explicit.DiscriminatedUnion) DiscriminatedUnion {
+// NewDiscriminatedUnion constructs a DiscriminatedUnion from a discriminated union.
+func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 	return DiscriminatedUnion{inner: u}
 }
 
 // Name returns the Go type name for this union.
-func (u DiscriminatedUnion) Name() Name {
-	return NewName(u.inner.Name())
+func (u DiscriminatedUnion) Name() (string, error) {
+	name, err := u.inner.Name()
+	if err != nil {
+		return "", err
+	}
+	return NewName(name).Value(), nil
 }
 
 // Doc returns the godoc comment for this union.
-func (u DiscriminatedUnion) Doc() GoDoc {
-	return NewGoDoc(NewDefinitionDoc(u.inner.Reference(), u.inner.Description()))
+func (u DiscriminatedUnion) Doc() (string, error) {
+	ref, err := u.inner.Reference()
+	if err != nil {
+		return "", err
+	}
+	doc, err := NewDefinitionDoc(ref, u.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewTypeGodoc(doc).Value(), nil
 }
 
 // DiscriminatorKey returns the JSON key used to discriminate variants.
-func (u DiscriminatedUnion) DiscriminatorKey() Key {
-	return NewKey(u.inner.DiscriminatorKey())
+func (u DiscriminatedUnion) DiscriminatorKey() (string, error) {
+	key, err := u.inner.DiscriminatorKey()
+	if err != nil {
+		return "", err
+	}
+	return string(key), nil
 }
 
 // Variants returns all variants of this union.

@@ -6,24 +6,36 @@ package python
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/explicit"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Object struct {
-	inner explicit.Object
+	inner ir.Object
 }
 
-func NewObject(o explicit.Object) Object {
+func NewObject(o ir.Object) Object {
 	return Object{inner: o}
 }
 
-func (o Object) Name() ClassName {
-	return NewClassName(o.inner.Name())
+func (o Object) Name() (string, error) {
+	name, err := o.inner.Name()
+	if err != nil {
+		return "", err
+	}
+	return NewClassName(name).Value(), nil
 }
 
-func (o Object) Doc() DocString {
-	return NewClassDocString(o.inner.Reference(), o.inner.Description())
+func (o Object) Doc() (string, error) {
+	ref, err := o.inner.Reference()
+	if err != nil {
+		return "", err
+	}
+	doc, err := NewDefinitionDoc(ref, o.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewClassDocString(doc).Value(), nil
 }
 
 func (o Object) Fields() iter.Seq[Field] {
@@ -31,14 +43,5 @@ func (o Object) Fields() iter.Seq[Field] {
 }
 
 func (o Object) HasInputFile() (bool, error) {
-	for f := range o.Fields() {
-		ok, err := f.IsInputFile()
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-	return false, nil
+	return o.inner.HasInputFile()
 }

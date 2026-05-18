@@ -2,23 +2,22 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
-{{- $name := .Name.AsString}}
+{{- $name := .Name}}
 {{- $ret := .ReturnType}}
-{{- $isUnion := $ret.IsUnion}}
-{{- $depth := $ret.Depth}}
-{{.Doc.AsString}}
+{{- $shape := $ret.Shape}}
+{{.Doc}}
 type {{$name}}Method struct {
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-    {{.Doc.AsString}}
-    {{.Name.AsString}} {{.Type.AsString}} {{.Tag.AsString}}
+	{{.Doc}}
+    {{.Name}} {{.Type.Value}} {{.Tag}}
 {{- end}}
 }
 
-func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsString}}, error) {
+func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.Value}}, error) {
 	payload := NewMultipartPayload()
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
 {{- if .Optional}}
-	if m.{{.Name.AsString}} != nil {
+	if m.{{.Name}} != nil {
 		if err := {{.Part}}.Write(payload, "{{.Key}}"); err != nil {
 			return {{$ret.Zero}}, err
 		}
@@ -29,35 +28,12 @@ func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.AsSt
 	}
 {{- end}}
 {{- end}}
-{{- if and $isUnion (eq $depth 1)}}
-	var resp []json.RawMessage
-{{- else if $isUnion}}
-	var resp json.RawMessage
+{{- if eq $shape "union_array"}}
+{{- template "method_response_union_array" .}}
+{{- else if eq $shape "union"}}
+{{- template "method_response_union" .}}
 {{- else}}
-	var resp {{$ret.AsString}}
-{{- end}}
-	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
-	if err != nil {
-		return {{$ret.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
-	}
-{{- if and $isUnion (eq $depth 1)}}
-	result := make([]{{$ret.Name}}, len(resp))
-	for i, r := range resp {
-		u, err := unmarshal{{$ret.Name}}(r)
-		if err != nil {
-			return {{$ret.Zero}}, err
-		}
-		result[i] = u
-	}
-	return result, nil
-{{- else if $isUnion}}
-	result, err := unmarshal{{$ret.Name}}(resp)
-	if err != nil {
-		return {{$ret.Zero}}, err
-	}
-	return result, nil
-{{- else}}
-	return resp, nil
+{{- template "method_response_plain" .}}
 {{- end}}
 }
 {{- end}}

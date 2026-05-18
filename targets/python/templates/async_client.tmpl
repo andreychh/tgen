@@ -12,11 +12,13 @@ import httpx
 from pydantic import TypeAdapter
 
 from ..client import (
+    Call,
+    CallQueue,
     Envelope,
+    Error,
     Payload,
     Response,
     T,
-    Error,
 )
 from ..method import Method
 
@@ -40,15 +42,19 @@ class HTTPConnection:
 
 
 class FakeConnection:
-    def __init__(self, responses: dict[Method, Response]) -> None:
-        self._responses = responses
+    def __init__(self, queue: CallQueue) -> None:
+        self._queue = queue
 
     async def do(self, method: Method, _: Payload, adapter: TypeAdapter[T]) -> T:
-        if method not in self._responses:
-            raise RuntimeError(f"FakeConnection: unexpected call to {method!r}")
-        match self._responses[method]:
-            case Exception() as e:
-                raise e
+        try:
+            call = self._queue.next()
+        except RuntimeError as e:
+            raise RuntimeError(f"FakeConnection: call to {method!r}: {e}") from e
+        if call.method != method:
+            raise RuntimeError(f"FakeConnection: expected {call.method!r}, got {method!r}")
+        match call.response:
+            case Exception() as exc:
+                raise exc
             case value:
                 raw = TypeAdapter(type(value)).dump_python(value, mode="json")
                 return adapter.validate_python(raw)

@@ -15,7 +15,11 @@ type Unions struct {
 
 func (u Unions) All() iter.Seq[Field] {
 	return iters.NewFilteredSeq(u.inner, func(f Field) bool {
-		is, err := f.Type().IsUnion()
+		typ, err := f.Type()
+		if err != nil {
+			panic(err)
+		}
+		is, err := typ.IsUnion()
 		if err != nil {
 			panic(err)
 		}

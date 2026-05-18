@@ -3,22 +3,34 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/explicit"
+import "github.com/andreychh/tgen/model/ir"
 
 type DiscriminatedObject struct {
-	inner explicit.DiscriminatedObject
+	inner ir.DiscriminatedObject
 }
 
-func NewDiscriminatedObject(v explicit.DiscriminatedObject) DiscriminatedObject {
+func NewDiscriminatedObject(v ir.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: v}
 }
 
-func (o DiscriminatedObject) Name() ClassName {
-	return NewClassName(o.inner.Name())
+func (o DiscriminatedObject) Name() (string, error) {
+	name, err := o.inner.Name()
+	if err != nil {
+		return "", err
+	}
+	return NewClassName(name).Value(), nil
 }
 
-func (o DiscriminatedObject) Doc() DocString {
-	return NewClassDocString(o.inner.Reference(), o.inner.Description())
+func (o DiscriminatedObject) Doc() (string, error) {
+	ref, err := o.inner.Reference()
+	if err != nil {
+		return "", err
+	}
+	doc, err := NewDefinitionDoc(ref, o.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewClassDocString(doc).Value(), nil
 }
 
 func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {
@@ -26,14 +38,5 @@ func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {
 }
 
 func (o DiscriminatedObject) HasInputFile() (bool, error) {
-	for f := range o.Fields().Free() {
-		ok, err := f.IsInputFile()
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-	return false, nil
+	return o.inner.HasInputFile()
 }

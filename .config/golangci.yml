@@ -150,15 +150,15 @@ linters:
           files:
             - "**/targets/**/*.go"
           deny:
-            - pkg: "github.com/andreychh/tgen/model/explicit/gq"
-              desc: "targets must not import GQ implementation details; use model/explicit interfaces"
-            - pkg: "github.com/andreychh/tgen/model/explicit/overlays"
-              desc: "targets must not import overlay implementation details; use model/explicit interfaces"
+            - pkg: "github.com/andreychh/tgen/model/spec/gq"
+              desc: "targets must not import GQ implementation details; use model/spec interfaces"
+            - pkg: "github.com/andreychh/tgen/model/spec/overlays"
+              desc: "targets must not import overlay implementation details; use model/spec interfaces"
         implicit-no-explicit-impl:
           files:
             - "**/model/implicit/**/*.go"
           deny:
-            - pkg: "github.com/andreychh/tgen/model/explicit"
+            - pkg: "github.com/andreychh/tgen/model/spec"
               desc: "implicit must not import explicit; depend only on model primitives"
         parsing-no-rendering:
           files:
@@ -170,15 +170,15 @@ linters:
           files:
             - "**/model/literals/**/*.go"
           deny:
-            - pkg: "github.com/andreychh/tgen/model/explicit"
+            - pkg: "github.com/andreychh/tgen/model/spec"
               desc: "literals implement model primitives and must not depend on explicit"
         pkg-gq-only-in-gq:
           files:
             - "**/*.go"
-            - "!**/model/explicit/gq/**"
+            - "!**/model/spec/gq/**"
           deny:
             - pkg: "github.com/andreychh/tgen/pkg/gq"
-              desc: "pkg/gq is an implementation detail of model/explicit/gq"
+              desc: "pkg/gq is an implementation detail of model/spec/gq"
     exhaustruct:
       exclude:
         - '^github\.com/spf13/cobra\..*$'

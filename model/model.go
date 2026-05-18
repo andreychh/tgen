@@ -1,51 +1,27 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-// Package model defines the foundational value interfaces shared across all
-// layers of the tgen pipeline: Name, Type, Description, Key, and their
-// companions. Both explicit and implicit layers implement these interfaces;
-// targets consumes them.
+// Package model defines the foundational value types shared across all layers
+// of the tgen pipeline: Name, Type, Description, Key, and their companions.
 package model
 
-import (
-	"time"
+import "time"
 
-	"github.com/andreychh/tgen/model/types"
-)
+type Name string
 
-type Name interface { //nolint:iface // identical signature to Reference/Key/DiscriminatorValue/ReleaseVersion but semantically distinct domain concepts
-	AsString() (string, error)
-}
+type Reference string
 
-type Reference interface { //nolint:iface // identical signature to Name/Key/DiscriminatorValue/ReleaseVersion but semantically distinct domain concepts
-	AsString() (string, error)
-}
-
-type Type interface {
-	AsExpression() (types.Expression, error)
-}
-
-type Optionality interface {
-	AsBool() (bool, error)
-}
+type Optionality bool
 
 type Description interface {
-	AsString() (string, error)
+	Value() (string, error)
 	Links() ([]string, error)
 }
 
-type Key interface { //nolint:iface // identical signature to Name/Reference/DiscriminatorValue/ReleaseVersion but semantically distinct domain concepts
-	AsString() (string, error)
-}
+type Key string
 
-type DiscriminatorValue interface { //nolint:iface // identical signature to Name/Reference/Key/ReleaseVersion but semantically distinct domain concepts
-	AsString() (string, error)
-}
+type DiscriminatorValue string
 
-type ReleaseVersion interface { //nolint:iface // identical signature to Name/Reference/Key/DiscriminatorValue but semantically distinct domain concepts
-	AsString() (string, error)
-}
+type ReleaseVersion string
 
-type ReleaseDate interface {
-	AsTime() (time.Time, error)
-}
+type ReleaseDate time.Time

@@ -6,29 +6,24 @@ package python
 import (
 	"strings"
 
-	"github.com/andreychh/tgen/model"
 	"github.com/mitchellh/go-wordwrap"
 )
 
-type Stringable interface {
-	AsString() (string, error)
-}
-
 type DocString struct {
-	description Stringable
-	indent      int
+	content string
+	indent  int
 }
 
-func NewDocString(d Stringable, indent int) DocString {
-	return DocString{description: d, indent: indent}
+func NewDocString(d string, indent int) DocString {
+	return DocString{content: d, indent: indent}
 }
 
-func NewFieldDocString(d model.Description) DocString {
+func NewFieldDocString(d string) DocString {
 	return NewDocString(d, 4)
 }
 
-func NewClassDocString(r model.Reference, d model.Description) DocString {
-	return NewDocString(NewDoc(r, d), 4)
+func NewClassDocString(d string) DocString {
+	return NewDocString(d, 4)
 }
 
 const (
@@ -36,15 +31,11 @@ const (
 	docQuotes = `"""`
 )
 
-func (d DocString) AsString() (string, error) {
-	desc, err := d.description.AsString()
-	if err != nil {
-		return "", err
+func (d DocString) Value() string {
+	if len(d.content) <= docLimit {
+		return docQuotes + d.content + docQuotes
 	}
-	if len(desc) <= docLimit {
-		return docQuotes + desc + docQuotes, nil
-	}
-	return d.multiline(desc), nil
+	return d.multiline(d.content)
 }
 
 func (d DocString) multiline(desc string) string {
@@ -52,8 +43,8 @@ func (d DocString) multiline(desc string) string {
 	paragraphs := strings.Split(desc, "\n\n")
 	var out strings.Builder
 	out.WriteString(docQuotes + "\n")
-	for i, para := range paragraphs {
-		wrapped := wordwrap.WrapString(para, docLimit)
+	for i, par := range paragraphs {
+		wrapped := wordwrap.WrapString(par, docLimit)
 		for line := range strings.SplitSeq(wrapped, "\n") {
 			out.WriteString(pad + line + "\n")
 		}
