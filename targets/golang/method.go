@@ -37,9 +37,9 @@ func (m Method) Doc() (GoDoc, error) {
 func (m Method) ReturnType() (Type, error) {
 	typ, err := m.inner.ReturnType()
 	if err != nil {
-		return nil, err
+		return Type{}, err
 	}
-	return NewExprType(typ), nil
+	return NewType(typ, false), nil
 }
 
 func (m Method) Fields() iter.Seq[Field] {

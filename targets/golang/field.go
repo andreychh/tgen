@@ -29,13 +29,13 @@ func (f Field) Name() (Name, error) {
 func (f Field) Type() (Type, error) {
 	typ, err := f.inner.Type()
 	if err != nil {
-		return nil, err
+		return Type{}, err
 	}
 	opt, err := f.inner.Optionality()
 	if err != nil {
-		return nil, err
+		return Type{}, err
 	}
-	return NewOptionalType(NewExprType(typ), opt), nil
+	return NewType(typ, opt), nil
 }
 
 func (f Field) Optional() (bool, error) {
