@@ -2,38 +2,38 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "discriminated_object"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}
-{{.Doc.Value}}
-type {{.Name.Value}} struct {
+{{.Doc}}
+type {{.Name}} struct {
 {{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-    {{.Doc.Value}}
-    {{.Name.Value}} {{.Type.Value}} {{.Tag.Value}}
+{{.Doc}}
+    {{.Name}} {{.Type.Value}} {{.Tag}}
 {{- end}}
 }
 
-func (v {{.Name.Value}}) MarshalJSON() ([]byte, error) {
-    type Alias {{.Name.Value}}
+func (v {{.Name}}) MarshalJSON() ([]byte, error) {
+    type Alias {{.Name}}
     return json.Marshal(struct {
-        Key string `json:"{{.Fields.Discriminator.Key.Value}}"`
+        Key string `json:"{{.Fields.Discriminator.Key}}"`
         Alias
-    }{"{{.Fields.Discriminator.Value.Value}}", Alias(v)})
+    }{{"{"}}{{.Fields.Discriminator.Value}}, Alias(v)})
 }
 
 {{- if .HasInputFile}}
-func (o {{.Name.Value}}) JSON(p *MultipartPayload) ([]byte, error) {
-    type Alias {{.Name.Value}}
+func (o {{.Name}}) JSON(p *MultipartPayload) ([]byte, error) {
+    type Alias {{.Name}}
 {{- range .Fields.Free | fields}}
 {{- if .IsInputFile}}
 {{- if .Optional}}
     var {{.Key}} *string
-    if o.{{.Name.Value}} != nil {
-        ref, err := o.{{.Name.Value}}.Attach(p)
+    if o.{{.Name}} != nil {
+        ref, err := o.{{.Name}}.Attach(p)
         if err != nil {
             return nil, err
         }
         {{.Key}} = &ref
     }
 {{- else}}
-    {{.Key}}, err := o.{{.Name.Value}}.Attach(p)
+    {{.Key}}, err := o.{{.Name}}.Attach(p)
     if err != nil {
         return nil, err
     }
@@ -41,22 +41,22 @@ func (o {{.Name.Value}}) JSON(p *MultipartPayload) ([]byte, error) {
 {{- end}}
 {{- end}}
     return json.Marshal(struct {
-        Key string `json:"{{.Fields.Discriminator.Key.Value}}"`
+        Key string `json:"{{.Fields.Discriminator.Key}}"`
 {{- range .Fields.Free | fields}}
 {{- if .IsInputFile}}
 {{- if .Optional}}
-        {{.Name.Value}} *string {{.Tag.Value}}
+        {{.Name}} *string {{.Tag}}
 {{- else}}
-        {{.Name.Value}} string {{.Tag.Value}}
+        {{.Name}} string {{.Tag}}
 {{- end}}
 {{- end}}
 {{- end}}
         Alias
     }{
-        Key: "{{.Fields.Discriminator.Value.Value}}",
+        Key: {{.Fields.Discriminator.Value}},
 {{- range .Fields.Free | fields}}
 {{- if .IsInputFile}}
-        {{.Name.Value}}: {{.Key}},
+        {{.Name}}: {{.Key}},
 {{- end}}
 {{- end}}
         Alias: Alias(o),
@@ -64,12 +64,12 @@ func (o {{.Name.Value}}) JSON(p *MultipartPayload) ([]byte, error) {
 }
 {{- else}}
 
-func (o {{.Name.Value}}) JSON(_ *MultipartPayload) ([]byte, error) {
+func (o {{.Name}}) JSON(_ *MultipartPayload) ([]byte, error) {
     return json.Marshal(o)
 }
 {{- end}}
 
-func (o {{.Name.Value}}) Write(p *MultipartPayload, key string) error {
+func (o {{.Name}}) Write(p *MultipartPayload, key string) error {
     data, err := o.JSON(p)
     if err != nil {
         return err

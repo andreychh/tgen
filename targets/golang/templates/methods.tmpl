@@ -17,7 +17,7 @@ type Method string
 
 const (
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
-	Method{{.Name.Value}} Method = "{{.Name.Value}}"
+	Method{{.Name}} Method = "{{.Name}}"
 {{- end}}
 )
 

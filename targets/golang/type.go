@@ -63,6 +63,10 @@ func NewType(typ ir.Type, opt model.Optionality) Type {
 	return Type{typ: typ, opt: opt}
 }
 
+func NewRequiredType(typ ir.Type) Type {
+	return NewType(typ, false)
+}
+
 func (t Type) IsPrimitive() (bool, error) {
 	kind, err := t.typ.Kind()
 	if err != nil {
@@ -112,10 +116,7 @@ func (t Type) Value() (string, error) {
 	}
 	rendered, ok := primitives[name]
 	if !ok {
-		rendered, err = NewStringName(name).Value()
-		if err != nil {
-			return "", err
-		}
+		rendered = NewName(model.Name(name)).Value()
 	}
 	ptr, err := t.hasPointer()
 	if err != nil {
@@ -181,10 +182,7 @@ func (t Type) Zero() (string, error) {
 	if zero, ok := zeros[name]; ok {
 		return zero, nil
 	}
-	formatted, err := NewStringName(name).Value()
-	if err != nil {
-		return "", err
-	}
+	formatted := NewName(model.Name(name)).Value()
 	return formatted + "{}", nil
 }
 

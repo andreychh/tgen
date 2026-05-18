@@ -18,20 +18,24 @@ func NewMethod(o ir.Method) Method {
 	return Method{inner: o}
 }
 
-func (m Method) Name() (Name, error) {
+func (m Method) Name() (string, error) {
 	name, err := m.inner.Name()
 	if err != nil {
-		return Name{}, err
+		return "", err
 	}
-	return NewName(name), nil
+	return NewName(name).Value(), nil
 }
 
-func (m Method) Doc() (GoDoc, error) {
+func (m Method) Doc() (string, error) {
 	ref, err := m.inner.Reference()
 	if err != nil {
-		return GoDoc{}, err
+		return "", err
 	}
-	return NewGoDoc(NewDefinitionDoc(ref, m.inner.Description())), nil
+	doc, err := NewDefinitionDoc(ref, m.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewTypeGodoc(doc).Value(), nil
 }
 
 func (m Method) ReturnType() (Type, error) {
@@ -39,7 +43,7 @@ func (m Method) ReturnType() (Type, error) {
 	if err != nil {
 		return Type{}, err
 	}
-	return NewType(typ, false), nil
+	return NewRequiredType(typ), nil
 }
 
 func (m Method) Fields() iter.Seq[Field] {

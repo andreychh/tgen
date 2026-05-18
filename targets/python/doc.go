@@ -24,9 +24,5 @@ func (d Doc) Value() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getting decs: %w", err)
 	}
-	url, err := targets.NewTelegramURL(d.ref).Value()
-	if err != nil {
-		return "", fmt.Errorf("getting url: %w", err)
-	}
-	return fmt.Sprintf("%s\n\nSee %s", desc, url), nil
+	return fmt.Sprintf("%s\n\nSee %s", desc, targets.NewTelegramURL(d.ref).Value()), nil
 }

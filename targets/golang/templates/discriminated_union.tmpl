@@ -2,25 +2,25 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "discriminated_union"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedUnion*/}}
-{{- $name := .Name.Value}}
-{{.Doc.Value}}
+{{- $name := .Name}}
+{{.Doc}}
 //sumtype:decl
 type {{$name}} interface{ Part; FormJSON; sealed{{$name}}() }
 {{range .Variants | discriminated_variants}}
-func (v {{.Name.Value}}) sealed{{$name}}() {}
+func (v {{.Name}}) sealed{{$name}}() {}
 {{- end}}
 
 func unmarshal{{$name}}(data []byte) ({{$name}}, error) {
 	var disc struct {
-		Key string `json:"{{.DiscriminatorKey.Value}}"`
+		Key string `json:"{{.DiscriminatorKey}}"`
 	}
 	if err := json.Unmarshal(data, &disc); err != nil {
 		return nil, err
 	}
 	switch disc.Key {
 {{- range .Variants | discriminated_variants}}
-{{- $variantName := .Name.Value}}
-	case "{{.DiscriminatorValue.Value}}":
+{{- $variantName := .Name}}
+	case "{{.DiscriminatorValue}}":
 		var v {{$variantName}}
 		if err := json.Unmarshal(data, &v); err != nil {
 			return nil, err

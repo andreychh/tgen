@@ -202,28 +202,28 @@ const (
 //
 // See https://core.telegram.org/bots/api#getupdates
 type GetUpdatesMethod struct { 
-    // Identifier of the first update to be returned. Must be greater by one than
-// the highest among the identifiers of previously received updates. By default,
-// updates starting with the earliest unconfirmed update are returned. An update
-// is considered confirmed as soon as getUpdates is called with an offset higher
-// than its update_id. The negative offset can be specified to retrieve updates
-// starting from -offset update from the end of the updates queue. All previous
-// updates will be forgotten.
+	// Identifier of the first update to be returned. Must be greater by one than
+	// the highest among the identifiers of previously received updates. By default,
+	// updates starting with the earliest unconfirmed update are returned. An update
+	// is considered confirmed as soon as getUpdates is called with an offset higher
+	// than its update_id. The negative offset can be specified to retrieve updates
+	// starting from -offset update from the end of the updates queue. All previous
+	// updates will be forgotten.
     Offset *int64 `json:"offset,omitempty"` 
-    // Limits the number of updates to be retrieved. Values between 1-100 are
-// accepted. Defaults to 100.
+	// Limits the number of updates to be retrieved. Values between 1-100 are
+	// accepted. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"` 
-    // Timeout in seconds for long polling. Defaults to 0, i.e. usual short polling.
-// Should be positive, short polling should be used for testing purposes only.
+	// Timeout in seconds for long polling. Defaults to 0, i.e. usual short polling.
+	// Should be positive, short polling should be used for testing purposes only.
     Timeout *int64 `json:"timeout,omitempty"` 
-    // A JSON-serialized list of the update types you want your bot to receive. For
-// example, specify ["message", "edited_channel_post", "callback_query"] to only
-// receive updates of these types. See Update for a complete list of available
-// update types. Specify an empty list to receive all update types except
-// chat_member, message_reaction, and message_reaction_count (default). If not
-// specified, the previous setting will be used.Please note that this parameter
-// doesn't affect updates created before the call to getUpdates, so unwanted
-// updates may be received for a short period of time.
+	// A JSON-serialized list of the update types you want your bot to receive. For
+	// example, specify ["message", "edited_channel_post", "callback_query"] to only
+	// receive updates of these types. See Update for a complete list of available
+	// update types. Specify an empty list to receive all update types except
+	// chat_member, message_reaction, and message_reaction_count (default). If not
+	// specified, the previous setting will be used.Please note that this parameter
+	// doesn't affect updates created before the call to getUpdates, so unwanted
+	// updates may be received for a short period of time.
     AllowedUpdates []string `json:"allowed_updates,omitempty"`
 }
 
@@ -279,35 +279,35 @@ func (m GetUpdatesMethod) Call(ctx context.Context, conn Connection) ([]Update, 
 //
 // See https://core.telegram.org/bots/api#setwebhook
 type SetWebhookMethod struct { 
-    // HTTPS URL to send updates to. Use an empty string to remove webhook
-// integration.
+	// HTTPS URL to send updates to. Use an empty string to remove webhook
+	// integration.
     URL string `json:"url"` 
-    // Upload your public key certificate so that the root certificate in use can be
-// checked. See our self-signed guide for details.
+	// Upload your public key certificate so that the root certificate in use can be
+	// checked. See our self-signed guide for details.
     Certificate InputFile `json:"certificate,omitempty"` 
-    // The fixed IP address which will be used to send webhook requests instead of
-// the IP address resolved through DNS
+	// The fixed IP address which will be used to send webhook requests instead of
+	// the IP address resolved through DNS
     IPAddress *string `json:"ip_address,omitempty"` 
-    // The maximum allowed number of simultaneous HTTPS connections to the webhook
-// for update delivery, 1-100. Defaults to 40. Use lower values to limit the
-// load on your bot's server, and higher values to increase your bot's
-// throughput.
+	// The maximum allowed number of simultaneous HTTPS connections to the webhook
+	// for update delivery, 1-100. Defaults to 40. Use lower values to limit the
+	// load on your bot's server, and higher values to increase your bot's
+	// throughput.
     MaxConnections *int64 `json:"max_connections,omitempty"` 
-    // A JSON-serialized list of the update types you want your bot to receive. For
-// example, specify ["message", "edited_channel_post", "callback_query"] to only
-// receive updates of these types. See Update for a complete list of available
-// update types. Specify an empty list to receive all update types except
-// chat_member, message_reaction, and message_reaction_count (default). If not
-// specified, the previous setting will be used.Please note that this parameter
-// doesn't affect updates created before the call to the setWebhook, so unwanted
-// updates may be received for a short period of time.
+	// A JSON-serialized list of the update types you want your bot to receive. For
+	// example, specify ["message", "edited_channel_post", "callback_query"] to only
+	// receive updates of these types. See Update for a complete list of available
+	// update types. Specify an empty list to receive all update types except
+	// chat_member, message_reaction, and message_reaction_count (default). If not
+	// specified, the previous setting will be used.Please note that this parameter
+	// doesn't affect updates created before the call to the setWebhook, so unwanted
+	// updates may be received for a short period of time.
     AllowedUpdates []string `json:"allowed_updates,omitempty"` 
-    // Pass True to drop all pending updates
+	// Pass True to drop all pending updates
     DropPendingUpdates *bool `json:"drop_pending_updates,omitempty"` 
-    // A secret token to be sent in a header “X-Telegram-Bot-Api-Secret-Token” in
-// every webhook request, 1-256 characters. Only characters A-Z, a-z, 0-9, _ and
-// - are allowed. The header is useful to ensure that the request comes from a
-// webhook set by you.
+	// A secret token to be sent in a header “X-Telegram-Bot-Api-Secret-Token” in
+	// every webhook request, 1-256 characters. Only characters A-Z, a-z, 0-9, _ and
+	// - are allowed. The header is useful to ensure that the request comes from a
+	// webhook set by you.
     SecretToken *string `json:"secret_token,omitempty"`
 }
 
@@ -358,7 +358,7 @@ func (m SetWebhookMethod) Call(ctx context.Context, conn Connection) (bool, erro
 //
 // See https://core.telegram.org/bots/api#deletewebhook
 type DeleteWebhookMethod struct { 
-    // Pass True to drop all pending updates
+	// Pass True to drop all pending updates
     DropPendingUpdates *bool `json:"drop_pending_updates,omitempty"`
 }
 
@@ -453,48 +453,48 @@ func (m CloseMethod) Call(ctx context.Context, conn Connection) (bool, error) {
 //
 // See https://core.telegram.org/bots/api#sendmessage
 type SendMessageMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Text of the message to be sent, 1-4096 characters after entities parsing
+	// Text of the message to be sent, 1-4096 characters after entities parsing
     Text string `json:"text"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Mode for parsing entities in the message text. See formatting options for
-// more details.
+	// Mode for parsing entities in the message text. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in message text, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in message text, which
+	// can be specified instead of parse_mode
     Entities []MessageEntity `json:"entities,omitempty"` 
-    // Link preview generation options for the message
+	// Link preview generation options for the message
     LinkPreviewOptions *LinkPreviewOptions `json:"link_preview_options,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -584,31 +584,31 @@ func (m SendMessageMethod) Call(ctx context.Context, conn Connection) (Message, 
 //
 // See https://core.telegram.org/bots/api#forwardmessage
 type ForwardMessageMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the chat where the original message was sent (or
-// username of the target bot, supergroup or channel in the format @username)
+	// Unique identifier for the chat where the original message was sent (or
+	// username of the target bot, supergroup or channel in the format @username)
     FromChatID ChatID `json:"from_chat_id"` 
-    // Message identifier in the chat specified in from_chat_id
+	// Message identifier in the chat specified in from_chat_id
     MessageID int64 `json:"message_id"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be
-// forwarded; required if the message is forwarded to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be
+	// forwarded; required if the message is forwarded to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // New start timestamp for the forwarded video in the message
+	// New start timestamp for the forwarded video in the message
     VideoStartTimestamp *int64 `json:"video_start_timestamp,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the forwarded message from forwarding and saving
+	// Protects the contents of the forwarded message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; only
-// available when forwarding to private chats
+	// Unique identifier of the message effect to be added to the message; only
+	// available when forwarding to private chats
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"`
 }
 
@@ -673,25 +673,25 @@ func (m ForwardMessageMethod) Call(ctx context.Context, conn Connection) (Messag
 //
 // See https://core.telegram.org/bots/api#forwardmessages
 type ForwardMessagesMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the chat where the original messages were sent (or
-// username of the target bot, supergroup or channel in the format @username)
+	// Unique identifier for the chat where the original messages were sent (or
+	// username of the target bot, supergroup or channel in the format @username)
     FromChatID ChatID `json:"from_chat_id"` 
-    // A JSON-serialized list of 1-100 identifiers of messages in the chat
-// from_chat_id to forward. The identifiers must be specified in a strictly
-// increasing order.
+	// A JSON-serialized list of 1-100 identifiers of messages in the chat
+	// from_chat_id to forward. The identifiers must be specified in a strictly
+	// increasing order.
     MessageIDs []int64 `json:"message_ids"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the messages will be
-// forwarded; required if the messages are forwarded to a direct messages chat
+	// Identifier of the direct messages topic to which the messages will be
+	// forwarded; required if the messages are forwarded to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Sends the messages silently. Users will receive a notification with no sound.
+	// Sends the messages silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the forwarded messages from forwarding and saving
+	// Protects the contents of the forwarded messages from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"`
 }
 
@@ -742,54 +742,54 @@ func (m ForwardMessagesMethod) Call(ctx context.Context, conn Connection) ([]Mes
 //
 // See https://core.telegram.org/bots/api#copymessage
 type CopyMessageMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the chat where the original message was sent (or
-// username of the target bot, supergroup or channel in the format @username)
+	// Unique identifier for the chat where the original message was sent (or
+	// username of the target bot, supergroup or channel in the format @username)
     FromChatID ChatID `json:"from_chat_id"` 
-    // Message identifier in the chat specified in from_chat_id
+	// Message identifier in the chat specified in from_chat_id
     MessageID int64 `json:"message_id"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // New start timestamp for the copied video in the message
+	// New start timestamp for the copied video in the message
     VideoStartTimestamp *int64 `json:"video_start_timestamp,omitempty"` 
-    // New caption for media, 0-1024 characters after entities parsing. If not
-// specified, the original caption is kept.
+	// New caption for media, 0-1024 characters after entities parsing. If not
+	// specified, the original caption is kept.
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the new caption. See formatting options for more
-// details.
+	// Mode for parsing entities in the new caption. See formatting options for more
+	// details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the new caption,
-// which can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the new caption,
+	// which can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media. Ignored if a
-// new caption isn't specified.
+	// Pass True, if the caption must be shown above the message media. Ignored if a
+	// new caption isn't specified.
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; only
-// available when copying to private chats
+	// Unique identifier of the message effect to be added to the message; only
+	// available when copying to private chats
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -892,27 +892,27 @@ func (m CopyMessageMethod) Call(ctx context.Context, conn Connection) (MessageID
 //
 // See https://core.telegram.org/bots/api#copymessages
 type CopyMessagesMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the chat where the original messages were sent (or
-// username of the target bot, supergroup or channel in the format @username)
+	// Unique identifier for the chat where the original messages were sent (or
+	// username of the target bot, supergroup or channel in the format @username)
     FromChatID ChatID `json:"from_chat_id"` 
-    // A JSON-serialized list of 1-100 identifiers of messages in the chat
-// from_chat_id to copy. The identifiers must be specified in a strictly
-// increasing order.
+	// A JSON-serialized list of 1-100 identifiers of messages in the chat
+	// from_chat_id to copy. The identifiers must be specified in a strictly
+	// increasing order.
     MessageIDs []int64 `json:"message_ids"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the messages will be sent;
-// required if the messages are sent to a direct messages chat
+	// Identifier of the direct messages topic to which the messages will be sent;
+	// required if the messages are sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Sends the messages silently. Users will receive a notification with no sound.
+	// Sends the messages silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent messages from forwarding and saving
+	// Protects the contents of the sent messages from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to copy the messages without their captions
+	// Pass True to copy the messages without their captions
     RemoveCaption *bool `json:"remove_caption,omitempty"`
 }
 
@@ -963,58 +963,58 @@ func (m CopyMessagesMethod) Call(ctx context.Context, conn Connection) ([]Messag
 //
 // See https://core.telegram.org/bots/api#sendphoto
 type SendPhotoMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Photo to send. Pass a file_id as String to send a photo that exists on the
-// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-// get a photo from the Internet, or upload a new photo using
-// multipart/form-data. The photo must be at most 10 MB in size. The photo's
-// width and height must not exceed 10000 in total. Width and height ratio must
-// be at most 20. More information on Sending Files »
+	// Photo to send. Pass a file_id as String to send a photo that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a photo from the Internet, or upload a new photo using
+	// multipart/form-data. The photo must be at most 10 MB in size. The photo's
+	// width and height must not exceed 10000 in total. Width and height ratio must
+	// be at most 20. More information on Sending Files »
     Photo InputFile `json:"photo"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Photo caption (may also be used when resending photos by file_id), 0-1024
-// characters after entities parsing
+	// Photo caption (may also be used when resending photos by file_id), 0-1024
+	// characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the photo caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the photo caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media
+	// Pass True, if the caption must be shown above the message media
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // Pass True if the photo needs to be covered with a spoiler animation
+	// Pass True if the photo needs to be covered with a spoiler animation
     HasSpoiler *bool `json:"has_spoiler,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -1113,62 +1113,62 @@ func (m SendPhotoMethod) Call(ctx context.Context, conn Connection) (Message, er
 //
 // See https://core.telegram.org/bots/api#sendlivephoto
 type SendLivePhotoMethod struct { 
-    // Unique identifier for the target chat or username of the target channel (in
-// the format @channelusername)
+	// Unique identifier for the target chat or username of the target channel (in
+	// the format @channelusername)
     ChatID ChatID `json:"chat_id"` 
-    // Live photo video to send. The video must be no longer than 10 seconds and
-// must not exceed 10 MB in size. Pass a file_id as String to send a video that
-// exists on the Telegram servers (recommended) or upload a new video using
-// multipart/form-data. More information on Sending Files ». Sending live photos
-// by a URL is currently unsupported.
+	// Live photo video to send. The video must be no longer than 10 seconds and
+	// must not exceed 10 MB in size. Pass a file_id as String to send a video that
+	// exists on the Telegram servers (recommended) or upload a new video using
+	// multipart/form-data. More information on Sending Files ». Sending live photos
+	// by a URL is currently unsupported.
     LivePhoto InputFile `json:"live_photo"` 
-    // The static photo to send. Pass a file_id as String to send a photo that
-// exists on the Telegram servers (recommended) or upload a new video using
-// multipart/form-data. More information on Sending Files ». Sending live photos
-// by a URL is currently unsupported.
+	// The static photo to send. Pass a file_id as String to send a photo that
+	// exists on the Telegram servers (recommended) or upload a new video using
+	// multipart/form-data. More information on Sending Files ». Sending live photos
+	// by a URL is currently unsupported.
     Photo InputFile `json:"photo"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Video caption (may also be used when resending videos by file_id), 0-1024
-// characters after entities parsing
+	// Video caption (may also be used when resending videos by file_id), 0-1024
+	// characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the video caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the video caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media
+	// Pass True, if the caption must be shown above the message media
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // Pass True if the video needs to be covered with a spoiler animation
+	// Pass True if the video needs to be covered with a spoiler animation
     HasSpoiler *bool `json:"has_spoiler,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -1274,66 +1274,66 @@ func (m SendLivePhotoMethod) Call(ctx context.Context, conn Connection) (Message
 //
 // See https://core.telegram.org/bots/api#sendaudio
 type SendAudioMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Audio file to send. Pass a file_id as String to send an audio file that
-// exists on the Telegram servers (recommended), pass an HTTP URL as a String
-// for Telegram to get an audio file from the Internet, or upload a new one
-// using multipart/form-data. More information on Sending Files »
+	// Audio file to send. Pass a file_id as String to send an audio file that
+	// exists on the Telegram servers (recommended), pass an HTTP URL as a String
+	// for Telegram to get an audio file from the Internet, or upload a new one
+	// using multipart/form-data. More information on Sending Files »
     Audio InputFile `json:"audio"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Audio caption, 0-1024 characters after entities parsing
+	// Audio caption, 0-1024 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the audio caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the audio caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Duration of the audio in seconds
+	// Duration of the audio in seconds
     Duration *int64 `json:"duration,omitempty"` 
-    // Performer
+	// Performer
     Performer *string `json:"performer,omitempty"` 
-    // Track name
+	// Track name
     Title *string `json:"title,omitempty"` 
-    // Thumbnail of the file sent; can be ignored if thumbnail generation for the
-// file is supported server-side. The thumbnail should be in JPEG format and
-// less than 200 kB in size. A thumbnail's width and height should not exceed
-// 320. Ignored if the file is not uploaded using multipart/form-data.
-// Thumbnails can't be reused and can be only uploaded as a new file, so you can
-// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
-// multipart/form-data under <file_attach_name>. More information on Sending
-// Files »
+	// Thumbnail of the file sent; can be ignored if thumbnail generation for the
+	// file is supported server-side. The thumbnail should be in JPEG format and
+	// less than 200 kB in size. A thumbnail's width and height should not exceed
+	// 320. Ignored if the file is not uploaded using multipart/form-data.
+	// Thumbnails can't be reused and can be only uploaded as a new file, so you can
+	// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
+	// multipart/form-data under <file_attach_name>. More information on Sending
+	// Files »
     Thumbnail InputFile `json:"thumbnail,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -1443,64 +1443,64 @@ func (m SendAudioMethod) Call(ctx context.Context, conn Connection) (Message, er
 //
 // See https://core.telegram.org/bots/api#senddocument
 type SendDocumentMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // File to send. Pass a file_id as String to send a file that exists on the
-// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-// get a file from the Internet, or upload a new one using multipart/form-data.
-// More information on Sending Files »
+	// File to send. Pass a file_id as String to send a file that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a file from the Internet, or upload a new one using multipart/form-data.
+	// More information on Sending Files »
     Document InputFile `json:"document"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Thumbnail of the file sent; can be ignored if thumbnail generation for the
-// file is supported server-side. The thumbnail should be in JPEG format and
-// less than 200 kB in size. A thumbnail's width and height should not exceed
-// 320. Ignored if the file is not uploaded using multipart/form-data.
-// Thumbnails can't be reused and can be only uploaded as a new file, so you can
-// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
-// multipart/form-data under <file_attach_name>. More information on Sending
-// Files »
+	// Thumbnail of the file sent; can be ignored if thumbnail generation for the
+	// file is supported server-side. The thumbnail should be in JPEG format and
+	// less than 200 kB in size. A thumbnail's width and height should not exceed
+	// 320. Ignored if the file is not uploaded using multipart/form-data.
+	// Thumbnails can't be reused and can be only uploaded as a new file, so you can
+	// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
+	// multipart/form-data under <file_attach_name>. More information on Sending
+	// Files »
     Thumbnail InputFile `json:"thumbnail,omitempty"` 
-    // Document caption (may also be used when resending documents by file_id),
-// 0-1024 characters after entities parsing
+	// Document caption (may also be used when resending documents by file_id),
+	// 0-1024 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the document caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the document caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Disables automatic server-side content type detection for files uploaded
-// using multipart/form-data
+	// Disables automatic server-side content type detection for files uploaded
+	// using multipart/form-data
     DisableContentTypeDetection *bool `json:"disable_content_type_detection,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -1601,81 +1601,81 @@ func (m SendDocumentMethod) Call(ctx context.Context, conn Connection) (Message,
 //
 // See https://core.telegram.org/bots/api#sendvideo
 type SendVideoMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Video to send. Pass a file_id as String to send a video that exists on the
-// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-// get a video from the Internet, or upload a new video using
-// multipart/form-data. More information on Sending Files »
+	// Video to send. Pass a file_id as String to send a video that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a video from the Internet, or upload a new video using
+	// multipart/form-data. More information on Sending Files »
     Video InputFile `json:"video"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Duration of sent video in seconds
+	// Duration of sent video in seconds
     Duration *int64 `json:"duration,omitempty"` 
-    // Video width
+	// Video width
     Width *int64 `json:"width,omitempty"` 
-    // Video height
+	// Video height
     Height *int64 `json:"height,omitempty"` 
-    // Thumbnail of the file sent; can be ignored if thumbnail generation for the
-// file is supported server-side. The thumbnail should be in JPEG format and
-// less than 200 kB in size. A thumbnail's width and height should not exceed
-// 320. Ignored if the file is not uploaded using multipart/form-data.
-// Thumbnails can't be reused and can be only uploaded as a new file, so you can
-// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
-// multipart/form-data under <file_attach_name>. More information on Sending
-// Files »
+	// Thumbnail of the file sent; can be ignored if thumbnail generation for the
+	// file is supported server-side. The thumbnail should be in JPEG format and
+	// less than 200 kB in size. A thumbnail's width and height should not exceed
+	// 320. Ignored if the file is not uploaded using multipart/form-data.
+	// Thumbnails can't be reused and can be only uploaded as a new file, so you can
+	// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
+	// multipart/form-data under <file_attach_name>. More information on Sending
+	// Files »
     Thumbnail InputFile `json:"thumbnail,omitempty"` 
-    // Cover for the video in the message. Pass a file_id to send a file that exists
-// on the Telegram servers (recommended), pass an HTTP URL for Telegram to get a
-// file from the Internet, or pass “attach://<file_attach_name>” to upload a new
-// one using multipart/form-data under <file_attach_name> name. More information
-// on Sending Files »
+	// Cover for the video in the message. Pass a file_id to send a file that exists
+	// on the Telegram servers (recommended), pass an HTTP URL for Telegram to get a
+	// file from the Internet, or pass “attach://<file_attach_name>” to upload a new
+	// one using multipart/form-data under <file_attach_name> name. More information
+	// on Sending Files »
     Cover InputFile `json:"cover,omitempty"` 
-    // Start timestamp for the video in the message
+	// Start timestamp for the video in the message
     StartTimestamp *int64 `json:"start_timestamp,omitempty"` 
-    // Video caption (may also be used when resending videos by file_id), 0-1024
-// characters after entities parsing
+	// Video caption (may also be used when resending videos by file_id), 0-1024
+	// characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the video caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the video caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media
+	// Pass True, if the caption must be shown above the message media
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // Pass True if the video needs to be covered with a spoiler animation
+	// Pass True if the video needs to be covered with a spoiler animation
     HasSpoiler *bool `json:"has_spoiler,omitempty"` 
-    // Pass True if the uploaded video is suitable for streaming
+	// Pass True if the uploaded video is suitable for streaming
     SupportsStreaming *bool `json:"supports_streaming,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -1811,71 +1811,71 @@ func (m SendVideoMethod) Call(ctx context.Context, conn Connection) (Message, er
 //
 // See https://core.telegram.org/bots/api#sendanimation
 type SendAnimationMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Animation to send. Pass a file_id as String to send an animation that exists
-// on the Telegram servers (recommended), pass an HTTP URL as a String for
-// Telegram to get an animation from the Internet, or upload a new animation
-// using multipart/form-data. More information on Sending Files »
+	// Animation to send. Pass a file_id as String to send an animation that exists
+	// on the Telegram servers (recommended), pass an HTTP URL as a String for
+	// Telegram to get an animation from the Internet, or upload a new animation
+	// using multipart/form-data. More information on Sending Files »
     Animation InputFile `json:"animation"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Duration of sent animation in seconds
+	// Duration of sent animation in seconds
     Duration *int64 `json:"duration,omitempty"` 
-    // Animation width
+	// Animation width
     Width *int64 `json:"width,omitempty"` 
-    // Animation height
+	// Animation height
     Height *int64 `json:"height,omitempty"` 
-    // Thumbnail of the file sent; can be ignored if thumbnail generation for the
-// file is supported server-side. The thumbnail should be in JPEG format and
-// less than 200 kB in size. A thumbnail's width and height should not exceed
-// 320. Ignored if the file is not uploaded using multipart/form-data.
-// Thumbnails can't be reused and can be only uploaded as a new file, so you can
-// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
-// multipart/form-data under <file_attach_name>. More information on Sending
-// Files »
+	// Thumbnail of the file sent; can be ignored if thumbnail generation for the
+	// file is supported server-side. The thumbnail should be in JPEG format and
+	// less than 200 kB in size. A thumbnail's width and height should not exceed
+	// 320. Ignored if the file is not uploaded using multipart/form-data.
+	// Thumbnails can't be reused and can be only uploaded as a new file, so you can
+	// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
+	// multipart/form-data under <file_attach_name>. More information on Sending
+	// Files »
     Thumbnail InputFile `json:"thumbnail,omitempty"` 
-    // Animation caption (may also be used when resending animation by file_id),
-// 0-1024 characters after entities parsing
+	// Animation caption (may also be used when resending animation by file_id),
+	// 0-1024 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the animation caption. See formatting options
-// for more details.
+	// Mode for parsing entities in the animation caption. See formatting options
+	// for more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media
+	// Pass True, if the caption must be shown above the message media
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // Pass True if the animation needs to be covered with a spoiler animation
+	// Pass True if the animation needs to be covered with a spoiler animation
     HasSpoiler *bool `json:"has_spoiler,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -1998,53 +1998,53 @@ func (m SendAnimationMethod) Call(ctx context.Context, conn Connection) (Message
 //
 // See https://core.telegram.org/bots/api#sendvoice
 type SendVoiceMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Audio file to send. Pass a file_id as String to send a file that exists on
-// the Telegram servers (recommended), pass an HTTP URL as a String for Telegram
-// to get a file from the Internet, or upload a new one using
-// multipart/form-data. More information on Sending Files »
+	// Audio file to send. Pass a file_id as String to send a file that exists on
+	// the Telegram servers (recommended), pass an HTTP URL as a String for Telegram
+	// to get a file from the Internet, or upload a new one using
+	// multipart/form-data. More information on Sending Files »
     Voice InputFile `json:"voice"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Voice message caption, 0-1024 characters after entities parsing
+	// Voice message caption, 0-1024 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the voice message caption. See formatting
-// options for more details.
+	// Mode for parsing entities in the voice message caption. See formatting
+	// options for more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Duration of the voice message in seconds
+	// Duration of the voice message in seconds
     Duration *int64 `json:"duration,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -2139,56 +2139,56 @@ func (m SendVoiceMethod) Call(ctx context.Context, conn Connection) (Message, er
 //
 // See https://core.telegram.org/bots/api#sendvideonote
 type SendVideoNoteMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Video note to send. Pass a file_id as String to send a video note that exists
-// on the Telegram servers (recommended) or upload a new video using
-// multipart/form-data. More information on Sending Files ». Sending video notes
-// by a URL is currently unsupported.
+	// Video note to send. Pass a file_id as String to send a video note that exists
+	// on the Telegram servers (recommended) or upload a new video using
+	// multipart/form-data. More information on Sending Files ». Sending video notes
+	// by a URL is currently unsupported.
     VideoNote InputFile `json:"video_note"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Duration of sent video in seconds
+	// Duration of sent video in seconds
     Duration *int64 `json:"duration,omitempty"` 
-    // Video width and height, i.e. diameter of the video message
+	// Video width and height, i.e. diameter of the video message
     Length *int64 `json:"length,omitempty"` 
-    // Thumbnail of the file sent; can be ignored if thumbnail generation for the
-// file is supported server-side. The thumbnail should be in JPEG format and
-// less than 200 kB in size. A thumbnail's width and height should not exceed
-// 320. Ignored if the file is not uploaded using multipart/form-data.
-// Thumbnails can't be reused and can be only uploaded as a new file, so you can
-// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
-// multipart/form-data under <file_attach_name>. More information on Sending
-// Files »
+	// Thumbnail of the file sent; can be ignored if thumbnail generation for the
+	// file is supported server-side. The thumbnail should be in JPEG format and
+	// less than 200 kB in size. A thumbnail's width and height should not exceed
+	// 320. Ignored if the file is not uploaded using multipart/form-data.
+	// Thumbnails can't be reused and can be only uploaded as a new file, so you can
+	// pass “attach://<file_attach_name>” if the thumbnail was uploaded using
+	// multipart/form-data under <file_attach_name>. More information on Sending
+	// Files »
     Thumbnail InputFile `json:"thumbnail,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -2276,55 +2276,55 @@ func (m SendVideoNoteMethod) Call(ctx context.Context, conn Connection) (Message
 //
 // See https://core.telegram.org/bots/api#sendpaidmedia
 type SendPaidMediaMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username. If the chat is a channel, all
-// Telegram Star proceeds from this media will be credited to the chat's
-// balance. Otherwise, they will be credited to the bot's balance.
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username. If the chat is a channel, all
+	// Telegram Star proceeds from this media will be credited to the chat's
+	// balance. Otherwise, they will be credited to the bot's balance.
     ChatID ChatID `json:"chat_id"` 
-    // The number of Telegram Stars that must be paid to buy access to the media;
-// 1-25000
+	// The number of Telegram Stars that must be paid to buy access to the media;
+	// 1-25000
     StarCount int64 `json:"star_count"` 
-    // A JSON-serialized array describing the media to be sent; up to 10 items
+	// A JSON-serialized array describing the media to be sent; up to 10 items
     Media []InputPaidMedia `json:"media"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Bot-defined paid media payload, 0-128 bytes. This will not be displayed to
-// the user, use it for your internal processes.
+	// Bot-defined paid media payload, 0-128 bytes. This will not be displayed to
+	// the user, use it for your internal processes.
     Payload *string `json:"payload,omitempty"` 
-    // Media caption, 0-1024 characters after entities parsing
+	// Media caption, 0-1024 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the media caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the media caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media
+	// Pass True, if the caption must be shown above the message media
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -2423,33 +2423,33 @@ func (m SendPaidMediaMethod) Call(ctx context.Context, conn Connection) (Message
 //
 // See https://core.telegram.org/bots/api#sendmediagroup
 type SendMediaGroupMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // A JSON-serialized array describing messages to be sent, must include 2-10
-// items
+	// A JSON-serialized array describing messages to be sent, must include 2-10
+	// items
     Media []InputMediaGroup `json:"media"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the messages will be sent;
-// required if the messages are sent to a direct messages chat
+	// Identifier of the direct messages topic to which the messages will be sent;
+	// required if the messages are sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Sends messages silently. Users will receive a notification with no sound.
+	// Sends messages silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent messages from forwarding and saving
+	// Protects the contents of the sent messages from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"`
 }
 
@@ -2513,54 +2513,54 @@ func (m SendMediaGroupMethod) Call(ctx context.Context, conn Connection) ([]Mess
 //
 // See https://core.telegram.org/bots/api#sendlocation
 type SendLocationMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Latitude of the location
+	// Latitude of the location
     Latitude float64 `json:"latitude"` 
-    // Longitude of the location
+	// Longitude of the location
     Longitude float64 `json:"longitude"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // The radius of uncertainty for the location, measured in meters; 0-1500
+	// The radius of uncertainty for the location, measured in meters; 0-1500
     HorizontalAccuracy *float64 `json:"horizontal_accuracy,omitempty"` 
-    // Period in seconds during which the location will be updated (see Live
-// Locations, should be between 60 and 86400, or 0x7FFFFFFF for live locations
-// that can be edited indefinitely
+	// Period in seconds during which the location will be updated (see Live
+	// Locations, should be between 60 and 86400, or 0x7FFFFFFF for live locations
+	// that can be edited indefinitely
     LivePeriod *int64 `json:"live_period,omitempty"` 
-    // For live locations, a direction in which the user is moving, in degrees. Must
-// be between 1 and 360 if specified.
+	// For live locations, a direction in which the user is moving, in degrees. Must
+	// be between 1 and 360 if specified.
     Heading *int64 `json:"heading,omitempty"` 
-    // For live locations, a maximum distance for proximity alerts about approaching
-// another chat member, in meters. Must be between 1 and 100000 if specified.
+	// For live locations, a maximum distance for proximity alerts about approaching
+	// another chat member, in meters. Must be between 1 and 100000 if specified.
     ProximityAlertRadius *int64 `json:"proximity_alert_radius,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -2657,56 +2657,56 @@ func (m SendLocationMethod) Call(ctx context.Context, conn Connection) (Message,
 //
 // See https://core.telegram.org/bots/api#sendvenue
 type SendVenueMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Latitude of the venue
+	// Latitude of the venue
     Latitude float64 `json:"latitude"` 
-    // Longitude of the venue
+	// Longitude of the venue
     Longitude float64 `json:"longitude"` 
-    // Name of the venue
+	// Name of the venue
     Title string `json:"title"` 
-    // Address of the venue
+	// Address of the venue
     Address string `json:"address"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Foursquare identifier of the venue
+	// Foursquare identifier of the venue
     FoursquareID *string `json:"foursquare_id,omitempty"` 
-    // Foursquare type of the venue, if known. (For example,
-// “arts_entertainment/default”, “arts_entertainment/aquarium” or
-// “food/icecream”.)
+	// Foursquare type of the venue, if known. (For example,
+	// “arts_entertainment/default”, “arts_entertainment/aquarium” or
+	// “food/icecream”.)
     FoursquareType *string `json:"foursquare_type,omitempty"` 
-    // Google Places identifier of the venue
+	// Google Places identifier of the venue
     GooglePlaceID *string `json:"google_place_id,omitempty"` 
-    // Google Places type of the venue. (See supported types.)
+	// Google Places type of the venue. (See supported types.)
     GooglePlaceType *string `json:"google_place_type,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -2809,46 +2809,46 @@ func (m SendVenueMethod) Call(ctx context.Context, conn Connection) (Message, er
 //
 // See https://core.telegram.org/bots/api#sendcontact
 type SendContactMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Contact's phone number
+	// Contact's phone number
     PhoneNumber string `json:"phone_number"` 
-    // Contact's first name
+	// Contact's first name
     FirstName string `json:"first_name"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Contact's last name
+	// Contact's last name
     LastName *string `json:"last_name,omitempty"` 
-    // Additional data about the contact in the form of a vCard, 0-2048 bytes
+	// Additional data about the contact in the form of a vCard, 0-2048 bytes
     Vcard *string `json:"vcard,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -2935,102 +2935,102 @@ func (m SendContactMethod) Call(ctx context.Context, conn Connection) (Message, 
 //
 // See https://core.telegram.org/bots/api#sendpoll
 type SendPollMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username. Polls can't be sent to channel
-// direct messages chats.
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username. Polls can't be sent to channel
+	// direct messages chats.
     ChatID ChatID `json:"chat_id"` 
-    // Poll question, 1-300 characters
+	// Poll question, 1-300 characters
     Question string `json:"question"` 
-    // A JSON-serialized list of 1-12 answer options
+	// A JSON-serialized list of 1-12 answer options
     Options []InputPollOption `json:"options"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Mode for parsing entities in the question. See formatting options for more
-// details. Currently, only custom emoji entities are allowed.
+	// Mode for parsing entities in the question. See formatting options for more
+	// details. Currently, only custom emoji entities are allowed.
     QuestionParseMode *string `json:"question_parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the poll question.
-// It can be specified instead of question_parse_mode.
+	// A JSON-serialized list of special entities that appear in the poll question.
+	// It can be specified instead of question_parse_mode.
     QuestionEntities []MessageEntity `json:"question_entities,omitempty"` 
-    // True, if the poll needs to be anonymous, defaults to True
+	// True, if the poll needs to be anonymous, defaults to True
     IsAnonymous *bool `json:"is_anonymous,omitempty"` 
-    // Poll type, “quiz” or “regular”, defaults to “regular”
+	// Poll type, “quiz” or “regular”, defaults to “regular”
     Type *string `json:"type,omitempty"` 
-    // Pass True, if the poll allows multiple answers, defaults to False
+	// Pass True, if the poll allows multiple answers, defaults to False
     AllowsMultipleAnswers *bool `json:"allows_multiple_answers,omitempty"` 
-    // Pass True, if the poll allows to change chosen answer options, defaults to
-// False for quizzes and to True for regular polls
+	// Pass True, if the poll allows to change chosen answer options, defaults to
+	// False for quizzes and to True for regular polls
     AllowsRevoting *bool `json:"allows_revoting,omitempty"` 
-    // Pass True, if the poll options must be shown in random order
+	// Pass True, if the poll options must be shown in random order
     ShuffleOptions *bool `json:"shuffle_options,omitempty"` 
-    // Pass True, if answer options can be added to the poll after creation; not
-// supported for anonymous polls and quizzes
+	// Pass True, if answer options can be added to the poll after creation; not
+	// supported for anonymous polls and quizzes
     AllowAddingOptions *bool `json:"allow_adding_options,omitempty"` 
-    // Pass True, if poll results must be shown only after the poll closes
+	// Pass True, if poll results must be shown only after the poll closes
     HideResultsUntilCloses *bool `json:"hide_results_until_closes,omitempty"` 
-    // Pass True, if voting is limited to users who have been members of the chat
-// where the poll is being sent for more than 24 hours; for channel chats only
+	// Pass True, if voting is limited to users who have been members of the chat
+	// where the poll is being sent for more than 24 hours; for channel chats only
     MembersOnly *bool `json:"members_only,omitempty"` 
-    // A JSON-serialized list of 0-12 two-letter ISO 3166-1 alpha-2 country codes
-// indicating the countries from which users can vote in the poll; for channel
-// chats only. Use “FT” as a country code to allow users with anonymous numbers
-// to vote. If omitted or empty, then users from any country can participate in
-// the poll.
+	// A JSON-serialized list of 0-12 two-letter ISO 3166-1 alpha-2 country codes
+	// indicating the countries from which users can vote in the poll; for channel
+	// chats only. Use “FT” as a country code to allow users with anonymous numbers
+	// to vote. If omitted or empty, then users from any country can participate in
+	// the poll.
     CountryCodes []string `json:"country_codes,omitempty"` 
-    // A JSON-serialized list of monotonically increasing 0-based identifiers of the
-// correct answer options, required for polls in quiz mode
+	// A JSON-serialized list of monotonically increasing 0-based identifiers of the
+	// correct answer options, required for polls in quiz mode
     CorrectOptionIDs []int64 `json:"correct_option_ids,omitempty"` 
-    // Text that is shown when a user chooses an incorrect answer or taps on the
-// lamp icon in a quiz-style poll, 0-200 characters with at most 2 line feeds
-// after entities parsing
+	// Text that is shown when a user chooses an incorrect answer or taps on the
+	// lamp icon in a quiz-style poll, 0-200 characters with at most 2 line feeds
+	// after entities parsing
     Explanation *string `json:"explanation,omitempty"` 
-    // Mode for parsing entities in the explanation. See formatting options for more
-// details.
+	// Mode for parsing entities in the explanation. See formatting options for more
+	// details.
     ExplanationParseMode *string `json:"explanation_parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the poll
-// explanation. It can be specified instead of explanation_parse_mode.
+	// A JSON-serialized list of special entities that appear in the poll
+	// explanation. It can be specified instead of explanation_parse_mode.
     ExplanationEntities []MessageEntity `json:"explanation_entities,omitempty"` 
-    // Media added to the quiz explanation
+	// Media added to the quiz explanation
     ExplanationMedia InputPollMedia `json:"explanation_media,omitempty"` 
-    // Amount of time in seconds the poll will be active after creation, 5-2628000.
-// Can't be used together with close_date.
+	// Amount of time in seconds the poll will be active after creation, 5-2628000.
+	// Can't be used together with close_date.
     OpenPeriod *int64 `json:"open_period,omitempty"` 
-    // Point in time (Unix timestamp) when the poll will be automatically closed.
-// Must be at least 5 and no more than 2628000 seconds in the future. Can't be
-// used together with open_period.
+	// Point in time (Unix timestamp) when the poll will be automatically closed.
+	// Must be at least 5 and no more than 2628000 seconds in the future. Can't be
+	// used together with open_period.
     CloseDate *int64 `json:"close_date,omitempty"` 
-    // Pass True if the poll needs to be immediately closed. This can be useful for
-// poll preview.
+	// Pass True if the poll needs to be immediately closed. This can be useful for
+	// poll preview.
     IsClosed *bool `json:"is_closed,omitempty"` 
-    // Description of the poll to be sent, 0-1024 characters after entities parsing
+	// Description of the poll to be sent, 0-1024 characters after entities parsing
     Description *string `json:"description,omitempty"` 
-    // Mode for parsing entities in the poll description. See formatting options for
-// more details.
+	// Mode for parsing entities in the poll description. See formatting options for
+	// more details.
     DescriptionParseMode *string `json:"description_parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the poll
-// description, which can be specified instead of description_parse_mode
+	// A JSON-serialized list of special entities that appear in the poll
+	// description, which can be specified instead of description_parse_mode
     DescriptionEntities []MessageEntity `json:"description_entities,omitempty"` 
-    // Media added to the poll description
+	// Media added to the poll description
     Media InputPollMedia `json:"media,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -3212,23 +3212,23 @@ func (m SendPollMethod) Call(ctx context.Context, conn Connection) (Message, err
 //
 // See https://core.telegram.org/bots/api#sendchecklist
 type SendChecklistMethod struct { 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier for the target chat or username of the target bot in the
-// format @username
+	// Unique identifier for the target chat or username of the target bot in the
+	// format @username
     ChatID ChatID `json:"chat_id"` 
-    // A JSON-serialized object for the checklist to send
+	// A JSON-serialized object for the checklist to send
     Checklist InputChecklist `json:"checklist"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Unique identifier of the message effect to be added to the message
+	// Unique identifier of the message effect to be added to the message
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object for description of the message to reply to
+	// A JSON-serialized object for description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // A JSON-serialized object for an inline keyboard
+	// A JSON-serialized object for an inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -3280,42 +3280,42 @@ func (m SendChecklistMethod) Call(ctx context.Context, conn Connection) (Message
 //
 // See https://core.telegram.org/bots/api#senddice
 type SendDiceMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Emoji on which the dice throw animation is based. Currently, must be one of
-// “”, “”, “”, “”, “”, or “”. Dice can have values 1-6 for “”, “” and “”, values
-// 1-5 for “” and “”, and values 1-64 for “”. Defaults to “”.
+	// Emoji on which the dice throw animation is based. Currently, must be one of
+	// “”, “”, “”, “”, “”, or “”. Dice can have values 1-6 for “”, “” and “”, values
+	// 1-5 for “” and “”, and values 1-64 for “”. Defaults to “”.
     Emoji *string `json:"emoji,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding
+	// Protects the contents of the sent message from forwarding
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -3394,21 +3394,21 @@ func (m SendDiceMethod) Call(ctx context.Context, conn Connection) (Message, err
 //
 // See https://core.telegram.org/bots/api#sendmessagedraft
 type SendMessageDraftMethod struct { 
-    // Unique identifier for the target private chat
+	// Unique identifier for the target private chat
     ChatID int64 `json:"chat_id"` 
-    // Unique identifier of the message draft; must be non-zero. Changes of drafts
-// with the same identifier are animated.
+	// Unique identifier of the message draft; must be non-zero. Changes of drafts
+	// with the same identifier are animated.
     DraftID int64 `json:"draft_id"` 
-    // Unique identifier for the target message thread
+	// Unique identifier for the target message thread
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Text of the message to be sent, 0-4096 characters after entities parsing.
-// Pass an empty text to show a “Thinking…” placeholder.
+	// Text of the message to be sent, 0-4096 characters after entities parsing.
+	// Pass an empty text to show a “Thinking…” placeholder.
     Text *string `json:"text,omitempty"` 
-    // Mode for parsing entities in the message text. See formatting options for
-// more details.
+	// Mode for parsing entities in the message text. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in message text, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in message text, which
+	// can be specified instead of parse_mode
     Entities []MessageEntity `json:"entities,omitempty"`
 }
 
@@ -3462,21 +3462,21 @@ func (m SendMessageDraftMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#sendchataction
 type SendChatActionMethod struct { 
-    // Unique identifier for the target chat or username of the target bot or
-// supergroup in the format @username. Channel chats and channel direct messages
-// chats aren't supported.
+	// Unique identifier for the target chat or username of the target bot or
+	// supergroup in the format @username. Channel chats and channel direct messages
+	// chats aren't supported.
     ChatID ChatID `json:"chat_id"` 
-    // Type of action to broadcast. Choose one, depending on what the user is about
-// to receive: typing for text messages, upload_photo for photos, record_video
-// or upload_video for videos, record_voice or upload_voice for voice notes,
-// upload_document for general files, choose_sticker for stickers, find_location
-// for location data, record_video_note or upload_video_note for video notes.
+	// Type of action to broadcast. Choose one, depending on what the user is about
+	// to receive: typing for text messages, upload_photo for photos, record_video
+	// or upload_video for videos, record_voice or upload_voice for voice notes,
+	// upload_document for general files, choose_sticker for stickers, find_location
+	// for location data, record_video_note or upload_video_note for video notes.
     Action string `json:"action"` 
-    // Unique identifier of the business connection on behalf of which the action
-// will be sent
+	// Unique identifier of the business connection on behalf of which the action
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread or topic of a forum; for
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread or topic of a forum; for
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 }
 
@@ -3512,19 +3512,19 @@ func (m SendChatActionMethod) Call(ctx context.Context, conn Connection) (bool, 
 //
 // See https://core.telegram.org/bots/api#setmessagereaction
 type SetMessageReactionMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Identifier of the target message. If the message belongs to a media group,
-// the reaction is set to the first non-deleted message in the group instead.
+	// Identifier of the target message. If the message belongs to a media group,
+	// the reaction is set to the first non-deleted message in the group instead.
     MessageID int64 `json:"message_id"` 
-    // A JSON-serialized list of reaction types to set on the message. Currently, as
-// non-premium users, bots can set up to one reaction per message. A custom
-// emoji reaction can be used if it is either already present on the message or
-// explicitly allowed by chat administrators. Paid reactions can't be used by
-// bots.
+	// A JSON-serialized list of reaction types to set on the message. Currently, as
+	// non-premium users, bots can set up to one reaction per message. A custom
+	// emoji reaction can be used if it is either already present on the message or
+	// explicitly allowed by chat administrators. Paid reactions can't be used by
+	// bots.
     Reaction []ReactionType `json:"reaction,omitempty"` 
-    // Pass True to set the reaction with a big animation
+	// Pass True to set the reaction with a big animation
     IsBig *bool `json:"is_big,omitempty"`
 }
 
@@ -3558,13 +3558,13 @@ func (m SetMessageReactionMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#getuserprofilephotos
 type GetUserProfilePhotosMethod struct { 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Sequential number of the first photo to be returned. By default, all photos
-// are returned.
+	// Sequential number of the first photo to be returned. By default, all photos
+	// are returned.
     Offset *int64 `json:"offset,omitempty"` 
-    // Limits the number of photos to be retrieved. Values between 1-100 are
-// accepted. Defaults to 100.
+	// Limits the number of photos to be retrieved. Values between 1-100 are
+	// accepted. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"`
 }
 
@@ -3595,13 +3595,13 @@ func (m GetUserProfilePhotosMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#getuserprofileaudios
 type GetUserProfileAudiosMethod struct { 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Sequential number of the first audio to be returned. By default, all audios
-// are returned.
+	// Sequential number of the first audio to be returned. By default, all audios
+	// are returned.
     Offset *int64 `json:"offset,omitempty"` 
-    // Limits the number of audios to be retrieved. Values between 1-100 are
-// accepted. Defaults to 100.
+	// Limits the number of audios to be retrieved. Values between 1-100 are
+	// accepted. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"`
 }
 
@@ -3633,12 +3633,12 @@ func (m GetUserProfileAudiosMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#setuseremojistatus
 type SetUserEmojiStatusMethod struct { 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Custom emoji identifier of the emoji status to set. Pass an empty string to
-// remove the status.
+	// Custom emoji identifier of the emoji status to set. Pass an empty string to
+	// remove the status.
     EmojiStatusCustomEmojiID *string `json:"emoji_status_custom_emoji_id,omitempty"` 
-    // Expiration date of the emoji status, if any
+	// Expiration date of the emoji status, if any
     EmojiStatusExpirationDate *int64 `json:"emoji_status_expiration_date,omitempty"`
 }
 
@@ -3678,7 +3678,7 @@ func (m SetUserEmojiStatusMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#getfile
 type GetFileMethod struct { 
-    // File identifier to get information about
+	// File identifier to get information about
     FileID string `json:"file_id"`
 }
 
@@ -3702,19 +3702,19 @@ func (m GetFileMethod) Call(ctx context.Context, conn Connection) (File, error) 
 //
 // See https://core.telegram.org/bots/api#banchatmember
 type BanChatMemberMethod struct { 
-    // Unique identifier for the target group or username of the target supergroup
-// or channel in the format @username
+	// Unique identifier for the target group or username of the target supergroup
+	// or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Date when the user will be unbanned; Unix time. If user is banned for more
-// than 366 days or less than 30 seconds from the current time they are
-// considered to be banned forever. Applied for supergroups and channels only.
+	// Date when the user will be unbanned; Unix time. If user is banned for more
+	// than 366 days or less than 30 seconds from the current time they are
+	// considered to be banned forever. Applied for supergroups and channels only.
     UntilDate *int64 `json:"until_date,omitempty"` 
-    // Pass True to delete all messages from the chat for the user that is being
-// removed. If False, the user will be able to see messages in the group that
-// were sent before the user was removed. Always True for supergroups and
-// channels.
+	// Pass True to delete all messages from the chat for the user that is being
+	// removed. If False, the user will be able to see messages in the group that
+	// were sent before the user was removed. Always True for supergroups and
+	// channels.
     RevokeMessages *bool `json:"revoke_messages,omitempty"`
 }
 
@@ -3753,12 +3753,12 @@ func (m BanChatMemberMethod) Call(ctx context.Context, conn Connection) (bool, e
 //
 // See https://core.telegram.org/bots/api#unbanchatmember
 type UnbanChatMemberMethod struct { 
-    // Unique identifier for the target group or username of the target supergroup
-// or channel in the format @username
+	// Unique identifier for the target group or username of the target supergroup
+	// or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Do nothing if the user is not banned
+	// Do nothing if the user is not banned
     OnlyIfBanned *bool `json:"only_if_banned,omitempty"`
 }
 
@@ -3789,22 +3789,22 @@ func (m UnbanChatMemberMethod) Call(ctx context.Context, conn Connection) (bool,
 //
 // See https://core.telegram.org/bots/api#restrictchatmember
 type RestrictChatMemberMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // A JSON-serialized object for new user permissions
+	// A JSON-serialized object for new user permissions
     Permissions ChatPermissions `json:"permissions"` 
-    // Pass True if chat permissions are set independently. Otherwise, the
-// can_send_other_messages and can_add_web_page_previews permissions will imply
-// the can_send_messages, can_send_audios, can_send_documents, can_send_photos,
-// can_send_videos, can_send_video_notes, and can_send_voice_notes permissions;
-// the can_send_polls permission will imply the can_send_messages permission.
+	// Pass True if chat permissions are set independently. Otherwise, the
+	// can_send_other_messages and can_add_web_page_previews permissions will imply
+	// the can_send_messages, can_send_audios, can_send_documents, can_send_photos,
+	// can_send_videos, can_send_video_notes, and can_send_voice_notes permissions;
+	// the can_send_polls permission will imply the can_send_messages permission.
     UseIndependentChatPermissions *bool `json:"use_independent_chat_permissions,omitempty"` 
-    // Date when restrictions will be lifted for the user; Unix time. If user is
-// restricted for more than 366 days or less than 30 seconds from the current
-// time, they are considered to be restricted forever.
+	// Date when restrictions will be lifted for the user; Unix time. If user is
+	// restricted for more than 366 days or less than 30 seconds from the current
+	// time, they are considered to be restricted forever.
     UntilDate *int64 `json:"until_date,omitempty"`
 }
 
@@ -3843,60 +3843,60 @@ func (m RestrictChatMemberMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#promotechatmember
 type PromoteChatMemberMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Pass True if the administrator's presence in the chat is hidden
+	// Pass True if the administrator's presence in the chat is hidden
     IsAnonymous *bool `json:"is_anonymous,omitempty"` 
-    // Pass True if the administrator can access the chat event log, get boost list,
-// see hidden supergroup and channel members, report spam messages, ignore slow
-// mode, and send messages to the chat without paying Telegram Stars. Implied by
-// any other administrator privilege.
+	// Pass True if the administrator can access the chat event log, get boost list,
+	// see hidden supergroup and channel members, report spam messages, ignore slow
+	// mode, and send messages to the chat without paying Telegram Stars. Implied by
+	// any other administrator privilege.
     CanManageChat *bool `json:"can_manage_chat,omitempty"` 
-    // Pass True if the administrator can delete messages of other users
+	// Pass True if the administrator can delete messages of other users
     CanDeleteMessages *bool `json:"can_delete_messages,omitempty"` 
-    // Pass True if the administrator can manage video chats
+	// Pass True if the administrator can manage video chats
     CanManageVideoChats *bool `json:"can_manage_video_chats,omitempty"` 
-    // Pass True if the administrator can restrict, ban or unban chat members, or
-// access supergroup statistics. For backward compatibility, defaults to True
-// for promotions of channel administrators.
+	// Pass True if the administrator can restrict, ban or unban chat members, or
+	// access supergroup statistics. For backward compatibility, defaults to True
+	// for promotions of channel administrators.
     CanRestrictMembers *bool `json:"can_restrict_members,omitempty"` 
-    // Pass True if the administrator can add new administrators with a subset of
-// their own privileges or demote administrators that they have promoted,
-// directly or indirectly (promoted by administrators that were appointed by
-// him)
+	// Pass True if the administrator can add new administrators with a subset of
+	// their own privileges or demote administrators that they have promoted,
+	// directly or indirectly (promoted by administrators that were appointed by
+	// him)
     CanPromoteMembers *bool `json:"can_promote_members,omitempty"` 
-    // Pass True if the administrator can change chat title, photo and other
-// settings
+	// Pass True if the administrator can change chat title, photo and other
+	// settings
     CanChangeInfo *bool `json:"can_change_info,omitempty"` 
-    // Pass True if the administrator can invite new users to the chat
+	// Pass True if the administrator can invite new users to the chat
     CanInviteUsers *bool `json:"can_invite_users,omitempty"` 
-    // Pass True if the administrator can post stories to the chat
+	// Pass True if the administrator can post stories to the chat
     CanPostStories *bool `json:"can_post_stories,omitempty"` 
-    // Pass True if the administrator can edit stories posted by other users, post
-// stories to the chat page, pin chat stories, and access the chat's story
-// archive
+	// Pass True if the administrator can edit stories posted by other users, post
+	// stories to the chat page, pin chat stories, and access the chat's story
+	// archive
     CanEditStories *bool `json:"can_edit_stories,omitempty"` 
-    // Pass True if the administrator can delete stories posted by other users
+	// Pass True if the administrator can delete stories posted by other users
     CanDeleteStories *bool `json:"can_delete_stories,omitempty"` 
-    // Pass True if the administrator can post messages in the channel, approve
-// suggested posts, or access channel statistics; for channels only
+	// Pass True if the administrator can post messages in the channel, approve
+	// suggested posts, or access channel statistics; for channels only
     CanPostMessages *bool `json:"can_post_messages,omitempty"` 
-    // Pass True if the administrator can edit messages of other users and can pin
-// messages; for channels only
+	// Pass True if the administrator can edit messages of other users and can pin
+	// messages; for channels only
     CanEditMessages *bool `json:"can_edit_messages,omitempty"` 
-    // Pass True if the administrator can pin messages; for supergroups only
+	// Pass True if the administrator can pin messages; for supergroups only
     CanPinMessages *bool `json:"can_pin_messages,omitempty"` 
-    // Pass True if the user is allowed to create, rename, close, and reopen forum
-// topics; for supergroups only
+	// Pass True if the user is allowed to create, rename, close, and reopen forum
+	// topics; for supergroups only
     CanManageTopics *bool `json:"can_manage_topics,omitempty"` 
-    // Pass True if the administrator can manage direct messages within the channel
-// and decline suggested posts; for channels only
+	// Pass True if the administrator can manage direct messages within the channel
+	// and decline suggested posts; for channels only
     CanManageDirectMessages *bool `json:"can_manage_direct_messages,omitempty"` 
-    // Pass True if the administrator can edit the tags of regular members; for
-// groups and supergroups only
+	// Pass True if the administrator can edit the tags of regular members; for
+	// groups and supergroups only
     CanManageTags *bool `json:"can_manage_tags,omitempty"`
 }
 
@@ -4005,13 +4005,13 @@ func (m PromoteChatMemberMethod) Call(ctx context.Context, conn Connection) (boo
 //
 // See https://core.telegram.org/bots/api#setchatadministratorcustomtitle
 type SetChatAdministratorCustomTitleMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // New custom title for the administrator; 0-16 characters, emoji are not
-// allowed
+	// New custom title for the administrator; 0-16 characters, emoji are not
+	// allowed
     CustomTitle string `json:"custom_title"`
 }
 
@@ -4039,12 +4039,12 @@ func (m SetChatAdministratorCustomTitleMethod) Call(ctx context.Context, conn Co
 //
 // See https://core.telegram.org/bots/api#setchatmembertag
 type SetChatMemberTagMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // New tag for the member; 0-16 characters, emoji are not allowed
+	// New tag for the member; 0-16 characters, emoji are not allowed
     Tag *string `json:"tag,omitempty"`
 }
 
@@ -4076,10 +4076,10 @@ func (m SetChatMemberTagMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#banchatsenderchat
 type BanChatSenderChatMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target sender chat
+	// Unique identifier of the target sender chat
     SenderChatID int64 `json:"sender_chat_id"`
 }
 
@@ -4104,10 +4104,10 @@ func (m BanChatSenderChatMethod) Call(ctx context.Context, conn Connection) (boo
 //
 // See https://core.telegram.org/bots/api#unbanchatsenderchat
 type UnbanChatSenderChatMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target sender chat
+	// Unique identifier of the target sender chat
     SenderChatID int64 `json:"sender_chat_id"`
 }
 
@@ -4132,16 +4132,16 @@ func (m UnbanChatSenderChatMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#setchatpermissions
 type SetChatPermissionsMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // A JSON-serialized object for new default chat permissions
+	// A JSON-serialized object for new default chat permissions
     Permissions ChatPermissions `json:"permissions"` 
-    // Pass True if chat permissions are set independently. Otherwise, the
-// can_send_other_messages and can_add_web_page_previews permissions will imply
-// the can_send_messages, can_send_audios, can_send_documents, can_send_photos,
-// can_send_videos, can_send_video_notes, and can_send_voice_notes permissions;
-// the can_send_polls permission will imply the can_send_messages permission.
+	// Pass True if chat permissions are set independently. Otherwise, the
+	// can_send_other_messages and can_add_web_page_previews permissions will imply
+	// the can_send_messages, can_send_audios, can_send_documents, can_send_photos,
+	// can_send_videos, can_send_video_notes, and can_send_voice_notes permissions;
+	// the can_send_polls permission will imply the can_send_messages permission.
     UseIndependentChatPermissions *bool `json:"use_independent_chat_permissions,omitempty"`
 }
 
@@ -4179,8 +4179,8 @@ func (m SetChatPermissionsMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#exportchatinvitelink
 type ExportChatInviteLinkMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4203,18 +4203,18 @@ func (m ExportChatInviteLinkMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#createchatinvitelink
 type CreateChatInviteLinkMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Invite link name; 0-32 characters
+	// Invite link name; 0-32 characters
     Name *string `json:"name,omitempty"` 
-    // Point in time (Unix timestamp) when the link will expire
+	// Point in time (Unix timestamp) when the link will expire
     ExpireDate *int64 `json:"expire_date,omitempty"` 
-    // The maximum number of users that can be members of the chat simultaneously
-// after joining the chat via this invite link; 1-99999
+	// The maximum number of users that can be members of the chat simultaneously
+	// after joining the chat via this invite link; 1-99999
     MemberLimit *int64 `json:"member_limit,omitempty"` 
-    // True, if users joining the chat via the link need to be approved by chat
-// administrators. If True, member_limit can't be specified.
+	// True, if users joining the chat via the link need to be approved by chat
+	// administrators. If True, member_limit can't be specified.
     CreatesJoinRequest *bool `json:"creates_join_request,omitempty"`
 }
 
@@ -4257,20 +4257,20 @@ func (m CreateChatInviteLinkMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#editchatinvitelink
 type EditChatInviteLinkMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // The invite link to edit
+	// The invite link to edit
     InviteLink string `json:"invite_link"` 
-    // Invite link name; 0-32 characters
+	// Invite link name; 0-32 characters
     Name *string `json:"name,omitempty"` 
-    // Point in time (Unix timestamp) when the link will expire
+	// Point in time (Unix timestamp) when the link will expire
     ExpireDate *int64 `json:"expire_date,omitempty"` 
-    // The maximum number of users that can be members of the chat simultaneously
-// after joining the chat via this invite link; 1-99999
+	// The maximum number of users that can be members of the chat simultaneously
+	// after joining the chat via this invite link; 1-99999
     MemberLimit *int64 `json:"member_limit,omitempty"` 
-    // True, if users joining the chat via the link need to be approved by chat
-// administrators. If True, member_limit can't be specified.
+	// True, if users joining the chat via the link need to be approved by chat
+	// administrators. If True, member_limit can't be specified.
     CreatesJoinRequest *bool `json:"creates_join_request,omitempty"`
 }
 
@@ -4317,16 +4317,16 @@ func (m EditChatInviteLinkMethod) Call(ctx context.Context, conn Connection) (Ch
 //
 // See https://core.telegram.org/bots/api#createchatsubscriptioninvitelink
 type CreateChatSubscriptionInviteLinkMethod struct { 
-    // Unique identifier for the target channel chat or username of the target
-// channel in the format @username
+	// Unique identifier for the target channel chat or username of the target
+	// channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // The number of seconds the subscription will be active for before the next
-// payment. Currently, it must always be 2592000 (30 days).
+	// The number of seconds the subscription will be active for before the next
+	// payment. Currently, it must always be 2592000 (30 days).
     SubscriptionPeriod int64 `json:"subscription_period"` 
-    // The amount of Telegram Stars a user must pay initially and after each
-// subsequent subscription period to be a member of the chat; 1-10000
+	// The amount of Telegram Stars a user must pay initially and after each
+	// subsequent subscription period to be a member of the chat; 1-10000
     SubscriptionPrice int64 `json:"subscription_price"` 
-    // Invite link name; 0-32 characters
+	// Invite link name; 0-32 characters
     Name *string `json:"name,omitempty"`
 }
 
@@ -4359,12 +4359,12 @@ func (m CreateChatSubscriptionInviteLinkMethod) Call(ctx context.Context, conn C
 //
 // See https://core.telegram.org/bots/api#editchatsubscriptioninvitelink
 type EditChatSubscriptionInviteLinkMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // The invite link to edit
+	// The invite link to edit
     InviteLink string `json:"invite_link"` 
-    // Invite link name; 0-32 characters
+	// Invite link name; 0-32 characters
     Name *string `json:"name,omitempty"`
 }
 
@@ -4396,10 +4396,10 @@ func (m EditChatSubscriptionInviteLinkMethod) Call(ctx context.Context, conn Con
 //
 // See https://core.telegram.org/bots/api#revokechatinvitelink
 type RevokeChatInviteLinkMethod struct { 
-    // Unique identifier of the target chat or username of the target channel in the
-// format @username
+	// Unique identifier of the target chat or username of the target channel in the
+	// format @username
     ChatID ChatID `json:"chat_id"` 
-    // The invite link to revoke
+	// The invite link to revoke
     InviteLink string `json:"invite_link"`
 }
 
@@ -4424,10 +4424,10 @@ func (m RevokeChatInviteLinkMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#approvechatjoinrequest
 type ApproveChatJoinRequestMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"`
 }
 
@@ -4452,10 +4452,10 @@ func (m ApproveChatJoinRequestMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#declinechatjoinrequest
 type DeclineChatJoinRequestMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"`
 }
 
@@ -4481,10 +4481,10 @@ func (m DeclineChatJoinRequestMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#setchatphoto
 type SetChatPhotoMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // New chat photo, uploaded using multipart/form-data
+	// New chat photo, uploaded using multipart/form-data
     Photo InputFile `json:"photo"`
 }
 
@@ -4509,8 +4509,8 @@ func (m SetChatPhotoMethod) Call(ctx context.Context, conn Connection) (bool, er
 //
 // See https://core.telegram.org/bots/api#deletechatphoto
 type DeleteChatPhotoMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4532,10 +4532,10 @@ func (m DeleteChatPhotoMethod) Call(ctx context.Context, conn Connection) (bool,
 //
 // See https://core.telegram.org/bots/api#setchattitle
 type SetChatTitleMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // New chat title, 1-128 characters
+	// New chat title, 1-128 characters
     Title string `json:"title"`
 }
 
@@ -4560,10 +4560,10 @@ func (m SetChatTitleMethod) Call(ctx context.Context, conn Connection) (bool, er
 //
 // See https://core.telegram.org/bots/api#setchatdescription
 type SetChatDescriptionMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // New chat description, 0-255 characters
+	// New chat description, 0-255 characters
     Description *string `json:"description,omitempty"`
 }
 
@@ -4592,17 +4592,17 @@ func (m SetChatDescriptionMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#pinchatmessage
 type PinChatMessageMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Identifier of a message to pin
+	// Identifier of a message to pin
     MessageID int64 `json:"message_id"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be pinned
+	// Unique identifier of the business connection on behalf of which the message
+	// will be pinned
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Pass True if it is not necessary to send a notification to all chat members
-// about the new pinned message. Notifications are always disabled in channels
-// and private chats.
+	// Pass True if it is not necessary to send a notification to all chat members
+	// about the new pinned message. Notifications are always disabled in channels
+	// and private chats.
     DisableNotification *bool `json:"disable_notification,omitempty"`
 }
 
@@ -4639,15 +4639,15 @@ func (m PinChatMessageMethod) Call(ctx context.Context, conn Connection) (bool, 
 //
 // See https://core.telegram.org/bots/api#unpinchatmessage
 type UnpinChatMessageMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be unpinned
+	// Unique identifier of the business connection on behalf of which the message
+	// will be unpinned
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Identifier of the message to unpin. Required if business_connection_id is
-// specified. If not specified, the most recent pinned message (by sending date)
-// will be unpinned.
+	// Identifier of the message to unpin. Required if business_connection_id is
+	// specified. If not specified, the most recent pinned message (by sending date)
+	// will be unpinned.
     MessageID *int64 `json:"message_id,omitempty"`
 }
 
@@ -4681,8 +4681,8 @@ func (m UnpinChatMessageMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#unpinallchatmessages
 type UnpinAllChatMessagesMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4703,9 +4703,9 @@ func (m UnpinAllChatMessagesMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#leavechat
 type LeaveChatMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup or
-// channel in the format @username. Channel direct messages chats aren't
-// supported; leave the corresponding channel instead.
+	// Unique identifier for the target chat or username of the target supergroup or
+	// channel in the format @username. Channel direct messages chats aren't
+	// supported; leave the corresponding channel instead.
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4726,8 +4726,8 @@ func (m LeaveChatMethod) Call(ctx context.Context, conn Connection) (bool, error
 //
 // See https://core.telegram.org/bots/api#getchat
 type GetChatMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup or
-// channel in the format @username
+	// Unique identifier for the target chat or username of the target supergroup or
+	// channel in the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4748,11 +4748,11 @@ func (m GetChatMethod) Call(ctx context.Context, conn Connection) (ChatFullInfo,
 //
 // See https://core.telegram.org/bots/api#getchatadministrators
 type GetChatAdministratorsMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup or
-// channel in the format @username
+	// Unique identifier for the target chat or username of the target supergroup or
+	// channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Pass True to additionally receive all bots that are administrators of the
-// chat. By default, bots other than the current bot are omitted.
+	// Pass True to additionally receive all bots that are administrators of the
+	// chat. By default, bots other than the current bot are omitted.
     ReturnBots *bool `json:"return_bots,omitempty"`
 }
 
@@ -4786,8 +4786,8 @@ func (m GetChatAdministratorsMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#getchatmembercount
 type GetChatMemberCountMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup or
-// channel in the format @username
+	// Unique identifier for the target chat or username of the target supergroup or
+	// channel in the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4809,10 +4809,10 @@ func (m GetChatMemberCountMethod) Call(ctx context.Context, conn Connection) (in
 //
 // See https://core.telegram.org/bots/api#getchatmember
 type GetChatMemberMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup or
-// channel in the format @username
+	// Unique identifier for the target chat or username of the target supergroup or
+	// channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"`
 }
 
@@ -4841,9 +4841,9 @@ func (m GetChatMemberMethod) Call(ctx context.Context, conn Connection) (ChatMem
 //
 // See https://core.telegram.org/bots/api#getuserpersonalchatmessages
 type GetUserPersonalChatMessagesMethod struct { 
-    // Unique identifier for the target user
+	// Unique identifier for the target user
     UserID int64 `json:"user_id"` 
-    // The maximum number of messages to return; 1-20
+	// The maximum number of messages to return; 1-20
     Limit int64 `json:"limit"`
 }
 
@@ -4870,10 +4870,10 @@ func (m GetUserPersonalChatMessagesMethod) Call(ctx context.Context, conn Connec
 //
 // See https://core.telegram.org/bots/api#setchatstickerset
 type SetChatStickerSetMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Name of the sticker set to be set as the group sticker set
+	// Name of the sticker set to be set as the group sticker set
     StickerSetName string `json:"sticker_set_name"`
 }
 
@@ -4900,8 +4900,8 @@ func (m SetChatStickerSetMethod) Call(ctx context.Context, conn Connection) (boo
 //
 // See https://core.telegram.org/bots/api#deletechatstickerset
 type DeleteChatStickerSetMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -4942,17 +4942,17 @@ func (m GetForumTopicIconStickersMethod) Call(ctx context.Context, conn Connecti
 //
 // See https://core.telegram.org/bots/api#createforumtopic
 type CreateForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Topic name, 1-128 characters
+	// Topic name, 1-128 characters
     Name string `json:"name"` 
-    // Color of the topic icon in RGB format. Currently, must be one of 7322096
-// (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98),
-// 16749490 (0xFF93B2), or 16478047 (0xFB6F5F).
+	// Color of the topic icon in RGB format. Currently, must be one of 7322096
+	// (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB), 9367192 (0x8EEE98),
+	// 16749490 (0xFF93B2), or 16478047 (0xFB6F5F).
     IconColor *int64 `json:"icon_color,omitempty"` 
-    // Unique identifier of the custom emoji shown as the topic icon. Use
-// getForumTopicIconStickers to get all allowed custom emoji identifiers.
+	// Unique identifier of the custom emoji shown as the topic icon. Use
+	// getForumTopicIconStickers to get all allowed custom emoji identifiers.
     IconCustomEmojiID *string `json:"icon_custom_emoji_id,omitempty"`
 }
 
@@ -4989,18 +4989,18 @@ func (m CreateForumTopicMethod) Call(ctx context.Context, conn Connection) (Foru
 //
 // See https://core.telegram.org/bots/api#editforumtopic
 type EditForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the target message thread of the forum topic
+	// Unique identifier for the target message thread of the forum topic
     MessageThreadID int64 `json:"message_thread_id"` 
-    // New topic name, 0-128 characters. If not specified or empty, the current name
-// of the topic will be kept.
+	// New topic name, 0-128 characters. If not specified or empty, the current name
+	// of the topic will be kept.
     Name *string `json:"name,omitempty"` 
-    // New unique identifier of the custom emoji shown as the topic icon. Use
-// getForumTopicIconStickers to get all allowed custom emoji identifiers. Pass
-// an empty string to remove the icon. If not specified, the current icon will
-// be kept.
+	// New unique identifier of the custom emoji shown as the topic icon. Use
+	// getForumTopicIconStickers to get all allowed custom emoji identifiers. Pass
+	// an empty string to remove the icon. If not specified, the current icon will
+	// be kept.
     IconCustomEmojiID *string `json:"icon_custom_emoji_id,omitempty"`
 }
 
@@ -5036,10 +5036,10 @@ func (m EditForumTopicMethod) Call(ctx context.Context, conn Connection) (bool, 
 //
 // See https://core.telegram.org/bots/api#closeforumtopic
 type CloseForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the target message thread of the forum topic
+	// Unique identifier for the target message thread of the forum topic
     MessageThreadID int64 `json:"message_thread_id"`
 }
 
@@ -5065,10 +5065,10 @@ func (m CloseForumTopicMethod) Call(ctx context.Context, conn Connection) (bool,
 //
 // See https://core.telegram.org/bots/api#reopenforumtopic
 type ReopenForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the target message thread of the forum topic
+	// Unique identifier for the target message thread of the forum topic
     MessageThreadID int64 `json:"message_thread_id"`
 }
 
@@ -5095,10 +5095,10 @@ func (m ReopenForumTopicMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#deleteforumtopic
 type DeleteForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the target message thread of the forum topic
+	// Unique identifier for the target message thread of the forum topic
     MessageThreadID int64 `json:"message_thread_id"`
 }
 
@@ -5125,10 +5125,10 @@ func (m DeleteForumTopicMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#unpinallforumtopicmessages
 type UnpinAllForumTopicMessagesMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the target message thread of the forum topic
+	// Unique identifier for the target message thread of the forum topic
     MessageThreadID int64 `json:"message_thread_id"`
 }
 
@@ -5153,10 +5153,10 @@ func (m UnpinAllForumTopicMessagesMethod) Call(ctx context.Context, conn Connect
 //
 // See https://core.telegram.org/bots/api#editgeneralforumtopic
 type EditGeneralForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // New topic name, 1-128 characters
+	// New topic name, 1-128 characters
     Name string `json:"name"`
 }
 
@@ -5181,8 +5181,8 @@ func (m EditGeneralForumTopicMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#closegeneralforumtopic
 type CloseGeneralForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -5205,8 +5205,8 @@ func (m CloseGeneralForumTopicMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#reopengeneralforumtopic
 type ReopenGeneralForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -5229,8 +5229,8 @@ func (m ReopenGeneralForumTopicMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#hidegeneralforumtopic
 type HideGeneralForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -5252,8 +5252,8 @@ func (m HideGeneralForumTopicMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#unhidegeneralforumtopic
 type UnhideGeneralForumTopicMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -5276,8 +5276,8 @@ func (m UnhideGeneralForumTopicMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#unpinallgeneralforumtopicmessages
 type UnpinAllGeneralForumTopicMessagesMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -5304,23 +5304,23 @@ func (m UnpinAllGeneralForumTopicMessagesMethod) Call(ctx context.Context, conn 
 //
 // See https://core.telegram.org/bots/api#answercallbackquery
 type AnswerCallbackQueryMethod struct { 
-    // Unique identifier for the query to be answered
+	// Unique identifier for the query to be answered
     CallbackQueryID string `json:"callback_query_id"` 
-    // Text of the notification. If not specified, nothing will be shown to the
-// user, 0-200 characters.
+	// Text of the notification. If not specified, nothing will be shown to the
+	// user, 0-200 characters.
     Text *string `json:"text,omitempty"` 
-    // If True, an alert will be shown by the client instead of a notification at
-// the top of the chat screen. Defaults to false.
+	// If True, an alert will be shown by the client instead of a notification at
+	// the top of the chat screen. Defaults to false.
     ShowAlert *bool `json:"show_alert,omitempty"` 
-    // URL that will be opened by the user's client. If you have created a Game and
-// accepted the conditions via @BotFather, specify the URL that opens your game
-// - note that this will only work if the query comes from a callback_game
-// button.Otherwise, you may use links like t.me/your_bot?start=XXXX that open
-// your bot with a parameter.
+	// URL that will be opened by the user's client. If you have created a Game and
+	// accepted the conditions via @BotFather, specify the URL that opens your game
+	// - note that this will only work if the query comes from a callback_game
+	// button.Otherwise, you may use links like t.me/your_bot?start=XXXX that open
+	// your bot with a parameter.
     URL *string `json:"url,omitempty"` 
-    // The maximum amount of time in seconds that the result of the callback query
-// may be cached client-side. Telegram apps will support caching starting in
-// version 3.14. Defaults to 0.
+	// The maximum amount of time in seconds that the result of the callback query
+	// may be cached client-side. Telegram apps will support caching starting in
+	// version 3.14. Defaults to 0.
     CacheTime *int64 `json:"cache_time,omitempty"`
 }
 
@@ -5361,9 +5361,9 @@ func (m AnswerCallbackQueryMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#answerguestquery
 type AnswerGuestQueryMethod struct { 
-    // Unique identifier for the query to be answered
+	// Unique identifier for the query to be answered
     GuestQueryID string `json:"guest_query_id"` 
-    // A JSON-serialized object describing the message to be sent
+	// A JSON-serialized object describing the message to be sent
     Result InlineQueryResult `json:"result"`
 }
 
@@ -5387,10 +5387,10 @@ func (m AnswerGuestQueryMethod) Call(ctx context.Context, conn Connection) (Sent
 //
 // See https://core.telegram.org/bots/api#getuserchatboosts
 type GetUserChatBoostsMethod struct { 
-    // Unique identifier for the chat or username of the channel in the format
-// @username
+	// Unique identifier for the chat or username of the channel in the format
+	// @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"`
 }
 
@@ -5414,7 +5414,7 @@ func (m GetUserChatBoostsMethod) Call(ctx context.Context, conn Connection) (Use
 //
 // See https://core.telegram.org/bots/api#getbusinessconnection
 type GetBusinessConnectionMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"`
 }
 
@@ -5435,7 +5435,7 @@ func (m GetBusinessConnectionMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#getmanagedbottoken
 type GetManagedBotTokenMethod struct { 
-    // User identifier of the managed bot whose token will be returned
+	// User identifier of the managed bot whose token will be returned
     UserID int64 `json:"user_id"`
 }
 
@@ -5456,7 +5456,7 @@ func (m GetManagedBotTokenMethod) Call(ctx context.Context, conn Connection) (st
 //
 // See https://core.telegram.org/bots/api#replacemanagedbottoken
 type ReplaceManagedBotTokenMethod struct { 
-    // User identifier of the managed bot whose token will be replaced
+	// User identifier of the managed bot whose token will be replaced
     UserID int64 `json:"user_id"`
 }
 
@@ -5477,7 +5477,7 @@ func (m ReplaceManagedBotTokenMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#getmanagedbotaccesssettings
 type GetManagedBotAccessSettingsMethod struct { 
-    // User identifier of the managed bot whose access settings will be returned
+	// User identifier of the managed bot whose access settings will be returned
     UserID int64 `json:"user_id"`
 }
 
@@ -5498,14 +5498,14 @@ func (m GetManagedBotAccessSettingsMethod) Call(ctx context.Context, conn Connec
 //
 // See https://core.telegram.org/bots/api#setmanagedbotaccesssettings
 type SetManagedBotAccessSettingsMethod struct { 
-    // User identifier of the managed bot whose access settings will be changed
+	// User identifier of the managed bot whose access settings will be changed
     UserID int64 `json:"user_id"` 
-    // Pass True, if only selected users can access the bot. The bot's owner can
-// always access it.
+	// Pass True, if only selected users can access the bot. The bot's owner can
+	// always access it.
     IsAccessRestricted bool `json:"is_access_restricted"` 
-    // A JSON-serialized list of up to 10 identifiers of users who will have access
-// to the bot in addition to its owner. Ignored if is_access_restricted is
-// false.
+	// A JSON-serialized list of up to 10 identifiers of users who will have access
+	// to the bot in addition to its owner. Ignored if is_access_restricted is
+	// false.
     AddedUserIDs []int64 `json:"added_user_ids,omitempty"`
 }
 
@@ -5534,15 +5534,15 @@ func (m SetManagedBotAccessSettingsMethod) Call(ctx context.Context, conn Connec
 //
 // See https://core.telegram.org/bots/api#setmycommands
 type SetMyCommandsMethod struct { 
-    // A JSON-serialized list of bot commands to be set as the list of the bot's
-// commands. At most 100 commands can be specified.
+	// A JSON-serialized list of bot commands to be set as the list of the bot's
+	// commands. At most 100 commands can be specified.
     Commands []BotCommand `json:"commands"` 
-    // A JSON-serialized object, describing scope of users for which the commands
-// are relevant. Defaults to BotCommandScopeDefault.
+	// A JSON-serialized object, describing scope of users for which the commands
+	// are relevant. Defaults to BotCommandScopeDefault.
     Scope BotCommandScope `json:"scope,omitempty"` 
-    // A two-letter ISO 639-1 language code. If empty, commands will be applied to
-// all users from the given scope, for whose language there are no dedicated
-// commands.
+	// A two-letter ISO 639-1 language code. If empty, commands will be applied to
+	// all users from the given scope, for whose language there are no dedicated
+	// commands.
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5574,12 +5574,12 @@ func (m SetMyCommandsMethod) Call(ctx context.Context, conn Connection) (bool, e
 //
 // See https://core.telegram.org/bots/api#deletemycommands
 type DeleteMyCommandsMethod struct { 
-    // A JSON-serialized object, describing scope of users for which the commands
-// are relevant. Defaults to BotCommandScopeDefault.
+	// A JSON-serialized object, describing scope of users for which the commands
+	// are relevant. Defaults to BotCommandScopeDefault.
     Scope BotCommandScope `json:"scope,omitempty"` 
-    // A two-letter ISO 639-1 language code. If empty, commands will be applied to
-// all users from the given scope, for whose language there are no dedicated
-// commands.
+	// A two-letter ISO 639-1 language code. If empty, commands will be applied to
+	// all users from the given scope, for whose language there are no dedicated
+	// commands.
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5608,10 +5608,10 @@ func (m DeleteMyCommandsMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#getmycommands
 type GetMyCommandsMethod struct { 
-    // A JSON-serialized object, describing scope of users. Defaults to
-// BotCommandScopeDefault.
+	// A JSON-serialized object, describing scope of users. Defaults to
+	// BotCommandScopeDefault.
     Scope BotCommandScope `json:"scope,omitempty"` 
-    // A two-letter ISO 639-1 language code or an empty string
+	// A two-letter ISO 639-1 language code or an empty string
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5638,11 +5638,11 @@ func (m GetMyCommandsMethod) Call(ctx context.Context, conn Connection) ([]BotCo
 //
 // See https://core.telegram.org/bots/api#setmyname
 type SetMyNameMethod struct { 
-    // New bot name; 0-64 characters. Pass an empty string to remove the dedicated
-// name for the given language.
+	// New bot name; 0-64 characters. Pass an empty string to remove the dedicated
+	// name for the given language.
     Name *string `json:"name,omitempty"` 
-    // A two-letter ISO 639-1 language code. If empty, the name will be shown to all
-// users for whose language there is no dedicated name.
+	// A two-letter ISO 639-1 language code. If empty, the name will be shown to all
+	// users for whose language there is no dedicated name.
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5670,7 +5670,7 @@ func (m SetMyNameMethod) Call(ctx context.Context, conn Connection) (bool, error
 //
 // See https://core.telegram.org/bots/api#getmyname
 type GetMyNameMethod struct { 
-    // A two-letter ISO 639-1 language code or an empty string
+	// A two-letter ISO 639-1 language code or an empty string
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5693,11 +5693,11 @@ func (m GetMyNameMethod) Call(ctx context.Context, conn Connection) (BotName, er
 //
 // See https://core.telegram.org/bots/api#setmydescription
 type SetMyDescriptionMethod struct { 
-    // New bot description; 0-512 characters. Pass an empty string to remove the
-// dedicated description for the given language.
+	// New bot description; 0-512 characters. Pass an empty string to remove the
+	// dedicated description for the given language.
     Description *string `json:"description,omitempty"` 
-    // A two-letter ISO 639-1 language code. If empty, the description will be
-// applied to all users for whose language there is no dedicated description.
+	// A two-letter ISO 639-1 language code. If empty, the description will be
+	// applied to all users for whose language there is no dedicated description.
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5725,7 +5725,7 @@ func (m SetMyDescriptionMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#getmydescription
 type GetMyDescriptionMethod struct { 
-    // A two-letter ISO 639-1 language code or an empty string
+	// A two-letter ISO 639-1 language code or an empty string
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5749,12 +5749,12 @@ func (m GetMyDescriptionMethod) Call(ctx context.Context, conn Connection) (BotD
 //
 // See https://core.telegram.org/bots/api#setmyshortdescription
 type SetMyShortDescriptionMethod struct { 
-    // New short description for the bot; 0-120 characters. Pass an empty string to
-// remove the dedicated short description for the given language.
+	// New short description for the bot; 0-120 characters. Pass an empty string to
+	// remove the dedicated short description for the given language.
     ShortDescription *string `json:"short_description,omitempty"` 
-    // A two-letter ISO 639-1 language code. If empty, the short description will be
-// applied to all users for whose language there is no dedicated short
-// description.
+	// A two-letter ISO 639-1 language code. If empty, the short description will be
+	// applied to all users for whose language there is no dedicated short
+	// description.
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5782,7 +5782,7 @@ func (m SetMyShortDescriptionMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#getmyshortdescription
 type GetMyShortDescriptionMethod struct { 
-    // A two-letter ISO 639-1 language code or an empty string
+	// A two-letter ISO 639-1 language code or an empty string
     LanguageCode *string `json:"language_code,omitempty"`
 }
 
@@ -5804,7 +5804,7 @@ func (m GetMyShortDescriptionMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#setmyprofilephoto
 type SetMyProfilePhotoMethod struct { 
-    // The new profile photo to set
+	// The new profile photo to set
     Photo InputProfilePhoto `json:"photo"`
 }
 
@@ -5841,11 +5841,11 @@ func (m RemoveMyProfilePhotoMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#setchatmenubutton
 type SetChatMenuButtonMethod struct { 
-    // Unique identifier for the target private chat. If not specified, the bot's
-// default menu button will be changed.
+	// Unique identifier for the target private chat. If not specified, the bot's
+	// default menu button will be changed.
     ChatID *int64 `json:"chat_id,omitempty"` 
-    // A JSON-serialized object for the bot's new menu button. Defaults to
-// MenuButtonDefault.
+	// A JSON-serialized object for the bot's new menu button. Defaults to
+	// MenuButtonDefault.
     MenuButton MenuButton `json:"menu_button,omitempty"`
 }
 
@@ -5873,8 +5873,8 @@ func (m SetChatMenuButtonMethod) Call(ctx context.Context, conn Connection) (boo
 //
 // See https://core.telegram.org/bots/api#getchatmenubutton
 type GetChatMenuButtonMethod struct { 
-    // Unique identifier for the target private chat. If not specified, the bot's
-// default menu button will be returned.
+	// Unique identifier for the target private chat. If not specified, the bot's
+	// default menu button will be returned.
     ChatID *int64 `json:"chat_id,omitempty"`
 }
 
@@ -5903,12 +5903,12 @@ func (m GetChatMenuButtonMethod) Call(ctx context.Context, conn Connection) (Men
 //
 // See https://core.telegram.org/bots/api#setmydefaultadministratorrights
 type SetMyDefaultAdministratorRightsMethod struct { 
-    // A JSON-serialized object describing new default administrator rights. If not
-// specified, the default administrator rights will be cleared.
+	// A JSON-serialized object describing new default administrator rights. If not
+	// specified, the default administrator rights will be cleared.
     Rights *ChatAdministratorRights `json:"rights,omitempty"` 
-    // Pass True to change the default administrator rights of the bot in channels.
-// Otherwise, the default administrator rights of the bot for groups and
-// supergroups will be changed.
+	// Pass True to change the default administrator rights of the bot in channels.
+	// Otherwise, the default administrator rights of the bot for groups and
+	// supergroups will be changed.
     ForChannels *bool `json:"for_channels,omitempty"`
 }
 
@@ -5936,9 +5936,9 @@ func (m SetMyDefaultAdministratorRightsMethod) Call(ctx context.Context, conn Co
 //
 // See https://core.telegram.org/bots/api#getmydefaultadministratorrights
 type GetMyDefaultAdministratorRightsMethod struct { 
-    // Pass True to get default administrator rights of the bot in channels.
-// Otherwise, default administrator rights of the bot for groups and supergroups
-// will be returned.
+	// Pass True to get default administrator rights of the bot in channels.
+	// Otherwise, default administrator rights of the bot for groups and supergroups
+	// will be returned.
     ForChannels *bool `json:"for_channels,omitempty"`
 }
 
@@ -5977,27 +5977,27 @@ func (m GetAvailableGiftsMethod) Call(ctx context.Context, conn Connection) (Gif
 //
 // See https://core.telegram.org/bots/api#sendgift
 type SendGiftMethod struct { 
-    // Identifier of the gift; limited gifts can't be sent to channel chats
+	// Identifier of the gift; limited gifts can't be sent to channel chats
     GiftID string `json:"gift_id"` 
-    // Required if chat_id is not specified. Unique identifier of the target user
-// who will receive the gift.
+	// Required if chat_id is not specified. Unique identifier of the target user
+	// who will receive the gift.
     UserID *int64 `json:"user_id,omitempty"` 
-    // Required if user_id is not specified. Unique identifier for the chat or
-// username of the channel (in the format @username) that will receive the gift.
+	// Required if user_id is not specified. Unique identifier for the chat or
+	// username of the channel (in the format @username) that will receive the gift.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Pass True to pay for the gift upgrade from the bot's balance, thereby making
-// the upgrade free for the receiver
+	// Pass True to pay for the gift upgrade from the bot's balance, thereby making
+	// the upgrade free for the receiver
     PayForUpgrade *bool `json:"pay_for_upgrade,omitempty"` 
-    // Text that will be shown along with the gift; 0-128 characters
+	// Text that will be shown along with the gift; 0-128 characters
     Text *string `json:"text,omitempty"` 
-    // Mode for parsing entities in the text. See formatting options for more
-// details. Entities other than “bold”, “italic”, “underline”, “strikethrough”,
-// “spoiler”, “custom_emoji”, and “date_time” are ignored.
+	// Mode for parsing entities in the text. See formatting options for more
+	// details. Entities other than “bold”, “italic”, “underline”, “strikethrough”,
+	// “spoiler”, “custom_emoji”, and “date_time” are ignored.
     TextParseMode *string `json:"text_parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the gift text. It
-// can be specified instead of text_parse_mode. Entities other than “bold”,
-// “italic”, “underline”, “strikethrough”, “spoiler”, “custom_emoji”, and
-// “date_time” are ignored.
+	// A JSON-serialized list of special entities that appear in the gift text. It
+	// can be specified instead of text_parse_mode. Entities other than “bold”,
+	// “italic”, “underline”, “strikethrough”, “spoiler”, “custom_emoji”, and
+	// “date_time” are ignored.
     TextEntities []MessageEntity `json:"text_entities,omitempty"`
 }
 
@@ -6048,26 +6048,26 @@ func (m SendGiftMethod) Call(ctx context.Context, conn Connection) (bool, error)
 //
 // See https://core.telegram.org/bots/api#giftpremiumsubscription
 type GiftPremiumSubscriptionMethod struct { 
-    // Unique identifier of the target user who will receive a Telegram Premium
-// subscription
+	// Unique identifier of the target user who will receive a Telegram Premium
+	// subscription
     UserID int64 `json:"user_id"` 
-    // Number of months the Telegram Premium subscription will be active for the
-// user; must be one of 3, 6, or 12
+	// Number of months the Telegram Premium subscription will be active for the
+	// user; must be one of 3, 6, or 12
     MonthCount int64 `json:"month_count"` 
-    // Number of Telegram Stars to pay for the Telegram Premium subscription; must
-// be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months
+	// Number of Telegram Stars to pay for the Telegram Premium subscription; must
+	// be 1000 for 3 months, 1500 for 6 months, and 2500 for 12 months
     StarCount int64 `json:"star_count"` 
-    // Text that will be shown along with the service message about the
-// subscription; 0-128 characters
+	// Text that will be shown along with the service message about the
+	// subscription; 0-128 characters
     Text *string `json:"text,omitempty"` 
-    // Mode for parsing entities in the text. See formatting options for more
-// details. Entities other than “bold”, “italic”, “underline”, “strikethrough”,
-// “spoiler”, “custom_emoji”, and “date_time” are ignored.
+	// Mode for parsing entities in the text. See formatting options for more
+	// details. Entities other than “bold”, “italic”, “underline”, “strikethrough”,
+	// “spoiler”, “custom_emoji”, and “date_time” are ignored.
     TextParseMode *string `json:"text_parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the gift text. It
-// can be specified instead of text_parse_mode. Entities other than “bold”,
-// “italic”, “underline”, “strikethrough”, “spoiler”, “custom_emoji”, and
-// “date_time” are ignored.
+	// A JSON-serialized list of special entities that appear in the gift text. It
+	// can be specified instead of text_parse_mode. Entities other than “bold”,
+	// “italic”, “underline”, “strikethrough”, “spoiler”, “custom_emoji”, and
+	// “date_time” are ignored.
     TextEntities []MessageEntity `json:"text_entities,omitempty"`
 }
 
@@ -6109,10 +6109,10 @@ func (m GiftPremiumSubscriptionMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#verifyuser
 type VerifyUserMethod struct { 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"` 
-    // Custom description for the verification; 0-70 characters. Must be empty if
-// the organization isn't allowed to provide a custom verification description.
+	// Custom description for the verification; 0-70 characters. Must be empty if
+	// the organization isn't allowed to provide a custom verification description.
     CustomDescription *string `json:"custom_description,omitempty"`
 }
 
@@ -6138,12 +6138,12 @@ func (m VerifyUserMethod) Call(ctx context.Context, conn Connection) (bool, erro
 //
 // See https://core.telegram.org/bots/api#verifychat
 type VerifyChatMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username. Channel direct messages chats
-// can't be verified.
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username. Channel direct messages chats
+	// can't be verified.
     ChatID ChatID `json:"chat_id"` 
-    // Custom description for the verification; 0-70 characters. Must be empty if
-// the organization isn't allowed to provide a custom verification description.
+	// Custom description for the verification; 0-70 characters. Must be empty if
+	// the organization isn't allowed to provide a custom verification description.
     CustomDescription *string `json:"custom_description,omitempty"`
 }
 
@@ -6169,7 +6169,7 @@ func (m VerifyChatMethod) Call(ctx context.Context, conn Connection) (bool, erro
 //
 // See https://core.telegram.org/bots/api#removeuserverification
 type RemoveUserVerificationMethod struct { 
-    // Unique identifier of the target user
+	// Unique identifier of the target user
     UserID int64 `json:"user_id"`
 }
 
@@ -6190,8 +6190,8 @@ func (m RemoveUserVerificationMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#removechatverification
 type RemoveChatVerificationMethod struct { 
-    // Unique identifier for the target chat or username of the target bot or
-// channel in the format @username
+	// Unique identifier for the target chat or username of the target bot or
+	// channel in the format @username
     ChatID ChatID `json:"chat_id"`
 }
 
@@ -6212,13 +6212,13 @@ func (m RemoveChatVerificationMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#readbusinessmessage
 type ReadBusinessMessageMethod struct { 
-    // Unique identifier of the business connection on behalf of which to read the
-// message
+	// Unique identifier of the business connection on behalf of which to read the
+	// message
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the chat in which the message was received. The chat
-// must have been active in the last 24 hours.
+	// Unique identifier of the chat in which the message was received. The chat
+	// must have been active in the last 24 hours.
     ChatID int64 `json:"chat_id"` 
-    // Unique identifier of the message to mark as read
+	// Unique identifier of the message to mark as read
     MessageID int64 `json:"message_id"`
 }
 
@@ -6247,12 +6247,12 @@ func (m ReadBusinessMessageMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#deletebusinessmessages
 type DeleteBusinessMessagesMethod struct { 
-    // Unique identifier of the business connection on behalf of which to delete the
-// messages
+	// Unique identifier of the business connection on behalf of which to delete the
+	// messages
     BusinessConnectionID string `json:"business_connection_id"` 
-    // A JSON-serialized list of 1-100 identifiers of messages to delete. All
-// messages must be from the same chat. See deleteMessage for limitations on
-// which messages can be deleted.
+	// A JSON-serialized list of 1-100 identifiers of messages to delete. All
+	// messages must be from the same chat. See deleteMessage for limitations on
+	// which messages can be deleted.
     MessageIDs []int64 `json:"message_ids"`
 }
 
@@ -6276,11 +6276,11 @@ func (m DeleteBusinessMessagesMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#setbusinessaccountname
 type SetBusinessAccountNameMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // The new value of the first name for the business account; 1-64 characters
+	// The new value of the first name for the business account; 1-64 characters
     FirstName string `json:"first_name"` 
-    // The new value of the last name for the business account; 0-64 characters
+	// The new value of the last name for the business account; 0-64 characters
     LastName *string `json:"last_name,omitempty"`
 }
 
@@ -6309,9 +6309,9 @@ func (m SetBusinessAccountNameMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#setbusinessaccountusername
 type SetBusinessAccountUsernameMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // The new value of the username for the business account; 0-32 characters
+	// The new value of the username for the business account; 0-32 characters
     Username *string `json:"username,omitempty"`
 }
 
@@ -6337,9 +6337,9 @@ func (m SetBusinessAccountUsernameMethod) Call(ctx context.Context, conn Connect
 //
 // See https://core.telegram.org/bots/api#setbusinessaccountbio
 type SetBusinessAccountBioMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // The new value of the bio for the business account; 0-140 characters
+	// The new value of the bio for the business account; 0-140 characters
     Bio *string `json:"bio,omitempty"`
 }
 
@@ -6365,13 +6365,13 @@ func (m SetBusinessAccountBioMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#setbusinessaccountprofilephoto
 type SetBusinessAccountProfilePhotoMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // The new profile photo to set
+	// The new profile photo to set
     Photo InputProfilePhoto `json:"photo"` 
-    // Pass True to set the public photo, which will be visible even if the main
-// photo is hidden by the business account's privacy settings. An account can
-// have only one public photo.
+	// Pass True to set the public photo, which will be visible even if the main
+	// photo is hidden by the business account's privacy settings. An account can
+	// have only one public photo.
     IsPublic *bool `json:"is_public,omitempty"`
 }
 
@@ -6400,11 +6400,11 @@ func (m SetBusinessAccountProfilePhotoMethod) Call(ctx context.Context, conn Con
 //
 // See https://core.telegram.org/bots/api#removebusinessaccountprofilephoto
 type RemoveBusinessAccountProfilePhotoMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Pass True to remove the public photo, which is visible even if the main photo
-// is hidden by the business account's privacy settings. After the main photo is
-// removed, the previous profile photo (if present) becomes the main photo.
+	// Pass True to remove the public photo, which is visible even if the main photo
+	// is hidden by the business account's privacy settings. After the main photo is
+	// removed, the previous profile photo (if present) becomes the main photo.
     IsPublic *bool `json:"is_public,omitempty"`
 }
 
@@ -6431,12 +6431,12 @@ func (m RemoveBusinessAccountProfilePhotoMethod) Call(ctx context.Context, conn 
 //
 // See https://core.telegram.org/bots/api#setbusinessaccountgiftsettings
 type SetBusinessAccountGiftSettingsMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Pass True, if a button for sending a gift to the user or by the business
-// account must always be shown in the input field
+	// Pass True, if a button for sending a gift to the user or by the business
+	// account must always be shown in the input field
     ShowGiftButton bool `json:"show_gift_button"` 
-    // Types of gifts accepted by the business account
+	// Types of gifts accepted by the business account
     AcceptedGiftTypes AcceptedGiftTypes `json:"accepted_gift_types"`
 }
 
@@ -6464,7 +6464,7 @@ func (m SetBusinessAccountGiftSettingsMethod) Call(ctx context.Context, conn Con
 //
 // See https://core.telegram.org/bots/api#getbusinessaccountstarbalance
 type GetBusinessAccountStarBalanceMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"`
 }
 
@@ -6486,9 +6486,9 @@ func (m GetBusinessAccountStarBalanceMethod) Call(ctx context.Context, conn Conn
 //
 // See https://core.telegram.org/bots/api#transferbusinessaccountstars
 type TransferBusinessAccountStarsMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Number of Telegram Stars to transfer; 1-10000
+	// Number of Telegram Stars to transfer; 1-10000
     StarCount int64 `json:"star_count"`
 }
 
@@ -6513,32 +6513,32 @@ func (m TransferBusinessAccountStarsMethod) Call(ctx context.Context, conn Conne
 //
 // See https://core.telegram.org/bots/api#getbusinessaccountgifts
 type GetBusinessAccountGiftsMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Pass True to exclude gifts that aren't saved to the account's profile page
+	// Pass True to exclude gifts that aren't saved to the account's profile page
     ExcludeUnsaved *bool `json:"exclude_unsaved,omitempty"` 
-    // Pass True to exclude gifts that are saved to the account's profile page
+	// Pass True to exclude gifts that are saved to the account's profile page
     ExcludeSaved *bool `json:"exclude_saved,omitempty"` 
-    // Pass True to exclude gifts that can be purchased an unlimited number of times
+	// Pass True to exclude gifts that can be purchased an unlimited number of times
     ExcludeUnlimited *bool `json:"exclude_unlimited,omitempty"` 
-    // Pass True to exclude gifts that can be purchased a limited number of times
-// and can be upgraded to unique
+	// Pass True to exclude gifts that can be purchased a limited number of times
+	// and can be upgraded to unique
     ExcludeLimitedUpgradable *bool `json:"exclude_limited_upgradable,omitempty"` 
-    // Pass True to exclude gifts that can be purchased a limited number of times
-// and can't be upgraded to unique
+	// Pass True to exclude gifts that can be purchased a limited number of times
+	// and can't be upgraded to unique
     ExcludeLimitedNonUpgradable *bool `json:"exclude_limited_non_upgradable,omitempty"` 
-    // Pass True to exclude unique gifts
+	// Pass True to exclude unique gifts
     ExcludeUnique *bool `json:"exclude_unique,omitempty"` 
-    // Pass True to exclude gifts that were assigned from the TON blockchain and
-// can't be resold or transferred in Telegram
+	// Pass True to exclude gifts that were assigned from the TON blockchain and
+	// can't be resold or transferred in Telegram
     ExcludeFromBlockchain *bool `json:"exclude_from_blockchain,omitempty"` 
-    // Pass True to sort results by gift price instead of send date. Sorting is
-// applied before pagination.
+	// Pass True to sort results by gift price instead of send date. Sorting is
+	// applied before pagination.
     SortByPrice *bool `json:"sort_by_price,omitempty"` 
-    // Offset of the first entry to return as received from the previous request;
-// use empty string to get the first chunk of results
+	// Offset of the first entry to return as received from the previous request;
+	// use empty string to get the first chunk of results
     Offset *string `json:"offset,omitempty"` 
-    // The maximum number of gifts to be returned; 1-100. Defaults to 100.
+	// The maximum number of gifts to be returned; 1-100. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"`
 }
 
@@ -6608,28 +6608,28 @@ func (m GetBusinessAccountGiftsMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#getusergifts
 type GetUserGiftsMethod struct { 
-    // Unique identifier of the user
+	// Unique identifier of the user
     UserID int64 `json:"user_id"` 
-    // Pass True to exclude gifts that can be purchased an unlimited number of times
+	// Pass True to exclude gifts that can be purchased an unlimited number of times
     ExcludeUnlimited *bool `json:"exclude_unlimited,omitempty"` 
-    // Pass True to exclude gifts that can be purchased a limited number of times
-// and can be upgraded to unique
+	// Pass True to exclude gifts that can be purchased a limited number of times
+	// and can be upgraded to unique
     ExcludeLimitedUpgradable *bool `json:"exclude_limited_upgradable,omitempty"` 
-    // Pass True to exclude gifts that can be purchased a limited number of times
-// and can't be upgraded to unique
+	// Pass True to exclude gifts that can be purchased a limited number of times
+	// and can't be upgraded to unique
     ExcludeLimitedNonUpgradable *bool `json:"exclude_limited_non_upgradable,omitempty"` 
-    // Pass True to exclude gifts that were assigned from the TON blockchain and
-// can't be resold or transferred in Telegram
+	// Pass True to exclude gifts that were assigned from the TON blockchain and
+	// can't be resold or transferred in Telegram
     ExcludeFromBlockchain *bool `json:"exclude_from_blockchain,omitempty"` 
-    // Pass True to exclude unique gifts
+	// Pass True to exclude unique gifts
     ExcludeUnique *bool `json:"exclude_unique,omitempty"` 
-    // Pass True to sort results by gift price instead of send date. Sorting is
-// applied before pagination.
+	// Pass True to sort results by gift price instead of send date. Sorting is
+	// applied before pagination.
     SortByPrice *bool `json:"sort_by_price,omitempty"` 
-    // Offset of the first entry to return as received from the previous request;
-// use an empty string to get the first chunk of results
+	// Offset of the first entry to return as received from the previous request;
+	// use an empty string to get the first chunk of results
     Offset *string `json:"offset,omitempty"` 
-    // The maximum number of gifts to be returned; 1-100. Defaults to 100.
+	// The maximum number of gifts to be returned; 1-100. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"`
 }
 
@@ -6689,37 +6689,37 @@ func (m GetUserGiftsMethod) Call(ctx context.Context, conn Connection) (OwnedGif
 //
 // See https://core.telegram.org/bots/api#getchatgifts
 type GetChatGiftsMethod struct { 
-    // Unique identifier for the target chat or username of the target channel in
-// the format @username
+	// Unique identifier for the target chat or username of the target channel in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Pass True to exclude gifts that aren't saved to the chat's profile page.
-// Always True, unless the bot has the can_post_messages administrator right in
-// the channel.
+	// Pass True to exclude gifts that aren't saved to the chat's profile page.
+	// Always True, unless the bot has the can_post_messages administrator right in
+	// the channel.
     ExcludeUnsaved *bool `json:"exclude_unsaved,omitempty"` 
-    // Pass True to exclude gifts that are saved to the chat's profile page. Always
-// False, unless the bot has the can_post_messages administrator right in the
-// channel.
+	// Pass True to exclude gifts that are saved to the chat's profile page. Always
+	// False, unless the bot has the can_post_messages administrator right in the
+	// channel.
     ExcludeSaved *bool `json:"exclude_saved,omitempty"` 
-    // Pass True to exclude gifts that can be purchased an unlimited number of times
+	// Pass True to exclude gifts that can be purchased an unlimited number of times
     ExcludeUnlimited *bool `json:"exclude_unlimited,omitempty"` 
-    // Pass True to exclude gifts that can be purchased a limited number of times
-// and can be upgraded to unique
+	// Pass True to exclude gifts that can be purchased a limited number of times
+	// and can be upgraded to unique
     ExcludeLimitedUpgradable *bool `json:"exclude_limited_upgradable,omitempty"` 
-    // Pass True to exclude gifts that can be purchased a limited number of times
-// and can't be upgraded to unique
+	// Pass True to exclude gifts that can be purchased a limited number of times
+	// and can't be upgraded to unique
     ExcludeLimitedNonUpgradable *bool `json:"exclude_limited_non_upgradable,omitempty"` 
-    // Pass True to exclude gifts that were assigned from the TON blockchain and
-// can't be resold or transferred in Telegram
+	// Pass True to exclude gifts that were assigned from the TON blockchain and
+	// can't be resold or transferred in Telegram
     ExcludeFromBlockchain *bool `json:"exclude_from_blockchain,omitempty"` 
-    // Pass True to exclude unique gifts
+	// Pass True to exclude unique gifts
     ExcludeUnique *bool `json:"exclude_unique,omitempty"` 
-    // Pass True to sort results by gift price instead of send date. Sorting is
-// applied before pagination.
+	// Pass True to sort results by gift price instead of send date. Sorting is
+	// applied before pagination.
     SortByPrice *bool `json:"sort_by_price,omitempty"` 
-    // Offset of the first entry to return as received from the previous request;
-// use an empty string to get the first chunk of results
+	// Offset of the first entry to return as received from the previous request;
+	// use an empty string to get the first chunk of results
     Offset *string `json:"offset,omitempty"` 
-    // The maximum number of gifts to be returned; 1-100. Defaults to 100.
+	// The maximum number of gifts to be returned; 1-100. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"`
 }
 
@@ -6790,10 +6790,10 @@ func (m GetChatGiftsMethod) Call(ctx context.Context, conn Connection) (OwnedGif
 //
 // See https://core.telegram.org/bots/api#convertgifttostars
 type ConvertGiftToStarsMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the regular gift that should be converted to Telegram
-// Stars
+	// Unique identifier of the regular gift that should be converted to Telegram
+	// Stars
     OwnedGiftID string `json:"owned_gift_id"`
 }
 
@@ -6819,17 +6819,17 @@ func (m ConvertGiftToStarsMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#upgradegift
 type UpgradeGiftMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the regular gift that should be upgraded to a unique one
+	// Unique identifier of the regular gift that should be upgraded to a unique one
     OwnedGiftID string `json:"owned_gift_id"` 
-    // Pass True to keep the original gift text, sender and receiver in the upgraded
-// gift
+	// Pass True to keep the original gift text, sender and receiver in the upgraded
+	// gift
     KeepOriginalDetails *bool `json:"keep_original_details,omitempty"` 
-    // The amount of Telegram Stars that will be paid for the upgrade from the
-// business account balance. If gift.prepaid_upgrade_star_count > 0, then pass
-// 0, otherwise, the can_transfer_stars business bot right is required and
-// gift.upgrade_star_count must be passed.
+	// The amount of Telegram Stars that will be paid for the upgrade from the
+	// business account balance. If gift.prepaid_upgrade_star_count > 0, then pass
+	// 0, otherwise, the can_transfer_stars business bot right is required and
+	// gift.upgrade_star_count must be passed.
     StarCount *int64 `json:"star_count,omitempty"`
 }
 
@@ -6865,16 +6865,16 @@ func (m UpgradeGiftMethod) Call(ctx context.Context, conn Connection) (bool, err
 //
 // See https://core.telegram.org/bots/api#transfergift
 type TransferGiftMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the regular gift that should be transferred
+	// Unique identifier of the regular gift that should be transferred
     OwnedGiftID string `json:"owned_gift_id"` 
-    // Unique identifier of the chat which will own the gift. The chat must be
-// active in the last 24 hours.
+	// Unique identifier of the chat which will own the gift. The chat must be
+	// active in the last 24 hours.
     NewOwnerChatID int64 `json:"new_owner_chat_id"` 
-    // The amount of Telegram Stars that will be paid for the transfer from the
-// business account balance. If positive, then the can_transfer_stars business
-// bot right is required.
+	// The amount of Telegram Stars that will be paid for the transfer from the
+	// business account balance. If positive, then the can_transfer_stars business
+	// bot right is required.
     StarCount *int64 `json:"star_count,omitempty"`
 }
 
@@ -6906,27 +6906,27 @@ func (m TransferGiftMethod) Call(ctx context.Context, conn Connection) (bool, er
 //
 // See https://core.telegram.org/bots/api#poststory
 type PostStoryMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Content of the story
+	// Content of the story
     Content InputStoryContent `json:"content"` 
-    // Period after which the story is moved to the archive, in seconds; must be one
-// of 6 * 3600, 12 * 3600, 86400, or 2 * 86400
+	// Period after which the story is moved to the archive, in seconds; must be one
+	// of 6 * 3600, 12 * 3600, 86400, or 2 * 86400
     ActivePeriod int64 `json:"active_period"` 
-    // Caption of the story, 0-2048 characters after entities parsing
+	// Caption of the story, 0-2048 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the story caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the story caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // A JSON-serialized list of clickable areas to be shown on the story
+	// A JSON-serialized list of clickable areas to be shown on the story
     Areas []StoryArea `json:"areas,omitempty"` 
-    // Pass True to keep the story accessible after it expires
+	// Pass True to keep the story accessible after it expires
     PostToChatPage *bool `json:"post_to_chat_page,omitempty"` 
-    // Pass True if the content of the story must be protected from forwarding and
-// screenshotting
+	// Pass True if the content of the story must be protected from forwarding and
+	// screenshotting
     ProtectContent *bool `json:"protect_content,omitempty"`
 }
 
@@ -6986,19 +6986,19 @@ func (m PostStoryMethod) Call(ctx context.Context, conn Connection) (Story, erro
 //
 // See https://core.telegram.org/bots/api#repoststory
 type RepostStoryMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the chat which posted the story that should be reposted
+	// Unique identifier of the chat which posted the story that should be reposted
     FromChatID int64 `json:"from_chat_id"` 
-    // Unique identifier of the story that should be reposted
+	// Unique identifier of the story that should be reposted
     FromStoryID int64 `json:"from_story_id"` 
-    // Period after which the story is moved to the archive, in seconds; must be one
-// of 6 * 3600, 12 * 3600, 86400, or 2 * 86400
+	// Period after which the story is moved to the archive, in seconds; must be one
+	// of 6 * 3600, 12 * 3600, 86400, or 2 * 86400
     ActivePeriod int64 `json:"active_period"` 
-    // Pass True to keep the story accessible after it expires
+	// Pass True to keep the story accessible after it expires
     PostToChatPage *bool `json:"post_to_chat_page,omitempty"` 
-    // Pass True if the content of the story must be protected from forwarding and
-// screenshotting
+	// Pass True if the content of the story must be protected from forwarding and
+	// screenshotting
     ProtectContent *bool `json:"protect_content,omitempty"`
 }
 
@@ -7039,21 +7039,21 @@ func (m RepostStoryMethod) Call(ctx context.Context, conn Connection) (Story, er
 //
 // See https://core.telegram.org/bots/api#editstory
 type EditStoryMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the story to edit
+	// Unique identifier of the story to edit
     StoryID int64 `json:"story_id"` 
-    // Content of the story
+	// Content of the story
     Content InputStoryContent `json:"content"` 
-    // Caption of the story, 0-2048 characters after entities parsing
+	// Caption of the story, 0-2048 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the story caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the story caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // A JSON-serialized list of clickable areas to be shown on the story
+	// A JSON-serialized list of clickable areas to be shown on the story
     Areas []StoryArea `json:"areas,omitempty"`
 }
 
@@ -7101,9 +7101,9 @@ func (m EditStoryMethod) Call(ctx context.Context, conn Connection) (Story, erro
 //
 // See https://core.telegram.org/bots/api#deletestory
 type DeleteStoryMethod struct { 
-    // Unique identifier of the business connection
+	// Unique identifier of the business connection
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier of the story to delete
+	// Unique identifier of the story to delete
     StoryID int64 `json:"story_id"`
 }
 
@@ -7128,9 +7128,9 @@ func (m DeleteStoryMethod) Call(ctx context.Context, conn Connection) (bool, err
 //
 // See https://core.telegram.org/bots/api#answerwebappquery
 type AnswerWebAppQueryMethod struct { 
-    // Unique identifier for the query to be answered
+	// Unique identifier for the query to be answered
     WebAppQueryID string `json:"web_app_query_id"` 
-    // A JSON-serialized object describing the message to be sent
+	// A JSON-serialized object describing the message to be sent
     Result InlineQueryResult `json:"result"`
 }
 
@@ -7154,17 +7154,17 @@ func (m AnswerWebAppQueryMethod) Call(ctx context.Context, conn Connection) (Sen
 //
 // See https://core.telegram.org/bots/api#savepreparedinlinemessage
 type SavePreparedInlineMessageMethod struct { 
-    // Unique identifier of the target user that can use the prepared message
+	// Unique identifier of the target user that can use the prepared message
     UserID int64 `json:"user_id"` 
-    // A JSON-serialized object describing the message to be sent
+	// A JSON-serialized object describing the message to be sent
     Result InlineQueryResult `json:"result"` 
-    // Pass True if the message can be sent to private chats with users
+	// Pass True if the message can be sent to private chats with users
     AllowUserChats *bool `json:"allow_user_chats,omitempty"` 
-    // Pass True if the message can be sent to private chats with bots
+	// Pass True if the message can be sent to private chats with bots
     AllowBotChats *bool `json:"allow_bot_chats,omitempty"` 
-    // Pass True if the message can be sent to group and supergroup chats
+	// Pass True if the message can be sent to group and supergroup chats
     AllowGroupChats *bool `json:"allow_group_chats,omitempty"` 
-    // Pass True if the message can be sent to channel chats
+	// Pass True if the message can be sent to channel chats
     AllowChannelChats *bool `json:"allow_channel_chats,omitempty"`
 }
 
@@ -7208,10 +7208,10 @@ func (m SavePreparedInlineMessageMethod) Call(ctx context.Context, conn Connecti
 //
 // See https://core.telegram.org/bots/api#savepreparedkeyboardbutton
 type SavePreparedKeyboardButtonMethod struct { 
-    // Unique identifier of the target user that can use the button
+	// Unique identifier of the target user that can use the button
     UserID int64 `json:"user_id"` 
-    // A JSON-serialized object describing the button to be saved. The button must
-// be of the type request_users, request_chat, or request_managed_bot.
+	// A JSON-serialized object describing the button to be saved. The button must
+	// be of the type request_users, request_chat, or request_managed_bot.
     Button KeyboardButton `json:"button"`
 }
 
@@ -7238,30 +7238,30 @@ func (m SavePreparedKeyboardButtonMethod) Call(ctx context.Context, conn Connect
 //
 // See https://core.telegram.org/bots/api#editmessagetext
 type EditMessageTextMethod struct { 
-    // New text of the message, 1-4096 characters after entities parsing
+	// New text of the message, 1-4096 characters after entities parsing
     Text string `json:"text"` 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat or username of the target bot, supergroup or channel in the
-// format @username.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat or username of the target bot, supergroup or channel in the
+	// format @username.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the message to
-// edit.
+	// Required if inline_message_id is not specified. Identifier of the message to
+	// edit.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"` 
-    // Mode for parsing entities in the message text. See formatting options for
-// more details.
+	// Mode for parsing entities in the message text. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in message text, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in message text, which
+	// can be specified instead of parse_mode
     Entities []MessageEntity `json:"entities,omitempty"` 
-    // Link preview generation options for the message
+	// Link preview generation options for the message
     LinkPreviewOptions *LinkPreviewOptions `json:"link_preview_options,omitempty"` 
-    // A JSON-serialized object for an inline keyboard
+	// A JSON-serialized object for an inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7329,31 +7329,31 @@ func (m EditMessageTextMethod) Call(ctx context.Context, conn Connection) (Maybe
 //
 // See https://core.telegram.org/bots/api#editmessagecaption
 type EditMessageCaptionMethod struct { 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat or username of the target bot, supergroup or channel in the
-// format @username.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat or username of the target bot, supergroup or channel in the
+	// format @username.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the message to
-// edit.
+	// Required if inline_message_id is not specified. Identifier of the message to
+	// edit.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"` 
-    // New caption of the message, 0-1024 characters after entities parsing
+	// New caption of the message, 0-1024 characters after entities parsing
     Caption *string `json:"caption,omitempty"` 
-    // Mode for parsing entities in the message caption. See formatting options for
-// more details.
+	// Mode for parsing entities in the message caption. See formatting options for
+	// more details.
     ParseMode *string `json:"parse_mode,omitempty"` 
-    // A JSON-serialized list of special entities that appear in the caption, which
-// can be specified instead of parse_mode
+	// A JSON-serialized list of special entities that appear in the caption, which
+	// can be specified instead of parse_mode
     CaptionEntities []MessageEntity `json:"caption_entities,omitempty"` 
-    // Pass True, if the caption must be shown above the message media. Supported
-// only for animation, photo and video messages.
+	// Pass True, if the caption must be shown above the message media. Supported
+	// only for animation, photo and video messages.
     ShowCaptionAboveMedia *bool `json:"show_caption_above_media,omitempty"` 
-    // A JSON-serialized object for an inline keyboard
+	// A JSON-serialized object for an inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7428,22 +7428,22 @@ func (m EditMessageCaptionMethod) Call(ctx context.Context, conn Connection) (Ma
 //
 // See https://core.telegram.org/bots/api#editmessagemedia
 type EditMessageMediaMethod struct { 
-    // A JSON-serialized object for a new media content of the message
+	// A JSON-serialized object for a new media content of the message
     Media InputMedia `json:"media"` 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat or username of the target bot, supergroup or channel in the
-// format @username.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat or username of the target bot, supergroup or channel in the
+	// format @username.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the message to
-// edit.
+	// Required if inline_message_id is not specified. Identifier of the message to
+	// edit.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"` 
-    // A JSON-serialized object for a new inline keyboard
+	// A JSON-serialized object for a new inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7495,39 +7495,39 @@ func (m EditMessageMediaMethod) Call(ctx context.Context, conn Connection) (Mayb
 //
 // See https://core.telegram.org/bots/api#editmessagelivelocation
 type EditMessageLiveLocationMethod struct { 
-    // Latitude of new location
+	// Latitude of new location
     Latitude float64 `json:"latitude"` 
-    // Longitude of new location
+	// Longitude of new location
     Longitude float64 `json:"longitude"` 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat or username of the target bot, supergroup or channel in the
-// format @username.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat or username of the target bot, supergroup or channel in the
+	// format @username.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the message to
-// edit.
+	// Required if inline_message_id is not specified. Identifier of the message to
+	// edit.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"` 
-    // New period in seconds during which the location can be updated, starting from
-// the message send date. If 0x7FFFFFFF is specified, then the location can be
-// updated forever. Otherwise, the new value must not exceed the current
-// live_period by more than a day, and the live location expiration date must
-// remain within the next 90 days. If not specified, then live_period remains
-// unchanged.
+	// New period in seconds during which the location can be updated, starting from
+	// the message send date. If 0x7FFFFFFF is specified, then the location can be
+	// updated forever. Otherwise, the new value must not exceed the current
+	// live_period by more than a day, and the live location expiration date must
+	// remain within the next 90 days. If not specified, then live_period remains
+	// unchanged.
     LivePeriod *int64 `json:"live_period,omitempty"` 
-    // The radius of uncertainty for the location, measured in meters; 0-1500
+	// The radius of uncertainty for the location, measured in meters; 0-1500
     HorizontalAccuracy *float64 `json:"horizontal_accuracy,omitempty"` 
-    // Direction in which the user is moving, in degrees. Must be between 1 and 360
-// if specified.
+	// Direction in which the user is moving, in degrees. Must be between 1 and 360
+	// if specified.
     Heading *int64 `json:"heading,omitempty"` 
-    // The maximum distance for proximity alerts about approaching another chat
-// member, in meters. Must be between 1 and 100000 if specified.
+	// The maximum distance for proximity alerts about approaching another chat
+	// member, in meters. Must be between 1 and 100000 if specified.
     ProximityAlertRadius *int64 `json:"proximity_alert_radius,omitempty"` 
-    // A JSON-serialized object for a new inline keyboard
+	// A JSON-serialized object for a new inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7601,20 +7601,20 @@ func (m EditMessageLiveLocationMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#stopmessagelivelocation
 type StopMessageLiveLocationMethod struct { 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat or username of the target bot, supergroup or channel in the
-// format @username.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat or username of the target bot, supergroup or channel in the
+	// format @username.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the message
-// with live location to stop.
+	// Required if inline_message_id is not specified. Identifier of the message
+	// with live location to stop.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"` 
-    // A JSON-serialized object for a new inline keyboard
+	// A JSON-serialized object for a new inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7661,17 +7661,17 @@ func (m StopMessageLiveLocationMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#editmessagechecklist
 type EditMessageChecklistMethod struct { 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID string `json:"business_connection_id"` 
-    // Unique identifier for the target chat or username of the target bot in the
-// format @username
+	// Unique identifier for the target chat or username of the target bot in the
+	// format @username
     ChatID ChatID `json:"chat_id"` 
-    // Unique identifier for the target message
+	// Unique identifier for the target message
     MessageID int64 `json:"message_id"` 
-    // A JSON-serialized object for the new checklist
+	// A JSON-serialized object for the new checklist
     Checklist InputChecklist `json:"checklist"` 
-    // A JSON-serialized object for the new inline keyboard for the message
+	// A JSON-serialized object for the new inline keyboard for the message
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7709,20 +7709,20 @@ func (m EditMessageChecklistMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#editmessagereplymarkup
 type EditMessageReplyMarkupMethod struct { 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat or username of the target bot, supergroup or channel in the
-// format @username.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat or username of the target bot, supergroup or channel in the
+	// format @username.
     ChatID ChatID `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the message to
-// edit.
+	// Required if inline_message_id is not specified. Identifier of the message to
+	// edit.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"` 
-    // A JSON-serialized object for an inline keyboard
+	// A JSON-serialized object for an inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7769,15 +7769,15 @@ func (m EditMessageReplyMarkupMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#stoppoll
 type StopPollMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Identifier of the original message with the poll
+	// Identifier of the original message with the poll
     MessageID int64 `json:"message_id"` 
-    // Unique identifier of the business connection on behalf of which the message
-// to be edited was sent
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // A JSON-serialized object for a new message inline keyboard
+	// A JSON-serialized object for a new message inline keyboard
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -7812,14 +7812,14 @@ func (m StopPollMethod) Call(ctx context.Context, conn Connection) (Poll, error)
 //
 // See https://core.telegram.org/bots/api#approvesuggestedpost
 type ApproveSuggestedPostMethod struct { 
-    // Unique identifier for the target direct messages chat
+	// Unique identifier for the target direct messages chat
     ChatID int64 `json:"chat_id"` 
-    // Identifier of a suggested post message to approve
+	// Identifier of a suggested post message to approve
     MessageID int64 `json:"message_id"` 
-    // Point in time (Unix timestamp) when the post is expected to be published;
-// omit if the date has already been specified when the suggested post was
-// created. If specified, then the date must be not more than 2678400 seconds
-// (30 days) in the future.
+	// Point in time (Unix timestamp) when the post is expected to be published;
+	// omit if the date has already been specified when the suggested post was
+	// created. If specified, then the date must be not more than 2678400 seconds
+	// (30 days) in the future.
     SendDate *int64 `json:"send_date,omitempty"`
 }
 
@@ -7849,11 +7849,11 @@ func (m ApproveSuggestedPostMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#declinesuggestedpost
 type DeclineSuggestedPostMethod struct { 
-    // Unique identifier for the target direct messages chat
+	// Unique identifier for the target direct messages chat
     ChatID int64 `json:"chat_id"` 
-    // Identifier of a suggested post message to decline
+	// Identifier of a suggested post message to decline
     MessageID int64 `json:"message_id"` 
-    // Comment for the creator of the suggested post; 0-128 characters
+	// Comment for the creator of the suggested post; 0-128 characters
     Comment *string `json:"comment,omitempty"`
 }
 
@@ -7893,10 +7893,10 @@ func (m DeclineSuggestedPostMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#deletemessage
 type DeleteMessageMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Identifier of the message to delete
+	// Identifier of the message to delete
     MessageID int64 `json:"message_id"`
 }
 
@@ -7920,11 +7920,11 @@ func (m DeleteMessageMethod) Call(ctx context.Context, conn Connection) (bool, e
 //
 // See https://core.telegram.org/bots/api#deletemessages
 type DeleteMessagesMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // A JSON-serialized list of 1-100 identifiers of messages to delete. See
-// deleteMessage for limitations on which messages can be deleted.
+	// A JSON-serialized list of 1-100 identifiers of messages to delete. See
+	// deleteMessage for limitations on which messages can be deleted.
     MessageIDs []int64 `json:"message_ids"`
 }
 
@@ -7949,16 +7949,16 @@ func (m DeleteMessagesMethod) Call(ctx context.Context, conn Connection) (bool, 
 //
 // See https://core.telegram.org/bots/api#deletemessagereaction
 type DeleteMessageReactionMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Identifier of the target message
+	// Identifier of the target message
     MessageID int64 `json:"message_id"` 
-    // Identifier of the user whose reaction will be removed, if the reaction was
-// added by a user
+	// Identifier of the user whose reaction will be removed, if the reaction was
+	// added by a user
     UserID *int64 `json:"user_id,omitempty"` 
-    // Identifier of the chat whose reaction will be removed, if the reaction was
-// added by a chat
+	// Identifier of the chat whose reaction will be removed, if the reaction was
+	// added by a chat
     ActorChatID *int64 `json:"actor_chat_id,omitempty"`
 }
 
@@ -7994,14 +7994,14 @@ func (m DeleteMessageReactionMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#deleteallmessagereactions
 type DeleteAllMessageReactionsMethod struct { 
-    // Unique identifier for the target chat or username of the target supergroup in
-// the format @username
+	// Unique identifier for the target chat or username of the target supergroup in
+	// the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Identifier of the user whose reactions will be removed, if the reactions were
-// added by a user
+	// Identifier of the user whose reactions will be removed, if the reactions were
+	// added by a user
     UserID *int64 `json:"user_id,omitempty"` 
-    // Identifier of the chat whose reactions will be removed, if the reactions were
-// added by a chat
+	// Identifier of the chat whose reactions will be removed, if the reactions were
+	// added by a chat
     ActorChatID *int64 `json:"actor_chat_id,omitempty"`
 }
 
@@ -8032,46 +8032,46 @@ func (m DeleteAllMessageReactionsMethod) Call(ctx context.Context, conn Connecti
 //
 // See https://core.telegram.org/bots/api#sendsticker
 type SendStickerMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Sticker to send. Pass a file_id as String to send a file that exists on the
-// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-// get a .WEBP sticker from the Internet, or upload a new .WEBP, .TGS, or .WEBM
-// sticker using multipart/form-data. More information on Sending Files ». Video
-// and animated stickers can't be sent via an HTTP URL.
+	// Sticker to send. Pass a file_id as String to send a file that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a .WEBP sticker from the Internet, or upload a new .WEBP, .TGS, or .WEBM
+	// sticker using multipart/form-data. More information on Sending Files ». Video
+	// and animated stickers can't be sent via an HTTP URL.
     Sticker InputFile `json:"sticker"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Emoji associated with the sticker; only for just uploaded stickers
+	// Emoji associated with the sticker; only for just uploaded stickers
     Emoji *string `json:"emoji,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // Additional interface options. A JSON-serialized object for an inline
-// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
-// to force a reply from the user.
+	// Additional interface options. A JSON-serialized object for an inline
+	// keyboard, custom reply keyboard, instructions to remove a reply keyboard or
+	// to force a reply from the user.
     ReplyMarkup ReplyMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -8150,7 +8150,7 @@ func (m SendStickerMethod) Call(ctx context.Context, conn Connection) (Message, 
 //
 // See https://core.telegram.org/bots/api#getstickerset
 type GetStickerSetMethod struct { 
-    // Name of the sticker set
+	// Name of the sticker set
     Name string `json:"name"`
 }
 
@@ -8171,8 +8171,8 @@ func (m GetStickerSetMethod) Call(ctx context.Context, conn Connection) (Sticker
 //
 // See https://core.telegram.org/bots/api#getcustomemojistickers
 type GetCustomEmojiStickersMethod struct { 
-    // A JSON-serialized list of custom emoji identifiers. At most 200 custom emoji
-// identifiers can be specified.
+	// A JSON-serialized list of custom emoji identifiers. At most 200 custom emoji
+	// identifiers can be specified.
     CustomEmojiIDs []string `json:"custom_emoji_ids"`
 }
 
@@ -8194,13 +8194,13 @@ func (m GetCustomEmojiStickersMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#uploadstickerfile
 type UploadStickerFileMethod struct { 
-    // User identifier of sticker file owner
+	// User identifier of sticker file owner
     UserID int64 `json:"user_id"` 
-    // A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format. See
-// https://core.telegram.org/stickers for technical requirements. More
-// information on Sending Files »
+	// A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format. See
+	// https://core.telegram.org/stickers for technical requirements. More
+	// information on Sending Files »
     Sticker InputFile `json:"sticker"` 
-    // Format of the sticker, must be one of “static”, “animated”, “video”
+	// Format of the sticker, must be one of “static”, “animated”, “video”
     StickerFormat string `json:"sticker_format"`
 }
 
@@ -8227,25 +8227,25 @@ func (m UploadStickerFileMethod) Call(ctx context.Context, conn Connection) (Fil
 //
 // See https://core.telegram.org/bots/api#createnewstickerset
 type CreateNewStickerSetMethod struct { 
-    // User identifier of created sticker set owner
+	// User identifier of created sticker set owner
     UserID int64 `json:"user_id"` 
-    // Short name of sticker set, to be used in t.me/addstickers/ URLs (e.g.,
-// animals). Can contain only English letters, digits and underscores. Must
-// begin with a letter, can't contain consecutive underscores and must end in
-// "_by_<bot_username>". <bot_username> is case insensitive. 1-64 characters.
+	// Short name of sticker set, to be used in t.me/addstickers/ URLs (e.g.,
+	// animals). Can contain only English letters, digits and underscores. Must
+	// begin with a letter, can't contain consecutive underscores and must end in
+	// "_by_<bot_username>". <bot_username> is case insensitive. 1-64 characters.
     Name string `json:"name"` 
-    // Sticker set title, 1-64 characters
+	// Sticker set title, 1-64 characters
     Title string `json:"title"` 
-    // A JSON-serialized list of 1-50 initial stickers to be added to the sticker
-// set
+	// A JSON-serialized list of 1-50 initial stickers to be added to the sticker
+	// set
     Stickers []InputSticker `json:"stickers"` 
-    // Type of stickers in the set, pass “regular”, “mask”, or “custom_emoji”. By
-// default, a regular sticker set is created.
+	// Type of stickers in the set, pass “regular”, “mask”, or “custom_emoji”. By
+	// default, a regular sticker set is created.
     StickerType *string `json:"sticker_type,omitempty"` 
-    // Pass True if stickers in the sticker set must be repainted to the color of
-// text when used in messages, the accent color if used as emoji status, white
-// on chat photos, or another appropriate color based on context; for custom
-// emoji sticker sets only
+	// Pass True if stickers in the sticker set must be repainted to the color of
+	// text when used in messages, the accent color if used as emoji status, white
+	// on chat photos, or another appropriate color based on context; for custom
+	// emoji sticker sets only
     NeedsRepainting *bool `json:"needs_repainting,omitempty"`
 }
 
@@ -8286,13 +8286,13 @@ func (m CreateNewStickerSetMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#addstickertoset
 type AddStickerToSetMethod struct { 
-    // User identifier of sticker set owner
+	// User identifier of sticker set owner
     UserID int64 `json:"user_id"` 
-    // Sticker set name
+	// Sticker set name
     Name string `json:"name"` 
-    // A JSON-serialized object with information about the added sticker. If exactly
-// the same sticker had already been added to the set, then the set isn't
-// changed.
+	// A JSON-serialized object with information about the added sticker. If exactly
+	// the same sticker had already been added to the set, then the set isn't
+	// changed.
     Sticker InputSticker `json:"sticker"`
 }
 
@@ -8319,9 +8319,9 @@ func (m AddStickerToSetMethod) Call(ctx context.Context, conn Connection) (bool,
 //
 // See https://core.telegram.org/bots/api#setstickerpositioninset
 type SetStickerPositionInSetMethod struct { 
-    // File identifier of the sticker
+	// File identifier of the sticker
     Sticker string `json:"sticker"` 
-    // New sticker position in the set, zero-based
+	// New sticker position in the set, zero-based
     Position int64 `json:"position"`
 }
 
@@ -8345,7 +8345,7 @@ func (m SetStickerPositionInSetMethod) Call(ctx context.Context, conn Connection
 //
 // See https://core.telegram.org/bots/api#deletestickerfromset
 type DeleteStickerFromSetMethod struct { 
-    // File identifier of the sticker
+	// File identifier of the sticker
     Sticker string `json:"sticker"`
 }
 
@@ -8367,15 +8367,15 @@ func (m DeleteStickerFromSetMethod) Call(ctx context.Context, conn Connection) (
 //
 // See https://core.telegram.org/bots/api#replacestickerinset
 type ReplaceStickerInSetMethod struct { 
-    // User identifier of the sticker set owner
+	// User identifier of the sticker set owner
     UserID int64 `json:"user_id"` 
-    // Sticker set name
+	// Sticker set name
     Name string `json:"name"` 
-    // File identifier of the replaced sticker
+	// File identifier of the replaced sticker
     OldSticker string `json:"old_sticker"` 
-    // A JSON-serialized object with information about the added sticker. If exactly
-// the same sticker had already been added to the set, then the set remains
-// unchanged.
+	// A JSON-serialized object with information about the added sticker. If exactly
+	// the same sticker had already been added to the set, then the set remains
+	// unchanged.
     Sticker InputSticker `json:"sticker"`
 }
 
@@ -8406,9 +8406,9 @@ func (m ReplaceStickerInSetMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#setstickeremojilist
 type SetStickerEmojiListMethod struct { 
-    // File identifier of the sticker
+	// File identifier of the sticker
     Sticker string `json:"sticker"` 
-    // A JSON-serialized list of 1-20 emoji associated with the sticker
+	// A JSON-serialized list of 1-20 emoji associated with the sticker
     EmojiList []string `json:"emoji_list"`
 }
 
@@ -8433,10 +8433,10 @@ func (m SetStickerEmojiListMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#setstickerkeywords
 type SetStickerKeywordsMethod struct { 
-    // File identifier of the sticker
+	// File identifier of the sticker
     Sticker string `json:"sticker"` 
-    // A JSON-serialized list of 0-20 search keywords for the sticker with total
-// length of up to 64 characters
+	// A JSON-serialized list of 0-20 search keywords for the sticker with total
+	// length of up to 64 characters
     Keywords []string `json:"keywords,omitempty"`
 }
 
@@ -8463,10 +8463,10 @@ func (m SetStickerKeywordsMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#setstickermaskposition
 type SetStickerMaskPositionMethod struct { 
-    // File identifier of the sticker
+	// File identifier of the sticker
     Sticker string `json:"sticker"` 
-    // A JSON-serialized object with the position where the mask should be placed on
-// faces. Omit the parameter to remove the mask position.
+	// A JSON-serialized object with the position where the mask should be placed on
+	// faces. Omit the parameter to remove the mask position.
     MaskPosition *MaskPosition `json:"mask_position,omitempty"`
 }
 
@@ -8492,9 +8492,9 @@ func (m SetStickerMaskPositionMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#setstickersettitle
 type SetStickerSetTitleMethod struct { 
-    // Sticker set name
+	// Sticker set name
     Name string `json:"name"` 
-    // Sticker set title, 1-64 characters
+	// Sticker set title, 1-64 characters
     Title string `json:"title"`
 }
 
@@ -8519,25 +8519,25 @@ func (m SetStickerSetTitleMethod) Call(ctx context.Context, conn Connection) (bo
 //
 // See https://core.telegram.org/bots/api#setstickersetthumbnail
 type SetStickerSetThumbnailMethod struct { 
-    // Sticker set name
+	// Sticker set name
     Name string `json:"name"` 
-    // User identifier of the sticker set owner
+	// User identifier of the sticker set owner
     UserID int64 `json:"user_id"` 
-    // Format of the thumbnail, must be one of “static” for a .WEBP or .PNG image,
-// “animated” for a .TGS animation, or “video” for a .WEBM video
+	// Format of the thumbnail, must be one of “static” for a .WEBP or .PNG image,
+	// “animated” for a .TGS animation, or “video” for a .WEBM video
     Format string `json:"format"` 
-    // A .WEBP or .PNG image with the thumbnail, must be up to 128 kilobytes in size
-// and have a width and height of exactly 100px, or a .TGS animation with a
-// thumbnail up to 32 kilobytes in size (see
-// https://core.telegram.org/stickers#animation-requirements for animated
-// sticker technical requirements), or a .WEBM video with the thumbnail up to 32
-// kilobytes in size; see https://core.telegram.org/stickers#video-requirements
-// for video sticker technical requirements. Pass a file_id as a String to send
-// a file that already exists on the Telegram servers, pass an HTTP URL as a
-// String for Telegram to get a file from the Internet, or upload a new one
-// using multipart/form-data. More information on Sending Files ». Animated and
-// video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then
-// the thumbnail is dropped and the first sticker is used as the thumbnail.
+	// A .WEBP or .PNG image with the thumbnail, must be up to 128 kilobytes in size
+	// and have a width and height of exactly 100px, or a .TGS animation with a
+	// thumbnail up to 32 kilobytes in size (see
+	// https://core.telegram.org/stickers#animation-requirements for animated
+	// sticker technical requirements), or a .WEBM video with the thumbnail up to 32
+	// kilobytes in size; see https://core.telegram.org/stickers#video-requirements
+	// for video sticker technical requirements. Pass a file_id as a String to send
+	// a file that already exists on the Telegram servers, pass an HTTP URL as a
+	// String for Telegram to get a file from the Internet, or upload a new one
+	// using multipart/form-data. More information on Sending Files ». Animated and
+	// video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then
+	// the thumbnail is dropped and the first sticker is used as the thumbnail.
     Thumbnail InputFile `json:"thumbnail,omitempty"`
 }
 
@@ -8569,10 +8569,10 @@ func (m SetStickerSetThumbnailMethod) Call(ctx context.Context, conn Connection)
 //
 // See https://core.telegram.org/bots/api#setcustomemojistickersetthumbnail
 type SetCustomEmojiStickerSetThumbnailMethod struct { 
-    // Sticker set name
+	// Sticker set name
     Name string `json:"name"` 
-    // Custom emoji identifier of a sticker from the sticker set; pass an empty
-// string to drop the thumbnail and use the first sticker as the thumbnail
+	// Custom emoji identifier of a sticker from the sticker set; pass an empty
+	// string to drop the thumbnail and use the first sticker as the thumbnail
     CustomEmojiID *string `json:"custom_emoji_id,omitempty"`
 }
 
@@ -8598,7 +8598,7 @@ func (m SetCustomEmojiStickerSetThumbnailMethod) Call(ctx context.Context, conn 
 //
 // See https://core.telegram.org/bots/api#deletestickerset
 type DeleteStickerSetMethod struct { 
-    // Sticker set name
+	// Sticker set name
     Name string `json:"name"`
 }
 
@@ -8619,24 +8619,24 @@ func (m DeleteStickerSetMethod) Call(ctx context.Context, conn Connection) (bool
 //
 // See https://core.telegram.org/bots/api#answerinlinequery
 type AnswerInlineQueryMethod struct { 
-    // Unique identifier for the answered query
+	// Unique identifier for the answered query
     InlineQueryID string `json:"inline_query_id"` 
-    // A JSON-serialized array of results for the inline query
+	// A JSON-serialized array of results for the inline query
     Results []InlineQueryResult `json:"results"` 
-    // The maximum amount of time in seconds that the result of the inline query may
-// be cached on the server. Defaults to 300.
+	// The maximum amount of time in seconds that the result of the inline query may
+	// be cached on the server. Defaults to 300.
     CacheTime *int64 `json:"cache_time,omitempty"` 
-    // Pass True if results may be cached on the server side only for the user that
-// sent the query. By default, results may be returned to any user who sends the
-// same query.
+	// Pass True if results may be cached on the server side only for the user that
+	// sent the query. By default, results may be returned to any user who sends the
+	// same query.
     IsPersonal *bool `json:"is_personal,omitempty"` 
-    // Pass the offset that a client should send in the next query with the same
-// text to receive more results. Pass an empty string if there are no more
-// results or if you don't support pagination. Offset length can't exceed 64
-// bytes.
+	// Pass the offset that a client should send in the next query with the same
+	// text to receive more results. Pass an empty string if there are no more
+	// results or if you don't support pagination. Offset length can't exceed 64
+	// bytes.
     NextOffset *string `json:"next_offset,omitempty"` 
-    // A JSON-serialized object describing a button to be shown above inline query
-// results
+	// A JSON-serialized object describing a button to be shown above inline query
+	// results
     Button *InlineQueryResultsButton `json:"button,omitempty"`
 }
 
@@ -8679,104 +8679,104 @@ func (m AnswerInlineQueryMethod) Call(ctx context.Context, conn Connection) (boo
 //
 // See https://core.telegram.org/bots/api#sendinvoice
 type SendInvoiceMethod struct { 
-    // Unique identifier for the target chat or username of the target bot,
-// supergroup or channel in the format @username
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
     ChatID ChatID `json:"chat_id"` 
-    // Product name, 1-32 characters
+	// Product name, 1-32 characters
     Title string `json:"title"` 
-    // Product description, 1-255 characters
+	// Product description, 1-255 characters
     Description string `json:"description"` 
-    // Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
-// user, use it for your internal processes.
+	// Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
+	// user, use it for your internal processes.
     Payload string `json:"payload"` 
-    // Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
-// payments in Telegram Stars.
+	// Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
+	// payments in Telegram Stars.
     Currency string `json:"currency"` 
-    // Price breakdown, a JSON-serialized list of components (e.g. product price,
-// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
-// exactly one item for payments in Telegram Stars.
+	// Price breakdown, a JSON-serialized list of components (e.g. product price,
+	// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
+	// exactly one item for payments in Telegram Stars.
     Prices []LabeledPrice `json:"prices"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Identifier of the direct messages topic to which the message will be sent;
-// required if the message is sent to a direct messages chat
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
     DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"` 
-    // Payment provider token, obtained via @BotFather. Pass an empty string for
-// payments in Telegram Stars.
+	// Payment provider token, obtained via @BotFather. Pass an empty string for
+	// payments in Telegram Stars.
     ProviderToken *string `json:"provider_token,omitempty"` 
-    // The maximum accepted amount for tips in the smallest units of the currency
-// (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass
-// max_tip_amount = 145. See the exp parameter in currencies.json, it shows the
-// number of digits past the decimal point for each currency (2 for the majority
-// of currencies). Defaults to 0. Not supported for payments in Telegram Stars.
+	// The maximum accepted amount for tips in the smallest units of the currency
+	// (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass
+	// max_tip_amount = 145. See the exp parameter in currencies.json, it shows the
+	// number of digits past the decimal point for each currency (2 for the majority
+	// of currencies). Defaults to 0. Not supported for payments in Telegram Stars.
     MaxTipAmount *int64 `json:"max_tip_amount,omitempty"` 
-    // A JSON-serialized array of suggested amounts of tips in the smallest units of
-// the currency (integer, not float/double). At most 4 suggested tip amounts can
-// be specified. The suggested tip amounts must be positive, passed in a
-// strictly increased order and must not exceed max_tip_amount.
+	// A JSON-serialized array of suggested amounts of tips in the smallest units of
+	// the currency (integer, not float/double). At most 4 suggested tip amounts can
+	// be specified. The suggested tip amounts must be positive, passed in a
+	// strictly increased order and must not exceed max_tip_amount.
     SuggestedTipAmounts []int64 `json:"suggested_tip_amounts,omitempty"` 
-    // Unique deep-linking parameter. If left empty, forwarded copies of the sent
-// message will have a Pay button, allowing multiple users to pay directly from
-// the forwarded message, using the same invoice. If non-empty, forwarded copies
-// of the sent message will have a URL button with a deep link to the bot
-// (instead of a Pay button), with the value used as the start parameter.
+	// Unique deep-linking parameter. If left empty, forwarded copies of the sent
+	// message will have a Pay button, allowing multiple users to pay directly from
+	// the forwarded message, using the same invoice. If non-empty, forwarded copies
+	// of the sent message will have a URL button with a deep link to the bot
+	// (instead of a Pay button), with the value used as the start parameter.
     StartParameter *string `json:"start_parameter,omitempty"` 
-    // JSON-serialized data about the invoice, which will be shared with the payment
-// provider. A detailed description of required fields should be provided by the
-// payment provider.
+	// JSON-serialized data about the invoice, which will be shared with the payment
+	// provider. A detailed description of required fields should be provided by the
+	// payment provider.
     ProviderData *string `json:"provider_data,omitempty"` 
-    // URL of the product photo for the invoice. Can be a photo of the goods or a
-// marketing image for a service. People like it better when they see what they
-// are paying for.
+	// URL of the product photo for the invoice. Can be a photo of the goods or a
+	// marketing image for a service. People like it better when they see what they
+	// are paying for.
     PhotoURL *string `json:"photo_url,omitempty"` 
-    // Photo size in bytes
+	// Photo size in bytes
     PhotoSize *int64 `json:"photo_size,omitempty"` 
-    // Photo width
+	// Photo width
     PhotoWidth *int64 `json:"photo_width,omitempty"` 
-    // Photo height
+	// Photo height
     PhotoHeight *int64 `json:"photo_height,omitempty"` 
-    // Pass True if you require the user's full name to complete the order. Ignored
-// for payments in Telegram Stars.
+	// Pass True if you require the user's full name to complete the order. Ignored
+	// for payments in Telegram Stars.
     NeedName *bool `json:"need_name,omitempty"` 
-    // Pass True if you require the user's phone number to complete the order.
-// Ignored for payments in Telegram Stars.
+	// Pass True if you require the user's phone number to complete the order.
+	// Ignored for payments in Telegram Stars.
     NeedPhoneNumber *bool `json:"need_phone_number,omitempty"` 
-    // Pass True if you require the user's email address to complete the order.
-// Ignored for payments in Telegram Stars.
+	// Pass True if you require the user's email address to complete the order.
+	// Ignored for payments in Telegram Stars.
     NeedEmail *bool `json:"need_email,omitempty"` 
-    // Pass True if you require the user's shipping address to complete the order.
-// Ignored for payments in Telegram Stars.
+	// Pass True if you require the user's shipping address to complete the order.
+	// Ignored for payments in Telegram Stars.
     NeedShippingAddress *bool `json:"need_shipping_address,omitempty"` 
-    // Pass True if the user's phone number should be sent to the provider. Ignored
-// for payments in Telegram Stars.
+	// Pass True if the user's phone number should be sent to the provider. Ignored
+	// for payments in Telegram Stars.
     SendPhoneNumberToProvider *bool `json:"send_phone_number_to_provider,omitempty"` 
-    // Pass True if the user's email address should be sent to the provider. Ignored
-// for payments in Telegram Stars.
+	// Pass True if the user's email address should be sent to the provider. Ignored
+	// for payments in Telegram Stars.
     SendEmailToProvider *bool `json:"send_email_to_provider,omitempty"` 
-    // Pass True if the final price depends on the shipping method. Ignored for
-// payments in Telegram Stars.
+	// Pass True if the final price depends on the shipping method. Ignored for
+	// payments in Telegram Stars.
     IsFlexible *bool `json:"is_flexible,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // A JSON-serialized object containing the parameters of the suggested post to
-// send; for direct messages chats only. If the message is sent as a reply to
-// another suggested post, then that suggested post is automatically declined.
+	// A JSON-serialized object containing the parameters of the suggested post to
+	// send; for direct messages chats only. If the message is sent as a reply to
+	// another suggested post, then that suggested post is automatically declined.
     SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // A JSON-serialized object for an inline keyboard. If empty, one 'Pay total
-// price' button will be shown. If not empty, the first button must be a Pay
-// button.
+	// A JSON-serialized object for an inline keyboard. If empty, one 'Pay total
+	// price' button will be shown. If not empty, the first button must be a Pay
+	// button.
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -8937,77 +8937,77 @@ func (m SendInvoiceMethod) Call(ctx context.Context, conn Connection) (Message, 
 //
 // See https://core.telegram.org/bots/api#createinvoicelink
 type CreateInvoiceLinkMethod struct { 
-    // Product name, 1-32 characters
+	// Product name, 1-32 characters
     Title string `json:"title"` 
-    // Product description, 1-255 characters
+	// Product description, 1-255 characters
     Description string `json:"description"` 
-    // Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
-// user, use it for your internal processes.
+	// Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
+	// user, use it for your internal processes.
     Payload string `json:"payload"` 
-    // Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
-// payments in Telegram Stars.
+	// Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
+	// payments in Telegram Stars.
     Currency string `json:"currency"` 
-    // Price breakdown, a JSON-serialized list of components (e.g. product price,
-// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
-// exactly one item for payments in Telegram Stars.
+	// Price breakdown, a JSON-serialized list of components (e.g. product price,
+	// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
+	// exactly one item for payments in Telegram Stars.
     Prices []LabeledPrice `json:"prices"` 
-    // Unique identifier of the business connection on behalf of which the link will
-// be created. For payments in Telegram Stars only.
+	// Unique identifier of the business connection on behalf of which the link will
+	// be created. For payments in Telegram Stars only.
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Payment provider token, obtained via @BotFather. Pass an empty string for
-// payments in Telegram Stars.
+	// Payment provider token, obtained via @BotFather. Pass an empty string for
+	// payments in Telegram Stars.
     ProviderToken *string `json:"provider_token,omitempty"` 
-    // The number of seconds the subscription will be active for before the next
-// payment. The currency must be set to “XTR” (Telegram Stars) if the parameter
-// is used. Currently, it must always be 2592000 (30 days) if specified. Any
-// number of subscriptions can be active for a given bot at the same time,
-// including multiple concurrent subscriptions from the same user. Subscription
-// price must no exceed 10000 Telegram Stars.
+	// The number of seconds the subscription will be active for before the next
+	// payment. The currency must be set to “XTR” (Telegram Stars) if the parameter
+	// is used. Currently, it must always be 2592000 (30 days) if specified. Any
+	// number of subscriptions can be active for a given bot at the same time,
+	// including multiple concurrent subscriptions from the same user. Subscription
+	// price must no exceed 10000 Telegram Stars.
     SubscriptionPeriod *int64 `json:"subscription_period,omitempty"` 
-    // The maximum accepted amount for tips in the smallest units of the currency
-// (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass
-// max_tip_amount = 145. See the exp parameter in currencies.json, it shows the
-// number of digits past the decimal point for each currency (2 for the majority
-// of currencies). Defaults to 0. Not supported for payments in Telegram Stars.
+	// The maximum accepted amount for tips in the smallest units of the currency
+	// (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass
+	// max_tip_amount = 145. See the exp parameter in currencies.json, it shows the
+	// number of digits past the decimal point for each currency (2 for the majority
+	// of currencies). Defaults to 0. Not supported for payments in Telegram Stars.
     MaxTipAmount *int64 `json:"max_tip_amount,omitempty"` 
-    // A JSON-serialized array of suggested amounts of tips in the smallest units of
-// the currency (integer, not float/double). At most 4 suggested tip amounts can
-// be specified. The suggested tip amounts must be positive, passed in a
-// strictly increased order and must not exceed max_tip_amount.
+	// A JSON-serialized array of suggested amounts of tips in the smallest units of
+	// the currency (integer, not float/double). At most 4 suggested tip amounts can
+	// be specified. The suggested tip amounts must be positive, passed in a
+	// strictly increased order and must not exceed max_tip_amount.
     SuggestedTipAmounts []int64 `json:"suggested_tip_amounts,omitempty"` 
-    // JSON-serialized data about the invoice, which will be shared with the payment
-// provider. A detailed description of required fields should be provided by the
-// payment provider.
+	// JSON-serialized data about the invoice, which will be shared with the payment
+	// provider. A detailed description of required fields should be provided by the
+	// payment provider.
     ProviderData *string `json:"provider_data,omitempty"` 
-    // URL of the product photo for the invoice. Can be a photo of the goods or a
-// marketing image for a service.
+	// URL of the product photo for the invoice. Can be a photo of the goods or a
+	// marketing image for a service.
     PhotoURL *string `json:"photo_url,omitempty"` 
-    // Photo size in bytes
+	// Photo size in bytes
     PhotoSize *int64 `json:"photo_size,omitempty"` 
-    // Photo width
+	// Photo width
     PhotoWidth *int64 `json:"photo_width,omitempty"` 
-    // Photo height
+	// Photo height
     PhotoHeight *int64 `json:"photo_height,omitempty"` 
-    // Pass True if you require the user's full name to complete the order. Ignored
-// for payments in Telegram Stars.
+	// Pass True if you require the user's full name to complete the order. Ignored
+	// for payments in Telegram Stars.
     NeedName *bool `json:"need_name,omitempty"` 
-    // Pass True if you require the user's phone number to complete the order.
-// Ignored for payments in Telegram Stars.
+	// Pass True if you require the user's phone number to complete the order.
+	// Ignored for payments in Telegram Stars.
     NeedPhoneNumber *bool `json:"need_phone_number,omitempty"` 
-    // Pass True if you require the user's email address to complete the order.
-// Ignored for payments in Telegram Stars.
+	// Pass True if you require the user's email address to complete the order.
+	// Ignored for payments in Telegram Stars.
     NeedEmail *bool `json:"need_email,omitempty"` 
-    // Pass True if you require the user's shipping address to complete the order.
-// Ignored for payments in Telegram Stars.
+	// Pass True if you require the user's shipping address to complete the order.
+	// Ignored for payments in Telegram Stars.
     NeedShippingAddress *bool `json:"need_shipping_address,omitempty"` 
-    // Pass True if the user's phone number should be sent to the provider. Ignored
-// for payments in Telegram Stars.
+	// Pass True if the user's phone number should be sent to the provider. Ignored
+	// for payments in Telegram Stars.
     SendPhoneNumberToProvider *bool `json:"send_phone_number_to_provider,omitempty"` 
-    // Pass True if the user's email address should be sent to the provider. Ignored
-// for payments in Telegram Stars.
+	// Pass True if the user's email address should be sent to the provider. Ignored
+	// for payments in Telegram Stars.
     SendEmailToProvider *bool `json:"send_email_to_provider,omitempty"` 
-    // Pass True if the final price depends on the shipping method. Ignored for
-// payments in Telegram Stars.
+	// Pass True if the final price depends on the shipping method. Ignored for
+	// payments in Telegram Stars.
     IsFlexible *bool `json:"is_flexible,omitempty"`
 }
 
@@ -9127,19 +9127,19 @@ func (m CreateInvoiceLinkMethod) Call(ctx context.Context, conn Connection) (str
 //
 // See https://core.telegram.org/bots/api#answershippingquery
 type AnswerShippingQueryMethod struct { 
-    // Unique identifier for the query to be answered
+	// Unique identifier for the query to be answered
     ShippingQueryID string `json:"shipping_query_id"` 
-    // Pass True if delivery to the specified address is possible and False if there
-// are any problems (for example, if delivery to the specified address is not
-// possible)
+	// Pass True if delivery to the specified address is possible and False if there
+	// are any problems (for example, if delivery to the specified address is not
+	// possible)
     Ok bool `json:"ok"` 
-    // Required if ok is True. A JSON-serialized array of available shipping
-// options.
+	// Required if ok is True. A JSON-serialized array of available shipping
+	// options.
     ShippingOptions []ShippingOption `json:"shipping_options,omitempty"` 
-    // Required if ok is False. Error message in human readable form that explains
-// why it is impossible to complete the order (e.g. “Sorry, delivery to your
-// desired address is unavailable”). Telegram will display this message to the
-// user.
+	// Required if ok is False. Error message in human readable form that explains
+	// why it is impossible to complete the order (e.g. “Sorry, delivery to your
+	// desired address is unavailable”). Telegram will display this message to the
+	// user.
     ErrorMessage *string `json:"error_message,omitempty"`
 }
 
@@ -9176,16 +9176,16 @@ func (m AnswerShippingQueryMethod) Call(ctx context.Context, conn Connection) (b
 //
 // See https://core.telegram.org/bots/api#answerprecheckoutquery
 type AnswerPreCheckoutQueryMethod struct { 
-    // Unique identifier for the query to be answered
+	// Unique identifier for the query to be answered
     PreCheckoutQueryID string `json:"pre_checkout_query_id"` 
-    // Specify True if everything is alright (goods are available, etc.) and the bot
-// is ready to proceed with the order. Use False if there are any problems.
+	// Specify True if everything is alright (goods are available, etc.) and the bot
+	// is ready to proceed with the order. Use False if there are any problems.
     Ok bool `json:"ok"` 
-    // Required if ok is False. Error message in human readable form that explains
-// the reason for failure to proceed with the checkout (e.g. "Sorry, somebody
-// just bought the last of our amazing black T-shirts while you were busy
-// filling out your payment details. Please choose a different color or
-// garment!"). Telegram will display this message to the user.
+	// Required if ok is False. Error message in human readable form that explains
+	// the reason for failure to proceed with the checkout (e.g. "Sorry, somebody
+	// just bought the last of our amazing black T-shirts while you were busy
+	// filling out your payment details. Please choose a different color or
+	// garment!"). Telegram will display this message to the user.
     ErrorMessage *string `json:"error_message,omitempty"`
 }
 
@@ -9230,10 +9230,10 @@ func (m GetMyStarBalanceMethod) Call(ctx context.Context, conn Connection) (Star
 //
 // See https://core.telegram.org/bots/api#getstartransactions
 type GetStarTransactionsMethod struct { 
-    // Number of transactions to skip in the response
+	// Number of transactions to skip in the response
     Offset *int64 `json:"offset,omitempty"` 
-    // The maximum number of transactions to be retrieved. Values between 1-100 are
-// accepted. Defaults to 100.
+	// The maximum number of transactions to be retrieved. Values between 1-100 are
+	// accepted. Defaults to 100.
     Limit *int64 `json:"limit,omitempty"`
 }
 
@@ -9260,9 +9260,9 @@ func (m GetStarTransactionsMethod) Call(ctx context.Context, conn Connection) (S
 //
 // See https://core.telegram.org/bots/api#refundstarpayment
 type RefundStarPaymentMethod struct { 
-    // Identifier of the user whose payment will be refunded
+	// Identifier of the user whose payment will be refunded
     UserID int64 `json:"user_id"` 
-    // Telegram payment identifier
+	// Telegram payment identifier
     TelegramPaymentChargeID string `json:"telegram_payment_charge_id"`
 }
 
@@ -9286,14 +9286,14 @@ func (m RefundStarPaymentMethod) Call(ctx context.Context, conn Connection) (boo
 //
 // See https://core.telegram.org/bots/api#edituserstarsubscription
 type EditUserStarSubscriptionMethod struct { 
-    // Identifier of the user whose subscription will be edited
+	// Identifier of the user whose subscription will be edited
     UserID int64 `json:"user_id"` 
-    // Telegram payment identifier for the subscription
+	// Telegram payment identifier for the subscription
     TelegramPaymentChargeID string `json:"telegram_payment_charge_id"` 
-    // Pass True to cancel extension of the user subscription; the subscription must
-// be active up to the end of the current subscription period. Pass False to
-// allow the user to re-enable a subscription that was previously canceled by
-// the bot.
+	// Pass True to cancel extension of the user subscription; the subscription must
+	// be active up to the end of the current subscription period. Pass False to
+	// allow the user to re-enable a subscription that was previously canceled by
+	// the bot.
     IsCanceled bool `json:"is_canceled"`
 }
 
@@ -9328,9 +9328,9 @@ func (m EditUserStarSubscriptionMethod) Call(ctx context.Context, conn Connectio
 //
 // See https://core.telegram.org/bots/api#setpassportdataerrors
 type SetPassportDataErrorsMethod struct { 
-    // User identifier
+	// User identifier
     UserID int64 `json:"user_id"` 
-    // A JSON-serialized array describing the errors
+	// A JSON-serialized array describing the errors
     Errors []PassportElementError `json:"errors"`
 }
 
@@ -9353,35 +9353,35 @@ func (m SetPassportDataErrorsMethod) Call(ctx context.Context, conn Connection) 
 //
 // See https://core.telegram.org/bots/api#sendgame
 type SendGameMethod struct { 
-    // Unique identifier for the target chat or username of the target bot in the
-// format @username. Games can't be sent to channel direct messages chats and
-// channel chats.
+	// Unique identifier for the target chat or username of the target bot in the
+	// format @username. Games can't be sent to channel direct messages chats and
+	// channel chats.
     ChatID ChatID `json:"chat_id"` 
-    // Short name of the game, serves as the unique identifier for the game. Set up
-// your games via @BotFather.
+	// Short name of the game, serves as the unique identifier for the game. Set up
+	// your games via @BotFather.
     GameShortName string `json:"game_short_name"` 
-    // Unique identifier of the business connection on behalf of which the message
-// will be sent
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
     BusinessConnectionID *string `json:"business_connection_id,omitempty"` 
-    // Unique identifier for the target message thread (topic) of a forum; for forum
-// supergroups and private chats of bots with forum topic mode enabled only
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
     MessageThreadID *int64 `json:"message_thread_id,omitempty"` 
-    // Sends the message silently. Users will receive a notification with no sound.
+	// Sends the message silently. Users will receive a notification with no sound.
     DisableNotification *bool `json:"disable_notification,omitempty"` 
-    // Protects the contents of the sent message from forwarding and saving
+	// Protects the contents of the sent message from forwarding and saving
     ProtectContent *bool `json:"protect_content,omitempty"` 
-    // Pass True to allow up to 1000 messages per second, ignoring broadcasting
-// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
-// be withdrawn from the bot's balance.
+	// Pass True to allow up to 1000 messages per second, ignoring broadcasting
+	// limits for a fee of 0.1 Telegram Stars per message. The relevant Stars will
+	// be withdrawn from the bot's balance.
     AllowPaidBroadcast *bool `json:"allow_paid_broadcast,omitempty"` 
-    // Unique identifier of the message effect to be added to the message; for
-// private chats only
+	// Unique identifier of the message effect to be added to the message; for
+	// private chats only
     MessageEffectID *string `json:"message_effect_id,omitempty"` 
-    // Description of the message to reply to
+	// Description of the message to reply to
     ReplyParameters *ReplyParameters `json:"reply_parameters,omitempty"` 
-    // A JSON-serialized object for an inline keyboard. If empty, one 'Play
-// game_title' button will be shown. If not empty, the first button must launch
-// the game.
+	// A JSON-serialized object for an inline keyboard. If empty, one 'Play
+	// game_title' button will be shown. If not empty, the first button must launch
+	// the game.
     ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
@@ -9447,24 +9447,24 @@ func (m SendGameMethod) Call(ctx context.Context, conn Connection) (Message, err
 //
 // See https://core.telegram.org/bots/api#setgamescore
 type SetGameScoreMethod struct { 
-    // User identifier
+	// User identifier
     UserID int64 `json:"user_id"` 
-    // New score, must be non-negative
+	// New score, must be non-negative
     Score int64 `json:"score"` 
-    // Pass True if the high score is allowed to decrease. This can be useful when
-// fixing mistakes or banning cheaters.
+	// Pass True if the high score is allowed to decrease. This can be useful when
+	// fixing mistakes or banning cheaters.
     Force *bool `json:"force,omitempty"` 
-    // Pass True if the game message should not be automatically edited to include
-// the current scoreboard
+	// Pass True if the game message should not be automatically edited to include
+	// the current scoreboard
     DisableEditMessage *bool `json:"disable_edit_message,omitempty"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat.
     ChatID *int64 `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the sent
-// message.
+	// Required if inline_message_id is not specified. Identifier of the sent
+	// message.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"`
 }
 
@@ -9523,16 +9523,16 @@ func (m SetGameScoreMethod) Call(ctx context.Context, conn Connection) (MaybeMes
 //
 // See https://core.telegram.org/bots/api#getgamehighscores
 type GetGameHighScoresMethod struct { 
-    // Target user id
+	// Target user id
     UserID int64 `json:"user_id"` 
-    // Required if inline_message_id is not specified. Unique identifier for the
-// target chat.
+	// Required if inline_message_id is not specified. Unique identifier for the
+	// target chat.
     ChatID *int64 `json:"chat_id,omitempty"` 
-    // Required if inline_message_id is not specified. Identifier of the sent
-// message.
+	// Required if inline_message_id is not specified. Identifier of the sent
+	// message.
     MessageID *int64 `json:"message_id,omitempty"` 
-    // Required if chat_id and message_id are not specified. Identifier of the
-// inline message.
+	// Required if chat_id and message_id are not specified. Identifier of the
+	// inline message.
     InlineMessageID *string `json:"inline_message_id,omitempty"`
 }
 

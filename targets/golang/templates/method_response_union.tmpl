@@ -2,7 +2,7 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "method_response_union"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
-{{- $name := .Name.Value}}
+{{- $name := .Name}}
 {{- $ret := .ReturnType}}
 	var resp json.RawMessage
 	err := conn.Do(ctx, Method{{$name}}, payload, &resp)

@@ -9,33 +9,35 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
-type Stringable interface {
-	Value() (string, error)
-}
-
 type GoDoc struct {
-	inner Stringable
+	content string
+	indent  int
 }
 
-func NewGoDoc(s Stringable) GoDoc {
-	return GoDoc{inner: s}
+func NewGoDoc(content string, indent int) GoDoc {
+	return GoDoc{content: content, indent: indent}
 }
 
-func (d GoDoc) Value() (string, error) {
-	text, err := d.inner.Value()
-	if err != nil {
-		return "", err
-	}
-	paragraphs := strings.Split(text, "\n\n")
+func NewTypeGodoc(content string) GoDoc {
+	return NewGoDoc(content, 0)
+}
+
+func NewFieldGodoc(content string) GoDoc {
+	return NewGoDoc(content, 1)
+}
+
+func (d GoDoc) Value() string {
+	pad := strings.Repeat("\t", d.indent)
+	paragraphs := strings.Split(d.content, "\n\n")
 	var lines []string
 	for i, p := range paragraphs {
 		wrapped := wordwrap.WrapString(p, 77)
 		for line := range strings.SplitSeq(wrapped, "\n") {
-			lines = append(lines, "// "+line)
+			lines = append(lines, pad+"// "+line)
 		}
 		if i < len(paragraphs)-1 {
-			lines = append(lines, "//")
+			lines = append(lines, pad+"//")
 		}
 	}
-	return strings.Join(lines, "\n"), nil
+	return strings.Join(lines, "\n")
 }

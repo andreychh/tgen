@@ -2,14 +2,14 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
-{{- $name := .Name.Value}}
+{{- $name := .Name}}
 {{- $ret := .ReturnType}}
 {{- $shape := $ret.Shape}}
-{{.Doc.Value}}
+{{.Doc}}
 type {{$name}}Method struct {
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-    {{.Doc.Value}}
-    {{.Name.Value}} {{.Type.Value}} {{.Tag.Value}}
+{{.Doc}}
+    {{.Name}} {{.Type.Value}} {{.Tag}}
 {{- end}}
 }
 
@@ -17,7 +17,7 @@ func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.Valu
 	payload := NewMultipartPayload()
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
 {{- if .Optional}}
-	if m.{{.Name.Value}} != nil {
+	if m.{{.Name}} != nil {
 		if err := {{.Part}}.Write(payload, "{{.Key}}"); err != nil {
 			return {{$ret.Zero}}, err
 		}

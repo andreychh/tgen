@@ -21,30 +21,34 @@ func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 }
 
 // Name returns the Go type name for this union.
-func (u DiscriminatedUnion) Name() (Name, error) {
+func (u DiscriminatedUnion) Name() (string, error) {
 	name, err := u.inner.Name()
 	if err != nil {
-		return Name{}, err
+		return "", err
 	}
-	return NewName(name), nil
+	return NewName(name).Value(), nil
 }
 
 // Doc returns the godoc comment for this union.
-func (u DiscriminatedUnion) Doc() (GoDoc, error) {
+func (u DiscriminatedUnion) Doc() (string, error) {
 	ref, err := u.inner.Reference()
 	if err != nil {
-		return GoDoc{}, err
+		return "", err
 	}
-	return NewGoDoc(NewDefinitionDoc(ref, u.inner.Description())), nil
+	doc, err := NewDefinitionDoc(ref, u.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewTypeGodoc(doc).Value(), nil
 }
 
 // DiscriminatorKey returns the JSON key used to discriminate variants.
-func (u DiscriminatedUnion) DiscriminatorKey() (Key, error) {
+func (u DiscriminatedUnion) DiscriminatorKey() (string, error) {
 	key, err := u.inner.DiscriminatorKey()
 	if err != nil {
-		return Key{}, err
+		return "", err
 	}
-	return NewKey(key), nil
+	return string(key), nil
 }
 
 // Variants returns all variants of this union.

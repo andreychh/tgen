@@ -52,8 +52,8 @@ func (d DocString) multiline(desc string) string {
 	paragraphs := strings.Split(desc, "\n\n")
 	var out strings.Builder
 	out.WriteString(docQuotes + "\n")
-	for i, para := range paragraphs {
-		wrapped := wordwrap.WrapString(para, docLimit)
+	for i, par := range paragraphs {
+		wrapped := wordwrap.WrapString(par, docLimit)
 		for line := range strings.SplitSeq(wrapped, "\n") {
 			out.WriteString(pad + line + "\n")
 		}

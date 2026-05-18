@@ -18,9 +18,9 @@ func NewTag(k model.Key, o model.Optionality) Tag {
 	return Tag{key: k, opt: o}
 }
 
-func (t Tag) Value() (string, error) {
-	if bool(t.opt) {
-		return fmt.Sprintf("`json:\"%s,omitempty\"`", string(t.key)), nil
+func (t Tag) Value() string {
+	if t.opt {
+		return fmt.Sprintf("`json:\"%s,omitempty\"`", t.key)
 	}
-	return fmt.Sprintf("`json:%q`", string(t.key)), nil
+	return fmt.Sprintf("`json:%q`", t.key)
 }

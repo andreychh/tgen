@@ -6,7 +6,6 @@ package golang
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/ir"
 )
 
@@ -18,12 +17,12 @@ func NewField(f ir.Field) Field {
 	return Field{inner: f}
 }
 
-func (f Field) Name() (Name, error) {
+func (f Field) Name() (string, error) {
 	key, err := f.inner.Key()
 	if err != nil {
-		return Name{}, err
+		return "", err
 	}
-	return NewName(model.Name(key)), nil
+	return NewNameFromKey(key).Value(), nil
 }
 
 func (f Field) Type() (Type, error) {
@@ -54,20 +53,24 @@ func (f Field) Key() (string, error) {
 	return string(key), nil
 }
 
-func (f Field) Tag() (Tag, error) {
+func (f Field) Tag() (string, error) {
 	key, err := f.inner.Key()
 	if err != nil {
-		return Tag{}, err
+		return "", err
 	}
 	opt, err := f.inner.Optionality()
 	if err != nil {
-		return Tag{}, err
+		return "", err
 	}
-	return NewTag(key, opt), nil
+	return NewTag(key, opt).Value(), nil
 }
 
-func (f Field) Doc() GoDoc {
-	return NewGoDoc(f.inner.Description())
+func (f Field) Doc() (string, error) {
+	desc, err := f.inner.Description().Value()
+	if err != nil {
+		return "", err
+	}
+	return NewFieldGodoc(desc).Value(), nil
 }
 
 func (f Field) IsInputFile() (bool, error) {
@@ -83,11 +86,7 @@ func (f Field) Part() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	n, err := f.Name()
-	if err != nil {
-		return "", err
-	}
-	name, err := n.Value()
+	name, err := f.Name()
 	if err != nil {
 		return "", err
 	}

@@ -26,14 +26,14 @@ func NewName(n model.Name) Name {
 	return Name{inner: n}
 }
 
-func NewStringName(s string) Name {
-	return NewName(model.Name(s))
+func NewNameFromKey(k model.Key) Name {
+	return NewName(model.Name(k))
 }
 
-func (n Name) Value() (string, error) {
+func (n Name) Value() string {
 	camel := strcase.ToCamel(string(n.inner))
 	for wrong, right := range acronyms {
 		camel = strings.ReplaceAll(camel, wrong, right)
 	}
-	return camel, nil
+	return camel
 }
