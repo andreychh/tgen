@@ -9,7 +9,7 @@ from __future__ import annotations
 from pydantic import BaseModel, TypeAdapter
 
 from .client import Connection
-from .method import Method
+from ..method import Method
 from ..types import *
 from ..payload import * 
 

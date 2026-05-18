@@ -5,8 +5,8 @@
 {{- template "header" .}}
 
 import json
-from io import IOBase
-from typing import Any, Protocol
+from collections.abc import Sequence
+from typing import IO, Any, Protocol
 
 import httpx
 from pydantic import TypeAdapter
@@ -15,13 +15,13 @@ from pydantic import TypeAdapter
 class MultipartPayload:
     def __init__(self) -> None:
         self._data: dict[str, str] = {}
-        self._files: dict[str, tuple[str, IOBase]] = {}
+        self._files: dict[str, tuple[str, IO[bytes]]] = {}
         self._counter: int = 0
 
     def text(self, key: str, value: str) -> None:
         self._data[key] = value
 
-    def file(self, key: str, name: str, reader: IOBase) -> None:
+    def file(self, key: str, name: str, reader: IO[bytes]) -> None:
         self._files[key] = (name, reader)
 
     def attach_key(self) -> str:
@@ -84,7 +84,7 @@ class FormJSON(Protocol):
 
 
 class ListFormJsonPart:
-    def __init__(self, value: list[FormJSON]) -> None:
+    def __init__(self, value: Sequence[FormJSON]) -> None:
         self._value = value
 
     def write(self, payload: MultipartPayload, key: str) -> None:
