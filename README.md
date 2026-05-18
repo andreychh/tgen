@@ -8,6 +8,7 @@ SPDX-License-Identifier: MIT
 [![REUSE status](https://api.reuse.software/badge/github.com/andreychh/tgen)](https://api.reuse.software/info/github.com/andreychh/tgen)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/andreychh/tgen)](https://github.com/andreychh/tgen/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/andreychh/tgen)](https://goreportcard.com/report/github.com/andreychh/tgen)
+[![Telegram Bot API v10.0](https://img.shields.io/static/v1?label=Telegram%20Bot%20API&color=2AABEE&logo=telegram&message=v10.0)](https://core.telegram.org/bots/api#may-8-2026)
 <!--
 [![codecov](https://codecov.io/gh/andreychh/tgen/graph/badge.svg?token=CRAB598PR3)](https://codecov.io/gh/andreychh/tgen)
 -->
@@ -185,35 +186,38 @@ func main() {
 
 #### Testing
 
-`FakeConnection` provides canned responses for unit tests: use `api.Ok(v)` for a successful result
-and `api.Err(err)` to simulate a failure.
+`FakeConnection` lets you test bot logic without a network connection. `NewSeqCallQueue` scripts
+a sequence of canned responses — each call to `Do` consumes the next one in order and panics if
+the method doesn't match. After the test, `queue.Calls()` returns what was actually sent.
 
 ```go
-func TestSendMessage(t *testing.T) {
-	conn := api.NewFakeConnection(api.Responses{
-		api.MethodSendMessage: api.Ok(api.Message{MessageID: 42}),
-	})
-
-	msg, err := api.SendMessageMethod{
-		ChatID: api.ID(-1001122334455),
-		Text:   "Hello from tgen!",
-	}.Call(context.Background(), conn)
-
-	assert.NoError(t, err)
-	assert.Equal(t, int64(42), msg.MessageID, "SendMessage must return the sent message")
+// BroadcastMessage sends text to every chat, returning the IDs of chats where the bot is banned.
+func BroadcastMessage(ctx context.Context, conn api.Connection, chats []api.ID, text string) []api.ID {
+	var banned []api.ID
+	for _, chat := range chats {
+		_, err := api.SendMessageMethod{ChatID: chat, Text: text}.Call(ctx, conn)
+		if apiErr, ok := errors.AsType[*api.Error](err); ok && apiErr.Code == 403 {
+			banned = append(banned, chat)
+		}
+	}
+	return banned
 }
 
-func TestSendMessage_Failure(t *testing.T) {
-	conn := api.NewFakeConnection(api.Responses{
-		api.MethodSendMessage: api.Err(errors.New("unauthorized")),
-	})
+func TestBroadcastMessage_SkipsBannedChats(t *testing.T) {
+	queue := api.NewSeqCallQueue(
+		api.NewCall(api.MethodSendMessage, api.Ok(api.Message{MessageID: 1})),
+		api.NewCall(
+			api.MethodSendMessage,
+			api.Err(&api.Error{Code: 403, Description: "bot was kicked from the group chat"}), 
+        ),
+		api.NewCall(api.MethodSendMessage, api.Ok(api.Message{MessageID: 3})),
+	)
+	conn := api.NewFakeConnection(queue)
 
-	_, err := api.SendMessageMethod{
-		ChatID: api.ID(-1001122334455),
-		Text:   "Hello from tgen!",
-	}.Call(context.Background(), conn)
+	banned := BroadcastMessage(context.Background(), conn, []api.ID{100, 200, 300}, "Hello!")
 
-	assert.ErrorContains(t, err, "unauthorized")
+	assert.Equal(t, []api.ID{200}, banned, "BroadcastMessage must collect banned chat IDs")
+	assert.Len(t, queue.Calls(), 3, "BroadcastMessage must attempt all chats")
 }
 ```
 
@@ -325,33 +329,35 @@ async def main():
 
 #### Testing
 
-`FakeConnection` provides canned responses for unit tests. Pass a value directly for a successful
-result or an exception instance to simulate a failure.
+`FakeConnection` lets you test bot logic without a network connection. `SeqCallQueue` scripts
+a sequence of canned responses — each call to `do` consumes the next one in order and raises
+if the method doesn't match. After the test, `queue.calls()` returns what was actually sent.
 
 ```python
-def test_send_message():
-    conn = FakeConnection({
-        Method.SendMessage: Message(message_id=42),
-    })
+def broadcast_message(conn: Connection, chats: list[ID], text: str) -> list[ID]:
+    """Send text to every chat, returning IDs of chats where the bot is banned."""
+    banned = []
+    for chat in chats:
+        try:
+            SendMessageMethod(chat_id=chat, text=text).call(conn)
+        except Error as e:
+            if e.code == 403:
+                banned.append(chat)
+    return banned
 
-    msg = SendMessageMethod(
-        chat_id=ID(-1001122334455),
-        text="Hello from tgen!",
-    ).call(conn)
 
-    assert msg.message_id == 42, "SendMessage must return the sent message"
+def test_broadcast_skips_banned_chats():
+    queue = SeqCallQueue(
+        Call(Method.SendMessage, Message(message_id=1)),
+        Call(Method.SendMessage, Error(403, "bot was kicked from the group chat")),
+        Call(Method.SendMessage, Message(message_id=3)),
+    )
+    conn = FakeConnection(queue)
 
+    banned = broadcast_message(conn, [ID(100), ID(200), ID(300)], "Hello!")
 
-def test_send_message_failure():
-    conn = FakeConnection({
-        Method.SendMessage: Error(401, "Unauthorized"),
-    })
-
-    with pytest.raises(Error, match="Unauthorized"):
-        SendMessageMethod(
-            chat_id=ID(-1001122334455),
-            text="Hello from tgen!",
-        ).call(conn)
+    assert banned == [ID(200)], "broadcast_message must collect banned chat IDs"
+    assert len(queue.calls()) == 3, "broadcast_message must attempt all chats"
 ```
 
 ## Contributing

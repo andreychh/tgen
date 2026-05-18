@@ -123,9 +123,20 @@ func Err(e error) Response { return errResponse{err: e} }
 
 // Call pairs a Method with its canned Response.
 type Call struct {
-	Method   Method
-	Response Response
+	method   Method
+	response Response
 }
+
+// NewCall constructs a Call from method and response.
+func NewCall(method Method, response Response) Call {
+	return Call{method: method, response: response}
+}
+
+// Method returns the API method.
+func (c Call) Method() Method { return c.method }
+
+// Response returns the canned response.
+func (c Call) Response() Response { return c.response }
 
 // CallQueue yields canned calls for FakeConnection.
 type CallQueue interface {
@@ -178,10 +189,10 @@ func (c FakeConnection) Do(_ context.Context, method Method, _ Payload, response
 	if err != nil {
 		panic(fmt.Sprintf("FakeConnection: call to %q: %v", method, err))
 	}
-	if call.Method != method {
-		panic(fmt.Sprintf("FakeConnection: expected %q, got %q", call.Method, method))
+	if call.Method() != method {
+		panic(fmt.Sprintf("FakeConnection: expected %q, got %q", call.Method(), method))
 	}
-	switch resp := call.Response.(type) {
+	switch resp := call.Response().(type) {
 	case errResponse:
 		return resp.err
 	case okResponse:
@@ -194,7 +205,7 @@ func (c FakeConnection) Do(_ context.Context, method Method, _ Payload, response
 		}
 		return nil
 	default:
-		panic(fmt.Sprintf("FakeConnection: unknown response type %T for %q", call.Response, method))
+		panic(fmt.Sprintf("FakeConnection: unknown response type %T for %q", call.Response(), method))
 	}
 }
 
