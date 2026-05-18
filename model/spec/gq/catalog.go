@@ -37,7 +37,8 @@ func (c Catalog) Lookup(name string) (types.Kind, bool) {
 		return types.KindObject, true
 	case DefinitionKindDiscriminatedUnion,
 		DefinitionKindStructuredUnion,
-		DefinitionKindFallbackUnion:
+		DefinitionKindFallbackUnion,
+		DefinitionKindGroupedUnion:
 		return types.KindUnion, true
 	case DefinitionKindMethod,
 		DefinitionKindUnknown:

@@ -9,7 +9,6 @@ type {{$name}} interface{ Part; FormJSON; sealed{{$name}}() }
 {{range .Variants | discriminated_variants}}
 func (v {{.Name.Value}}) sealed{{$name}}() {}
 {{- end}}
-{{- if ne $name "InlineQueryResult"}}
 
 func unmarshal{{$name}}(data []byte) ({{$name}}, error) {
 	var disc struct {
@@ -32,6 +31,4 @@ func unmarshal{{$name}}(data []byte) ({{$name}}, error) {
 		return nil, fmt.Errorf("unknown {{$name}}: %q", disc.Key)
 	}
 }
-{{- end}}
-
 {{- end}}

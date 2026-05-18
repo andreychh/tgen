@@ -21,6 +21,7 @@ const (
 	DefinitionKindStructuredUnion     DefinitionKind = "structured_union"
 	DefinitionKindDiscriminatedUnion  DefinitionKind = "discriminated_union"
 	DefinitionKindFallbackUnion       DefinitionKind = "fallback_union"
+	DefinitionKindGroupedUnion        DefinitionKind = "grouped_union"
 )
 
 // Header classifies an h4 section within a Telegram Bot API document. root is
@@ -90,6 +91,8 @@ func (h Header) objectKind(body gq.Selection) DefinitionKind {
 
 func (h Header) unionKind(body gq.Selection) DefinitionKind {
 	all, discriminated := 0, 0
+	seen := make(map[string]struct{})
+	unique := true
 	for li := range body.Find("ul li").All() {
 		variant := h.root.
 			Find("div#dev_page_content h4").
@@ -110,13 +113,22 @@ func (h Header) unionKind(body gq.Selection) DefinitionKind {
 			IsEmpty()
 		if hasDiscriminator {
 			discriminated++
+			val, err := NewDiscriminatedObject(h.root, variant).Fields().Discriminator().Value()
+			if err == nil {
+				if _, ok := seen[string(val)]; ok {
+					unique = false
+				}
+				seen[string(val)] = struct{}{}
+			}
 		}
 	}
 	switch {
 	case all == 0 || discriminated == 0:
 		return DefinitionKindStructuredUnion
-	case discriminated == all:
+	case discriminated == all && unique:
 		return DefinitionKindDiscriminatedUnion
+	case discriminated == all:
+		return DefinitionKindGroupedUnion
 	default:
 		return DefinitionKindFallbackUnion
 	}
