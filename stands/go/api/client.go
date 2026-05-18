@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -105,58 +106,96 @@ func (e *Error) Error() string {
 
 // Response represents the outcome of a FakeConnection call — either a value or
 // an error.
-type Response struct {
-	value any
-	err   error
-}
+//sumtype:decl
+type Response interface{ sealedResponse() }
+
+type okResponse struct{ value any }
+type errResponse struct{ err error }
+
+func (okResponse) sealedResponse()  {}
+func (errResponse) sealedResponse() {}
 
 // Ok creates a Response that returns v as the decoded result.
-func Ok(v any) Response {
-	return Response{value: v, err: nil}
-}
+func Ok(v any) Response { return okResponse{value: v} }
 
 // Err creates a Response that returns e as the method error.
-func Err(e error) Response {
-	return Response{value: nil, err: e}
+func Err(e error) Response { return errResponse{err: e} }
+
+// Call pairs a Method with its canned Response.
+type Call struct {
+	Method   Method
+	Response Response
 }
 
-// Responses maps Method values to canned outcomes for FakeConnection.
-type Responses map[Method]Response
+// CallQueue yields canned calls for FakeConnection.
+type CallQueue interface {
+	Next() (Call, error)
+}
+
+// SeqCallQueue implements CallQueue as a strict sequential list of Calls.
+type SeqCallQueue struct {
+	calls []Call
+	index int
+}
+
+// NewSeqCallQueue creates a SeqCallQueue from the given calls.
+func NewSeqCallQueue(calls ...Call) *SeqCallQueue {
+	return &SeqCallQueue{calls: calls}
+}
+
+// Next returns the next Call in the sequence, or an error if the queue is exhausted.
+func (q *SeqCallQueue) Next() (Call, error) {
+	if q.index >= len(q.calls) {
+		return Call{}, errors.New("queue exhausted")
+	}
+	call := q.calls[q.index]
+	q.index++
+	return call, nil
+}
+
+// Calls returns the calls consumed so far.
+func (q *SeqCallQueue) Calls() []Call {
+	return q.calls[:q.index]
+}
 
 // FakeConnection implements Connection with canned responses for use in tests.
 // Misconfiguration causes a panic rather than an error to prevent silent test
 // failures.
 type FakeConnection struct {
-	responses Responses
+	queue CallQueue
 }
 
-// NewFakeConnection creates a FakeConnection that returns the given canned
-// responses.
-func NewFakeConnection(r Responses) FakeConnection {
-	return FakeConnection{responses: r}
+// NewFakeConnection creates a FakeConnection that draws responses from queue.
+func NewFakeConnection(queue CallQueue) FakeConnection {
+	return FakeConnection{queue: queue}
 }
 
-// Do returns the canned error for method if the Response was created with Err,
-// or populates response with the canned value. It panics if method was not
-// registered in Responses or if the canned value cannot be decoded into
-// response.
+// Do draws the next Call from the queue and returns its canned response. It
+// panics if the queue is exhausted, the next call's Method does not match
+// method, or the canned value cannot be decoded into response.
 func (c FakeConnection) Do(_ context.Context, method Method, _ Payload, response any) error {
-	resp, ok := c.responses[method]
-	if !ok {
-		panic(fmt.Sprintf("FakeConnection: unexpected method %q", method))
+	call, err := c.queue.Next()
+	if err != nil {
+		panic(fmt.Sprintf("FakeConnection: call to %q: %v", method, err))
 	}
-	if resp.err != nil {
+	if call.Method != method {
+		panic(fmt.Sprintf("FakeConnection: expected %q, got %q", call.Method, method))
+	}
+	switch resp := call.Response.(type) {
+	case errResponse:
 		return resp.err
+	case okResponse:
+		data, err := json.Marshal(resp.value)
+		if err != nil {
+			panic(fmt.Sprintf("FakeConnection: marshaling response for %q: %v", method, err))
+		}
+		if err = json.Unmarshal(data, response); err != nil {
+			panic(fmt.Sprintf("FakeConnection: unmarshaling response for %q: %v", method, err))
+		}
+		return nil
+	default:
+		panic(fmt.Sprintf("FakeConnection: unknown response type %T for %q", call.Response, method))
 	}
-	data, err := json.Marshal(resp.value)
-	if err != nil {
-		panic(fmt.Sprintf("FakeConnection: marshaling response for %q: %v", method, err))
-	}
-	err = json.Unmarshal(data, response)
-	if err != nil {
-		panic(fmt.Sprintf("FakeConnection: unmarshaling response for %q: %v", method, err))
-	}
-	return nil
 }
 
 // Payload produces an HTTP request from accumulated method fields.
