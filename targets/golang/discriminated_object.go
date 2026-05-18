@@ -4,15 +4,15 @@
 package golang
 
 import (
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type DiscriminatedObject struct {
-	inner spec.DiscriminatedObject
+	inner ir.DiscriminatedObject
 }
 
-func NewDiscriminatedObject(v spec.DiscriminatedObject) DiscriminatedObject {
+func NewDiscriminatedObject(v ir.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: v}
 }
 
@@ -37,16 +37,7 @@ func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {
 }
 
 func (o DiscriminatedObject) HasInputFile() (bool, error) {
-	for f := range o.Fields().Free() {
-		ok, err := f.IsInputFile()
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-	return false, nil
+	return o.inner.HasInputFile()
 }
 
 func (o DiscriminatedObject) Unions() Unions {

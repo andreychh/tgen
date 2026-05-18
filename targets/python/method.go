@@ -6,15 +6,15 @@ package python
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Method struct {
-	inner spec.Method
+	inner ir.Method
 }
 
-func NewMethod(o spec.Method) Method {
+func NewMethod(o ir.Method) Method {
 	return Method{inner: o}
 }
 
@@ -35,11 +35,11 @@ func (m Method) Doc() (DocString, error) {
 }
 
 func (m Method) ReturnType() (Type, error) {
-	expr, err := m.inner.ReturnType()
+	typ, err := m.inner.ReturnType()
 	if err != nil {
 		return Type{}, err
 	}
-	return NewType(expr), nil
+	return NewType(typ), nil
 }
 
 func (m Method) Fields() iter.Seq[Field] {

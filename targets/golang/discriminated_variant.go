@@ -3,16 +3,16 @@
 
 package golang
 
-import "github.com/andreychh/tgen/model/spec"
+import "github.com/andreychh/tgen/model/ir"
 
 // DiscriminatedVariant represents a single variant of a discriminated
 // union for Go code generation.
 type DiscriminatedVariant struct {
-	inner spec.DiscriminatedObject
+	inner ir.DiscriminatedObject
 }
 
 // NewDiscriminatedVariant constructs a DiscriminatedVariant from a parsed variant object.
-func NewDiscriminatedVariant(v spec.DiscriminatedObject) DiscriminatedVariant {
+func NewDiscriminatedVariant(v ir.DiscriminatedObject) DiscriminatedVariant {
 	return DiscriminatedVariant{inner: v}
 }
 

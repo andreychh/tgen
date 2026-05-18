@@ -10,7 +10,7 @@ import (
 	"text/template"
 
 	"github.com/andreychh/tgen/meta"
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/output"
 	"github.com/andreychh/tgen/targets"
 )
@@ -24,9 +24,9 @@ type Pass struct {
 }
 
 // NewPass creates a Pass for the given specification and snapshot.
-func NewPass(spec spec.Specification, snapshot meta.Snapshot) Pass {
+func NewPass(s ir.Specification, snapshot meta.Snapshot) Pass {
 	return Pass{context: NewGenerationContext(
-		NewSpecification(spec),
+		NewSpecification(s),
 		targets.NewSnapshot(snapshot),
 	)}
 }

@@ -3,13 +3,13 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/spec"
+import "github.com/andreychh/tgen/model/ir"
 
 type DiscriminatedObject struct {
-	inner spec.DiscriminatedObject
+	inner ir.DiscriminatedObject
 }
 
-func NewDiscriminatedObject(v spec.DiscriminatedObject) DiscriminatedObject {
+func NewDiscriminatedObject(v ir.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: v}
 }
 
@@ -34,14 +34,5 @@ func (o DiscriminatedObject) Fields() DiscriminatedObjectFields {
 }
 
 func (o DiscriminatedObject) HasInputFile() (bool, error) {
-	for f := range o.Fields().Free() {
-		ok, err := f.IsInputFile()
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-	return false, nil
+	return o.inner.HasInputFile()
 }

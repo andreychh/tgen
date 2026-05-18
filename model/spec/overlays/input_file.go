@@ -10,6 +10,9 @@ import (
 	"github.com/andreychh/tgen/model/types"
 )
 
+// InputFileName is the synthetic union name produced by the InputFile overlay.
+const InputFileName = "InputFile"
+
 // InputFile represents an Overlay that replaces InputFile-or-String and
 // String-with-sending-files-link field types with InputFile.
 type InputFile struct{}
@@ -23,14 +26,14 @@ func (o InputFile) Apply(field spec.Field) spec.Field {
 	if err != nil {
 		return field
 	}
-	if expr.Equals(types.NewNamed("InputFile", types.KindObject)) ||
+	if expr.Equals(types.NewNamed(InputFileName, types.KindObject)) ||
 		expr.Equals(types.NewUnion(
-			types.NewNamed("InputFile", types.KindObject),
+			types.NewNamed(InputFileName, types.KindObject),
 			types.NewNamed("String", types.KindPrimitive),
 		)) ||
 		(expr.Equals(types.NewNamed("String", types.KindPrimitive)) &&
 			slices.Contains(links, "#sending-files")) {
-		return NewModified(field, types.NewNamed("InputFile", types.KindUnion))
+		return NewModified(field, types.NewNamed(InputFileName, types.KindUnion))
 	}
 	return field
 }

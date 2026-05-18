@@ -6,17 +6,17 @@ package golang
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
-// DiscriminatedUnion represents a discriminated union from the spec spec for Go code generation.
+// DiscriminatedUnion represents a discriminated union for Go code generation.
 type DiscriminatedUnion struct {
-	inner spec.DiscriminatedUnion
+	inner ir.DiscriminatedUnion
 }
 
-// NewDiscriminatedUnion constructs an DiscriminatedUnion from an spec discriminated union.
-func NewDiscriminatedUnion(u spec.DiscriminatedUnion) DiscriminatedUnion {
+// NewDiscriminatedUnion constructs a DiscriminatedUnion from a discriminated union.
+func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 	return DiscriminatedUnion{inner: u}
 }
 

@@ -7,14 +7,14 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 )
 
 type Field struct {
-	inner spec.Field
+	inner ir.Field
 }
 
-func NewField(f spec.Field) Field {
+func NewField(f ir.Field) Field {
 	return Field{inner: f}
 }
 
@@ -27,7 +27,7 @@ func (f Field) Name() (Name, error) {
 }
 
 func (f Field) Type() (Type, error) {
-	expr, err := f.inner.Type()
+	typ, err := f.inner.Type()
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (f Field) Type() (Type, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewOptionalType(NewExprType(expr), opt), nil
+	return NewOptionalType(NewExprType(typ), opt), nil
 }
 
 func (f Field) Optional() (bool, error) {
@@ -71,15 +71,7 @@ func (f Field) Doc() GoDoc {
 }
 
 func (f Field) IsInputFile() (bool, error) {
-	typ, err := f.Type()
-	if err != nil {
-		return false, err
-	}
-	name, err := typ.Name()
-	if err != nil {
-		return false, err
-	}
-	return name == "InputFile", nil
+	return f.inner.IsInputFile()
 }
 
 func (f Field) Part() (string, error) {

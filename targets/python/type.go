@@ -3,11 +3,7 @@
 
 package python
 
-import (
-	"fmt"
-
-	"github.com/andreychh/tgen/model/types"
-)
+import "github.com/andreychh/tgen/model/ir"
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var parts = map[string]string{
@@ -30,71 +26,53 @@ var primitives = map[string]string{
 }
 
 type Type struct {
-	inner types.Expression
+	inner ir.Type
 }
 
-func NewType(t types.Expression) Type {
+func NewType(t ir.Type) Type {
 	return Type{inner: t}
 }
 
 func (t Type) Value() (string, error) {
-	return t.render(t.inner)
-}
-
-func (t Type) Part() (string, error) {
-	return t.part(t.inner)
-}
-
-func (t Type) part(expr types.Expression) (string, error) {
-	switch expr := expr.(type) {
-	case types.Named:
-		if p, ok := parts[expr.Name()]; ok {
-			return p + "(%s)", nil
-		}
-		return "%s", nil
-	case types.Array:
-		if n, ok := expr.Element().(types.Named); ok {
-			if _, ok := parts[n.Name()]; !ok {
-				return "ListFormJsonPart(%s)", nil
-			}
-		}
-		return "ListPart(%s)", nil
-	case types.Union:
-		return "", fmt.Errorf("unsupported union %q", expr)
+	name, err := t.inner.Name()
+	if err != nil {
+		return "", err
 	}
-	return "", fmt.Errorf("unknown type expression %q", expr)
-}
-
-func (t Type) name() (string, error) {
-	expr := t.inner
-	for {
-		switch e := expr.(type) {
-		case types.Named:
-			return e.Name(), nil
-		case types.Array:
-			expr = e.Element()
-		default:
-			return "", fmt.Errorf("unknown type expression %q", expr)
-		}
+	dim, err := t.inner.Dimensionality()
+	if err != nil {
+		return "", err
 	}
-}
-
-func (t Type) render(expr types.Expression) (string, error) {
-	switch expr := expr.(type) {
-	case types.Named:
-		p, ok := primitives[expr.Name()]
-		if !ok {
-			return NewStringClassName(expr.Name()).Value()
-		}
-		return p, nil
-	case types.Array:
-		elem, err := t.render(expr.Element())
+	rendered, ok := primitives[name]
+	if !ok {
+		rendered, err = NewStringClassName(name).Value()
 		if err != nil {
 			return "", err
 		}
-		return "list[" + elem + "]", nil
-	case types.Union:
-		return "", fmt.Errorf("unsupported union %q", expr)
 	}
-	return "", fmt.Errorf("unknown type expression %q", expr)
+	for range dim {
+		rendered = "list[" + rendered + "]"
+	}
+	return rendered, nil
+}
+
+func (t Type) Part() (string, error) {
+	name, err := t.inner.Name()
+	if err != nil {
+		return "", err
+	}
+	dim, err := t.inner.Dimensionality()
+	if err != nil {
+		return "", err
+	}
+	part, isPrim := parts[name]
+	if dim == 0 {
+		if isPrim {
+			return part + "(%s)", nil
+		}
+		return "%s", nil
+	}
+	if dim == 1 && !isPrim {
+		return "ListFormJsonPart(%s)", nil
+	}
+	return "ListPart(%s)", nil
 }

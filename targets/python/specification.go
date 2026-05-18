@@ -6,15 +6,15 @@ package python
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Specification struct {
-	inner spec.Specification
+	inner ir.Specification
 }
 
-func NewSpecification(s spec.Specification) Specification {
+func NewSpecification(s ir.Specification) Specification {
 	return Specification{inner: s}
 }
 

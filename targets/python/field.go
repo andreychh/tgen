@@ -7,14 +7,14 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 )
 
 type Field struct {
-	inner spec.Field
+	inner ir.Field
 }
 
-func NewField(f spec.Field) Field {
+func NewField(f ir.Field) Field {
 	return Field{inner: f}
 }
 
@@ -27,7 +27,7 @@ func (f Field) Name() (FieldName, error) {
 }
 
 func (f Field) Annotation() (Annotation, error) {
-	expr, err := f.inner.Type()
+	typ, err := f.inner.Type()
 	if err != nil {
 		return Annotation{}, err
 	}
@@ -35,7 +35,7 @@ func (f Field) Annotation() (Annotation, error) {
 	if err != nil {
 		return Annotation{}, err
 	}
-	return NewAnnotation(expr, opt), nil
+	return NewAnnotation(typ, opt), nil
 }
 
 func (f Field) Doc() DocString {
@@ -59,23 +59,15 @@ func (f Field) Key() (string, error) {
 }
 
 func (f Field) IsInputFile() (bool, error) {
-	expr, err := f.inner.Type()
-	if err != nil {
-		return false, err
-	}
-	name, err := NewType(expr).name()
-	if err != nil {
-		return false, err
-	}
-	return name == "InputFile", nil
+	return f.inner.IsInputFile()
 }
 
 func (f Field) Part() (string, error) {
-	expr, err := f.inner.Type()
+	typ, err := f.inner.Type()
 	if err != nil {
 		return "", err
 	}
-	part, err := NewType(expr).Part()
+	part, err := NewType(typ).Part()
 	if err != nil {
 		return "", err
 	}

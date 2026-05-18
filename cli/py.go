@@ -10,6 +10,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/meta"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/model/spec/gq"
 	"github.com/andreychh/tgen/model/spec/overlays"
 	"github.com/andreychh/tgen/output"
@@ -57,8 +58,10 @@ func pythonAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
 		return fmt.Errorf("parsing HTML from %q: %w", location, err)
 	}
 	artifacts, err := python.NewPass(
-		overlays.NewSpecification(
-			gq.NewSpecificationFromDocument(doc),
+		ir.NewSpecification(
+			overlays.NewSpecification(
+				gq.NewSpecificationFromDocument(doc),
+			),
 		),
 		snapshot,
 	).Artifacts()

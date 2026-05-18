@@ -6,15 +6,15 @@ package python
 import (
 	"iter"
 
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
 type Object struct {
-	inner spec.Object
+	inner ir.Object
 }
 
-func NewObject(o spec.Object) Object {
+func NewObject(o ir.Object) Object {
 	return Object{inner: o}
 }
 
@@ -39,14 +39,5 @@ func (o Object) Fields() iter.Seq[Field] {
 }
 
 func (o Object) HasInputFile() (bool, error) {
-	for f := range o.Fields() {
-		ok, err := f.IsInputFile()
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-	return false, nil
+	return o.inner.HasInputFile()
 }

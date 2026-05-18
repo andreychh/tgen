@@ -4,14 +4,14 @@
 package python
 
 import (
-	"github.com/andreychh/tgen/model/spec"
+	"github.com/andreychh/tgen/model/ir"
 )
 
 type DiscriminatedUnion struct {
-	inner spec.DiscriminatedUnion
+	inner ir.DiscriminatedUnion
 }
 
-func NewDiscriminatedUnion(u spec.DiscriminatedUnion) DiscriminatedUnion {
+func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 	return DiscriminatedUnion{inner: u}
 }
 

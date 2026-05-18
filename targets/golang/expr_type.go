@@ -4,8 +4,9 @@
 package golang
 
 import (
-	"fmt"
+	"strings"
 
+	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/model/types"
 )
 
@@ -51,69 +52,35 @@ var parts = map[string]string{
 const zeroNil = "nil"
 
 type ExprType struct {
-	typ types.Expression
+	typ ir.Type
 }
 
-func NewExprType(t types.Expression) ExprType {
-	return ExprType{typ: t}
+func NewExprType(typ ir.Type) ExprType {
+	return ExprType{typ: typ}
 }
 
 func (t ExprType) IsPrimitive() (bool, error) {
-	expr := t.typ
-	for {
-		switch e := expr.(type) {
-		case types.Named:
-			return e.Kind() == types.KindPrimitive, nil
-		case types.Array:
-			expr = e.Element()
-		default:
-			return false, fmt.Errorf("unexpected type expression %q", expr)
-		}
+	kind, err := t.typ.Kind()
+	if err != nil {
+		return false, err
 	}
+	return kind == types.KindPrimitive, nil
 }
 
 func (t ExprType) IsUnion() (bool, error) {
-	expr := t.typ
-	for {
-		switch e := expr.(type) {
-		case types.Named:
-			return e.Kind() == types.KindUnion, nil
-		case types.Array:
-			expr = e.Element()
-		default:
-			return false, fmt.Errorf("unexpected type expression %q", expr)
-		}
+	kind, err := t.typ.Kind()
+	if err != nil {
+		return false, err
 	}
+	return kind == types.KindUnion, nil
 }
 
 func (t ExprType) Depth() (int, error) {
-	expr := t.typ
-	depth := 0
-	for {
-		switch e := expr.(type) {
-		case types.Named:
-			return depth, nil
-		case types.Array:
-			expr = e.Element()
-			depth += 1
-		default:
-			return 0, fmt.Errorf("unexpected type expression %q", expr)
-		}
-	}
+	return t.typ.Dimensionality()
 }
 
 func (t ExprType) Name() (string, error) {
-	expr := t.typ
-	for {
-		switch e := expr.(type) {
-		case types.Named:
-			return e.Name(), nil
-		case types.Array:
-			expr = e.Element()
-		default:
-			return "", fmt.Errorf("unexpected type expression %q", expr)
-		}
-	}
+	return t.typ.Name()
 }
 
 func (t ExprType) Part() (string, error) {
@@ -138,7 +105,22 @@ func (t ExprType) Part() (string, error) {
 }
 
 func (t ExprType) Value() (string, error) {
-	return t.render(t.typ)
+	name, err := t.typ.Name()
+	if err != nil {
+		return "", err
+	}
+	dim, err := t.typ.Dimensionality()
+	if err != nil {
+		return "", err
+	}
+	rendered, ok := primitives[name]
+	if !ok {
+		rendered, err = NewStringName(name).Value()
+		if err != nil {
+			return "", err
+		}
+	}
+	return strings.Repeat("[]", dim) + rendered, nil
 }
 
 func (t ExprType) Zero() (string, error) {
@@ -168,24 +150,4 @@ func (t ExprType) Zero() (string, error) {
 		return "", err
 	}
 	return formatted + "{}", nil
-}
-
-func (t ExprType) render(expr types.Expression) (string, error) {
-	switch expr := expr.(type) {
-	case types.Named:
-		p, ok := primitives[expr.Name()]
-		if !ok {
-			return NewStringName(expr.Name()).Value()
-		}
-		return p, nil
-	case types.Array:
-		elem, err := t.render(expr.Element())
-		if err != nil {
-			return "", err
-		}
-		return "[]" + elem, nil
-	case types.Union:
-		return "", fmt.Errorf("unsupported union %q", expr)
-	}
-	return "", fmt.Errorf("unknown type expression %q", expr)
 }

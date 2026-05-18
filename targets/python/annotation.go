@@ -5,15 +5,15 @@ package python
 
 import (
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/types"
+	"github.com/andreychh/tgen/model/ir"
 )
 
 type Annotation struct {
-	typ      types.Expression
+	typ      ir.Type
 	optional model.Optionality
 }
 
-func NewAnnotation(t types.Expression, o model.Optionality) Annotation {
+func NewAnnotation(t ir.Type, o model.Optionality) Annotation {
 	return Annotation{typ: t, optional: o}
 }
 

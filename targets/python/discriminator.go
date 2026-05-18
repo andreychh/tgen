@@ -3,15 +3,15 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/spec"
+import "github.com/andreychh/tgen/model/ir"
 
 // Discriminator represents the discriminator field of a variant for Python code generation.
 type Discriminator struct {
-	inner spec.Discriminator
+	inner ir.Discriminator
 }
 
 // NewDiscriminator constructs a Discriminator from a parsed discriminator.
-func NewDiscriminator(d spec.Discriminator) Discriminator {
+func NewDiscriminator(d ir.Discriminator) Discriminator {
 	return Discriminator{inner: d}
 }
 
