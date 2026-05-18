@@ -3,23 +3,23 @@
 
 {{- define "method_fields"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/python.Field*/}}
-    {{.Name.Value}}: {{.Annotation.Value}}
-    {{.Doc.Value}}
+    {{.Name}}: {{.Annotation}}
+    {{.Doc}}
 {{- end}}
 {{- end}}
 
 {{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
-{{- $name := .Name.Value}}
+{{- $name := .Name}}
 {{- $ret := .ReturnType.Value}}
 class {{$name}}Method(BaseModel):
-    {{.Doc.Value}}
+    {{.Doc}}
 {{template "method_fields" .}}
 
     def call(self, conn: Connection) -> {{$ret}}:
         payload = MultipartPayload()
 {{- range .Fields | fields}}
 {{- if .Optional}}
-        if self.{{.Name.Value}} is not None:
+        if self.{{.Name}} is not None:
             {{.Part}}.write(payload, "{{.Key}}")
 {{- else}}
         {{.Part}}.write(payload, "{{.Key}}")

@@ -13,17 +13,17 @@ var keywords = map[string]bool{
 }
 
 type FieldName struct {
-	inner model.Name
+	key model.Key
 }
 
-func NewFieldName(n model.Name) FieldName {
-	return FieldName{inner: n}
+func NewFieldName(k model.Key) FieldName {
+	return FieldName{key: k}
 }
 
-func (n FieldName) Value() (string, error) {
-	name := string(n.inner)
+func (n FieldName) Value() string {
+	name := string(n.key)
 	if keywords[name] {
-		return name + "_", nil
+		return name + "_"
 	}
-	return name, nil
+	return name
 }

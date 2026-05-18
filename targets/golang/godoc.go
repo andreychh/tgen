@@ -30,12 +30,16 @@ func (d GoDoc) Value() string {
 	pad := strings.Repeat("\t", d.indent)
 	paragraphs := strings.Split(d.content, "\n\n")
 	var lines []string
-	for i, p := range paragraphs {
+	for idx, p := range paragraphs {
 		wrapped := wordwrap.WrapString(p, 77)
-		for line := range strings.SplitSeq(wrapped, "\n") {
-			lines = append(lines, pad+"// "+line)
+		for j, line := range strings.Split(wrapped, "\n") {
+			if j == 0 {
+				lines = append(lines, "// "+line)
+			} else {
+				lines = append(lines, pad+"// "+line)
+			}
 		}
-		if i < len(paragraphs)-1 {
+		if idx < len(paragraphs)-1 {
 			lines = append(lines, pad+"//")
 		}
 	}

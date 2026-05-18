@@ -79,10 +79,8 @@ class Username(RootModel[str]):
         StrPart(self.root).write(payload, key)
 
 {{- range .Spec.DiscriminatedUnions | discriminated_unions}} {{/*gotype: github.com/andreychh/tgen/targets/python.DiscriminatedUnion*/}}
-{{- if ne .Name.Value "InlineQueryResult"}}
 
 {{template "discriminated_union" .}}
-{{- end}}
 {{- end}}
 
 type ChatID = ID | Username

@@ -2,17 +2,17 @@
 {{/*SPDX-License-Identifier: MIT*/}}
 
 {{- define "discriminated_object"}} {{/*gotype: github.com/andreychh/tgen/targets/python.DiscriminatedObject*/}}
-class {{.Name.Value}}(BaseModel):
-    {{.Doc.Value}}
+class {{.Name}}(BaseModel):
+    {{.Doc}}
     model_config = ConfigDict(
         alias_generator=lambda s: s.removesuffix("_"),
         populate_by_name=True,
     )
 
-    {{.Fields.Discriminator.Key.Value}}: Literal["{{.Fields.Discriminator.Value.Value}}"] = "{{.Fields.Discriminator.Value.Value}}"
+    {{.Fields.Discriminator.Key}}: Literal[{{.Fields.Discriminator.Value}}] = {{.Fields.Discriminator.Value}}
 {{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/targets/python.Field*/}}
-    {{.Name.Value}}: {{.Annotation.Value}}
-    {{.Doc.Value}}
+    {{.Name}}: {{.Annotation}}
+    {{.Doc}}
 {{- end}}
 {{- if .HasInputFile}}
 
@@ -22,7 +22,7 @@ class {{.Name.Value}}(BaseModel):
             exclude={
 {{- range .Fields.Free | fields}}
 {{- if .IsInputFile}}
-                "{{.Name.Value}}",
+                "{{.Name}}",
 {{- end}}
 {{- end}}
             },
@@ -32,10 +32,10 @@ class {{.Name.Value}}(BaseModel):
 {{- range .Fields.Free | fields}}
 {{- if .IsInputFile}}
 {{- if .Optional}}
-        if self.{{.Name.Value}} is not None:
-            data["{{.Key}}"] = self.{{.Name.Value}}.attach(payload)
+        if self.{{.Name}} is not None:
+            data["{{.Key}}"] = self.{{.Name}}.attach(payload)
 {{- else}}
-        data["{{.Key}}"] = self.{{.Name.Value}}.attach(payload)
+        data["{{.Key}}"] = self.{{.Name}}.attach(payload)
 {{- end}}
 {{- end}}
 {{- end}}

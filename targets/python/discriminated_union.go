@@ -15,26 +15,34 @@ func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 	return DiscriminatedUnion{inner: u}
 }
 
-func (i DiscriminatedUnion) Name() (ClassName, error) {
+func (i DiscriminatedUnion) Name() (string, error) {
 	name, err := i.inner.Name()
 	if err != nil {
-		return ClassName{}, err
+		return "", err
 	}
-	return NewClassName(name), nil
+	return NewClassName(name).Value(), nil
 }
 
-func (i DiscriminatedUnion) Doc() DocString {
-	return NewDocString(i.inner.Description(), 0)
+func (i DiscriminatedUnion) Doc() (string, error) {
+	ref, err := i.inner.Reference()
+	if err != nil {
+		return "", err
+	}
+	doc, err := NewDefinitionDoc(ref, i.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewClassDocString(doc).Value(), nil
 }
 
-func (i DiscriminatedUnion) DiscriminatorKey() (Key, error) {
+func (i DiscriminatedUnion) DiscriminatorKey() (string, error) {
 	key, err := i.inner.DiscriminatorKey()
 	if err != nil {
-		return Key{}, err
+		return "", err
 	}
-	return NewKey(key), nil
+	return string(key), nil
 }
 
-func (i DiscriminatedUnion) Variants() Variants {
-	return NewVariants(i.inner.Variants())
+func (i DiscriminatedUnion) Variants() (string, error) {
+	return NewVariants(i.inner.Variants()).Value()
 }

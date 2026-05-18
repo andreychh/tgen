@@ -26,14 +26,10 @@ func NewClassName(n model.Name) ClassName {
 	return ClassName{inner: n}
 }
 
-func NewStringClassName(s string) ClassName {
-	return NewClassName(model.Name(s))
-}
-
-func (n ClassName) Value() (string, error) {
+func (n ClassName) Value() string {
 	camel := strcase.ToCamel(string(n.inner))
 	for wrong, right := range acronyms {
 		camel = strings.ReplaceAll(camel, wrong, right)
 	}
-	return camel, nil
+	return camel
 }

@@ -18,20 +18,24 @@ func NewObject(o ir.Object) Object {
 	return Object{inner: o}
 }
 
-func (o Object) Name() (ClassName, error) {
+func (o Object) Name() (string, error) {
 	name, err := o.inner.Name()
 	if err != nil {
-		return ClassName{}, err
+		return "", err
 	}
-	return NewClassName(name), nil
+	return NewClassName(name).Value(), nil
 }
 
-func (o Object) Doc() (DocString, error) {
+func (o Object) Doc() (string, error) {
 	ref, err := o.inner.Reference()
 	if err != nil {
-		return DocString{}, err
+		return "", err
 	}
-	return NewClassDocString(ref, o.inner.Description()), nil
+	doc, err := NewDefinitionDoc(ref, o.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewClassDocString(doc).Value(), nil
 }
 
 func (o Object) Fields() iter.Seq[Field] {

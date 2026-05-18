@@ -67,14 +67,6 @@ func NewRequiredType(typ ir.Type) Type {
 	return NewType(typ, false)
 }
 
-func (t Type) IsPrimitive() (bool, error) {
-	kind, err := t.typ.Kind()
-	if err != nil {
-		return false, err
-	}
-	return kind == types.KindPrimitive, nil
-}
-
 func (t Type) IsUnion() (bool, error) {
 	kind, err := t.typ.Kind()
 	if err != nil {

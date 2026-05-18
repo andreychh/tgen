@@ -9,14 +9,16 @@ import (
 
 // GenerationContext holds all data required to render a single code generation run.
 type GenerationContext struct {
-	spec     Specification
-	snapshot targets.Snapshot
+	spec        Specification
+	snapshot    targets.Snapshot
+	packageName string
 }
 
 func NewGenerationContext(spec Specification, snapshot targets.Snapshot) GenerationContext {
 	return GenerationContext{
-		spec:     spec,
-		snapshot: snapshot,
+		spec:        spec,
+		snapshot:    snapshot,
+		packageName: "api",
 	}
 }
 
@@ -26,4 +28,8 @@ func (c GenerationContext) Spec() Specification {
 
 func (c GenerationContext) Snapshot() targets.Snapshot {
 	return c.snapshot
+}
+
+func (c GenerationContext) PackageName() string {
+	return c.packageName
 }

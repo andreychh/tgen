@@ -22,15 +22,11 @@ func NewVariants(s iter.Seq[ir.DiscriminatedObject]) Variants {
 func (v Variants) Value() (string, error) {
 	var names []string
 	for o := range v.inner {
-		objName, err := o.Name()
+		name, err := o.Name()
 		if err != nil {
 			return "", fmt.Errorf("variant name: %w", err)
 		}
-		name, err := NewClassName(objName).Value()
-		if err != nil {
-			return "", fmt.Errorf("variant name: %w", err)
-		}
-		names = append(names, name)
+		names = append(names, NewClassName(name).Value())
 	}
 	return strings.Join(names, " | "), nil
 }

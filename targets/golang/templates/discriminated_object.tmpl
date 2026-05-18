@@ -5,7 +5,7 @@
 {{.Doc}}
 type {{.Name}} struct {
 {{- range .Fields.Free | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-{{.Doc}}
+	{{.Doc}}
     {{.Name}} {{.Type.Value}} {{.Tag}}
 {{- end}}
 }

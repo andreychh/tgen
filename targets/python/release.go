@@ -9,7 +9,7 @@ import (
 )
 
 // Release represents the latest release section of the Telegram Bot API
-// specification, adapted for the Go code generation target.
+// specification, adapted for the Python code generation target.
 type Release struct {
 	inner ir.Release
 }
@@ -20,19 +20,19 @@ func NewRelease(r ir.Release) Release {
 }
 
 // Version returns the Bot API version.
-func (r Release) Version() (ReleaseVersion, error) {
+func (r Release) Version() (string, error) {
 	ver, err := r.inner.Version()
 	if err != nil {
-		return ReleaseVersion{}, err
+		return "", err
 	}
-	return NewReleaseVersion(ver), nil
+	return string(ver), nil
 }
 
 // URL returns the URL to the release section on the Telegram Bot API page.
-func (r Release) URL() (targets.TelegramURL, error) {
+func (r Release) URL() (string, error) {
 	ref, err := r.inner.Reference()
 	if err != nil {
-		return targets.TelegramURL{}, err
+		return "", err
 	}
-	return targets.NewTelegramURL(ref), nil
+	return targets.NewTelegramURL(ref).Value(), nil
 }

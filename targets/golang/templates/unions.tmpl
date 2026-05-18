@@ -4,7 +4,7 @@
 {{- define "unions"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.GenerationContext*/}}
 {{- template "header" .}}
 
-package api
+package {{.PackageName}}
 
 import (
     "encoding/json"

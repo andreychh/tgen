@@ -10,16 +10,16 @@ import (
 	"github.com/andreychh/tgen/targets"
 )
 
-type Doc struct {
+type DefinitionDoc struct {
 	ref  model.Reference
 	decs model.Description
 }
 
-func NewDoc(r model.Reference, d model.Description) Doc {
-	return Doc{ref: r, decs: d}
+func NewDefinitionDoc(r model.Reference, d model.Description) DefinitionDoc {
+	return DefinitionDoc{ref: r, decs: d}
 }
 
-func (d Doc) Value() (string, error) {
+func (d DefinitionDoc) Value() (string, error) {
 	desc, err := d.decs.Value()
 	if err != nil {
 		return "", fmt.Errorf("getting decs: %w", err)

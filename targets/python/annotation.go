@@ -9,12 +9,12 @@ import (
 )
 
 type Annotation struct {
-	typ      ir.Type
-	optional model.Optionality
+	typ ir.Type
+	opt model.Optionality
 }
 
 func NewAnnotation(t ir.Type, o model.Optionality) Annotation {
-	return Annotation{typ: t, optional: o}
+	return Annotation{typ: t, opt: o}
 }
 
 func (a Annotation) Value() (string, error) {
@@ -22,7 +22,7 @@ func (a Annotation) Value() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !bool(a.optional) {
+	if !a.opt {
 		return typ, nil
 	}
 	return typ + " | None = None", nil

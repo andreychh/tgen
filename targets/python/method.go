@@ -18,20 +18,24 @@ func NewMethod(o ir.Method) Method {
 	return Method{inner: o}
 }
 
-func (m Method) Name() (ClassName, error) {
+func (m Method) Name() (string, error) {
 	name, err := m.inner.Name()
 	if err != nil {
-		return ClassName{}, err
+		return "", err
 	}
-	return NewClassName(name), nil
+	return NewClassName(name).Value(), nil
 }
 
-func (m Method) Doc() (DocString, error) {
+func (m Method) Doc() (string, error) {
 	ref, err := m.inner.Reference()
 	if err != nil {
-		return DocString{}, err
+		return "", err
 	}
-	return NewClassDocString(ref, m.inner.Description()), nil
+	doc, err := NewDefinitionDoc(ref, m.inner.Description()).Value()
+	if err != nil {
+		return "", err
+	}
+	return NewClassDocString(doc).Value(), nil
 }
 
 func (m Method) ReturnType() (Type, error) {

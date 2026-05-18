@@ -3,7 +3,10 @@
 
 package python
 
-import "github.com/andreychh/tgen/model/ir"
+import (
+	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/ir"
+)
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var parts = map[string]string{
@@ -44,10 +47,7 @@ func (t Type) Value() (string, error) {
 	}
 	rendered, ok := primitives[name]
 	if !ok {
-		rendered, err = NewStringClassName(name).Value()
-		if err != nil {
-			return "", err
-		}
+		rendered = NewClassName(model.Name(name)).Value()
 	}
 	for range dim {
 		rendered = "list[" + rendered + "]"

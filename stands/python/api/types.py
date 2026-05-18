@@ -11268,7 +11268,7 @@ InputProfilePhoto = Annotated[
 InputStoryContent = Annotated[
     InputStoryContentPhoto | InputStoryContentVideo,
     Field(discriminator="type"),
-]  
+] 
 
  
 RevenueWithdrawalState = Annotated[

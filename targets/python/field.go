@@ -6,7 +6,6 @@ package python
 import (
 	"fmt"
 
-	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/ir"
 )
 
@@ -18,28 +17,32 @@ func NewField(f ir.Field) Field {
 	return Field{inner: f}
 }
 
-func (f Field) Name() (FieldName, error) {
+func (f Field) Name() (string, error) {
 	key, err := f.inner.Key()
 	if err != nil {
-		return FieldName{}, err
+		return "", err
 	}
-	return NewFieldName(model.Name(key)), nil
+	return NewFieldName(key).Value(), nil
 }
 
-func (f Field) Annotation() (Annotation, error) {
+func (f Field) Annotation() (string, error) {
 	typ, err := f.inner.Type()
 	if err != nil {
-		return Annotation{}, err
+		return "", err
 	}
 	opt, err := f.inner.Optionality()
 	if err != nil {
-		return Annotation{}, err
+		return "", err
 	}
-	return NewAnnotation(typ, opt), nil
+	return NewAnnotation(typ, opt).Value()
 }
 
-func (f Field) Doc() DocString {
-	return NewFieldDocString(f.inner.Description())
+func (f Field) Doc() (string, error) {
+	desc, err := f.inner.Description().Value()
+	if err != nil {
+		return "", err
+	}
+	return NewFieldDocString(desc).Value(), nil
 }
 
 func (f Field) Optional() (bool, error) {
@@ -71,11 +74,7 @@ func (f Field) Part() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	n, err := f.Name()
-	if err != nil {
-		return "", err
-	}
-	name, err := n.Value()
+	name, err := f.Name()
 	if err != nil {
 		return "", err
 	}
