@@ -4,8 +4,7 @@
 {{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
 {{- $name := .Name.Value}}
 {{- $ret := .ReturnType}}
-{{- $isUnion := $ret.IsUnion}}
-{{- $depth := $ret.Depth}}
+{{- $shape := $ret.Shape}}
 {{.Doc.Value}}
 type {{$name}}Method struct {
 {{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
@@ -29,35 +28,12 @@ func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.Valu
 	}
 {{- end}}
 {{- end}}
-{{- if and $isUnion (eq $depth 1)}}
-	var resp []json.RawMessage
-{{- else if $isUnion}}
-	var resp json.RawMessage
+{{- if eq $shape "union_array"}}
+{{- template "method_response_union_array" .}}
+{{- else if eq $shape "union"}}
+{{- template "method_response_union" .}}
 {{- else}}
-	var resp {{$ret.Value}}
-{{- end}}
-	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
-	if err != nil {
-		return {{$ret.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
-	}
-{{- if and $isUnion (eq $depth 1)}}
-	result := make([]{{$ret.Name}}, len(resp))
-	for i, r := range resp {
-		u, err := unmarshal{{$ret.Name}}(r)
-		if err != nil {
-			return {{$ret.Zero}}, err
-		}
-		result[i] = u
-	}
-	return result, nil
-{{- else if $isUnion}}
-	result, err := unmarshal{{$ret.Name}}(resp)
-	if err != nil {
-		return {{$ret.Zero}}, err
-	}
-	return result, nil
-{{- else}}
-	return resp, nil
+{{- template "method_response_plain" .}}
 {{- end}}
 }
 {{- end}}

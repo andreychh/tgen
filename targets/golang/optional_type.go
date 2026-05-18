@@ -32,6 +32,10 @@ func (t OptionalType) Depth() (int, error) {
 	return t.inner.Depth()
 }
 
+func (t OptionalType) Shape() (Shape, error) {
+	return t.inner.Shape()
+}
+
 func (t OptionalType) Name() (string, error) {
 	return t.inner.Name()
 }

@@ -9,6 +9,7 @@ type Type interface {
 	IsPrimitive() (bool, error)
 	Depth() (int, error)
 	Name() (string, error)
+	Shape() (Shape, error)
 	Value() (string, error)
 	Zero() (string, error)
 	Part() (string, error)

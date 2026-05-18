@@ -79,6 +79,24 @@ func (t ExprType) Depth() (int, error) {
 	return t.typ.Dimensionality()
 }
 
+func (t ExprType) Shape() (Shape, error) {
+	isUnion, err := t.IsUnion()
+	if err != nil {
+		return "", err
+	}
+	if !isUnion {
+		return ShapePlain, nil
+	}
+	dim, err := t.Depth()
+	if err != nil {
+		return "", err
+	}
+	if dim == 1 {
+		return ShapeUnionArray, nil
+	}
+	return ShapeUnion, nil
+}
+
 func (t ExprType) Name() (string, error) {
 	return t.typ.Name()
 }

@@ -1,0 +1,13 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "method_response_plain"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+{{- $name := .Name.Value}}
+{{- $ret := .ReturnType}}
+	var resp {{$ret.Value}}
+	err := conn.Do(ctx, Method{{$name}}, payload, &resp)
+	if err != nil {
+		return {{$ret.Zero}}, fmt.Errorf("%s: %w", Method{{$name}}, err)
+	}
+	return resp, nil
+{{- end}}
