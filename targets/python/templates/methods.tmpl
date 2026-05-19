@@ -11,7 +11,15 @@ from pydantic import BaseModel, TypeAdapter
 from .client import Connection
 from .method import Method
 from .types import *
-from .payload import *
+from .payload import (
+    _BoolPart,
+    _FloatPart,
+    _IntPart,
+    _MultipartPayload,
+    _ObjectListPart,
+    _PrimitiveListPart,
+    _StrPart,
+)
 
 {{- range .Spec.Methods | methods}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
 

@@ -14,7 +14,7 @@ from pydantic import TypeAdapter
 from ..client import (
     Call,
     CallQueue,
-    Envelope,
+    _Envelope,
     Error,
     Payload,
     Response,
@@ -35,10 +35,10 @@ class HTTPConnection:
     async def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
         req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
         resp = await self._client.send(req)
-        envelope = Envelope.model_validate(resp.json())
-        if not envelope.ok:
-            raise Error(envelope.error_code, envelope.description, envelope.parameters)
-        return adapter.validate_python(envelope.result)
+        env = _Envelope.model_validate(resp.json())
+        if not env.ok:
+            raise Error(env.error_code, env.description, env.parameters)
+        return adapter.validate_python(env.result)
 
 
 class FakeConnection:

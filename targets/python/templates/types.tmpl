@@ -11,7 +11,7 @@ from typing import IO, Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, SkipValidation
 
-from .payload import IntPart, MultipartPayload, StrPart
+from .payload import _IntPart, _MultipartPayload, _StrPart
 
 {{- range .Spec.Objects | objects}} {{/*gotype: github.com/andreychh/tgen/targets/python.Object*/}}
 
@@ -24,6 +24,11 @@ from .payload import IntPart, MultipartPayload, StrPart
 {{- end }}
 
 class InaccessibleMessage(BaseModel):
+    """This object describes a message that was deleted or is otherwise inaccessible to the bot.
+
+    See https://core.telegram.org/bots/api#inaccessiblemessage
+    """
+
     model_config = ConfigDict(
         alias_generator=lambda s: s.removesuffix("_"),
         populate_by_name=True,
@@ -32,13 +37,15 @@ class InaccessibleMessage(BaseModel):
     message_id: int
     date: Literal[0]
 
-    def form_json(self, _: MultipartPayload) -> str:
+    def _form_json(self, _: _MultipartPayload) -> str:
         return self.model_dump_json(exclude_none=True, by_alias=True)
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, self.form_json(payload))
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
+        payload.text(key, self._form_json(payload))
 
 class Upload(BaseModel):
+    """A file to be uploaded by providing its name and reader."""
+
     # Upload is write-only: it is constructed in user code and serialized into
     # a multipart payload, never deserialized from JSON. arbitrary_types_allowed
     # lets pydantic build a schema for the typing.IO[bytes] generic alias;
@@ -48,51 +55,61 @@ class Upload(BaseModel):
     name: str = ""
     reader: SkipValidation[IO[bytes]]
 
-    def attach(self, payload: MultipartPayload) -> str:
-        key = payload.attach_key()
-        self.write(payload, key)
+    def _attach(self, payload: _MultipartPayload) -> str:
+        key = payload._attach_key()
+        self._write(payload, key)
         return f"attach://{key}"
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
         payload.file(key, self.name or "file", self.reader)
 
 class FileID(RootModel[str]):
+    """A Telegram file identifier."""
+
     def __init__(self, value: str) -> None:
         super().__init__(root=value)
 
-    def attach(self, payload: MultipartPayload) -> str:
+    def _attach(self, _: _MultipartPayload) -> str:
         return self.root
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        StrPart(self.root).write(payload, key)
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
+        _StrPart(self.root)._write(payload, key)
 
 
 class ID(RootModel[int]):
+    """A numeric Telegram chat or user identifier."""
+
     def __init__(self, value: int) -> None:
         super().__init__(root=value)
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        IntPart(self.root).write(payload, key)
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
+        _IntPart(self.root)._write(payload, key)
 
 
 class Username(RootModel[str]):
+    """A Telegram username."""
+
     def __init__(self, value: str) -> None:
         super().__init__(root=value)
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        StrPart(self.root).write(payload, key)
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
+        _StrPart(self.root)._write(payload, key)
 
 {{- range .Spec.DiscriminatedUnions | discriminated_unions}} {{/*gotype: github.com/andreychh/tgen/targets/python.DiscriminatedUnion*/}}
 
 {{template "discriminated_union" .}}
 {{- end}}
 
+# A chat identifier: either a numeric ID or a username.
 type ChatID = ID | Username
 
+# A method return value that is either an edited Message or True for inline messages.
 type MaybeMessage = Message | Literal[True]
 
+# A file to send: either by file ID or by uploading.
 type InputFile = FileID | Upload
 
+# A reply markup attached to a message.
 type ReplyMarkup = (
         InlineKeyboardMarkup
         | ReplyKeyboardMarkup
@@ -100,6 +117,7 @@ type ReplyMarkup = (
         | ForceReply
 )
 
+# A media element in a media group.
 type InputMediaGroup = (
         InputMediaAudio
         | InputMediaDocument
@@ -108,6 +126,8 @@ type InputMediaGroup = (
         | InputMediaVideo
 )
 
+# The content of a message to be sent as a result of an inline query.
+# See https://core.telegram.org/bots/api#inputmessagecontent
 type InputMessageContent = (
         InputTextMessageContent
         | InputLocationMessageContent
@@ -116,8 +136,14 @@ type InputMessageContent = (
         | InputInvoiceMessageContent
 )
 
+# A message that can be inaccessible to the bot.
+# See https://core.telegram.org/bots/api#maybeinaccessiblemessage
 type MaybeInaccessibleMessage = InaccessibleMessage | Message
 
+# One result of an inline query.
+# Note: All URLs passed in inline query results will be available to end users
+# and therefore must be assumed to be public.
+# See https://core.telegram.org/bots/api#inlinequeryresult
 type InlineQueryResult = (
         InlineQueryResultCachedAudio
         | InlineQueryResultCachedDocument

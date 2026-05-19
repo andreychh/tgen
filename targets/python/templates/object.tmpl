@@ -14,7 +14,7 @@ class {{.Name}}(BaseModel):
 {{- end}}
 {{- if .HasInputFile}}
 
-    def form_json(self, payload: MultipartPayload) -> str:
+    def _form_json(self, payload: _MultipartPayload) -> str:
         data = self.model_dump(
             mode="json",
             exclude={
@@ -31,19 +31,19 @@ class {{.Name}}(BaseModel):
 {{- if .IsInputFile}}
 {{- if .Optional}}
         if self.{{.Name}} is not None:
-            data["{{.Key}}"] = self.{{.Name}}.attach(payload)
+            data["{{.Key}}"] = self.{{.Name}}._attach(payload)
 {{- else}}
-        data["{{.Key}}"] = self.{{.Name}}.attach(payload)
+        data["{{.Key}}"] = self.{{.Name}}._attach(payload)
 {{- end}}
 {{- end}}
 {{- end}}
         return json.dumps(data)
 {{- else}}
 
-    def form_json(self, _: MultipartPayload) -> str:
+    def _form_json(self, _: _MultipartPayload) -> str:
         return self.model_dump_json(exclude_none=True, by_alias=True)
 {{- end}}
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        payload.text(key, self.form_json(payload))
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
+        payload.text(key, self._form_json(payload))
 {{- end}}

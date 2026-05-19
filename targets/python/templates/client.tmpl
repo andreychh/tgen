@@ -19,14 +19,21 @@ T = TypeVar("T")
 
 
 class Payload(Protocol):
+    """Carries the accumulated fields of an API method call and produces an HTTP
+    request from them."""
+
     def request(self, method: str, url: str) -> httpx.Request: ...
 
 
 class Connection(Protocol):
+    """Executes Telegram Bot API methods over a transport."""
+
     def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
 
 
-class Envelope(BaseModel):
+class _Envelope(BaseModel):
+    """The Telegram Bot API JSON response wrapper."""
+
     ok: bool
     result: Any = None
     error_code: int = 0
@@ -35,6 +42,8 @@ class Envelope(BaseModel):
 
 
 class Error(Exception):
+    """A failure response from the Telegram Bot API."""
+
     def __init__(self, code: int, description: str, parameters: ResponseParameters | None = None) -> None:
         super().__init__(description)
         self.code = code
@@ -43,38 +52,52 @@ class Error(Exception):
 
 
 class HTTPConnection:
+    """Implements Connection over HTTP using the Telegram Bot API endpoint."""
+
     def __init__(self, client: httpx.Client, token: str) -> None:
         self._client = client
         self._token = token
 
     def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        """Sends a POST to the Telegram API and decodes the result.
+
+        Raises Error if the API reports a failure.
+        """
         req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
         resp = self._client.send(req)
-        envelope = Envelope.model_validate(resp.json())
-        if not envelope.ok:
-            raise Error(envelope.error_code, envelope.description, envelope.parameters)
-        return adapter.validate_python(envelope.result)
+        env = _Envelope.model_validate(resp.json())
+        if not env.ok:
+            raise Error(env.error_code, env.description, env.parameters)
+        return adapter.validate_python(env.result)
 
 
 type Response = Any | Exception
+"""The outcome of a FakeConnection call: a value or an exception."""
 
 
 @dataclass
 class Call:
+    """Pairs a Method with its canned Response for use in FakeConnection."""
+
     method: Method
     response: Response
 
 
 class CallQueue(Protocol):
+    """Yields canned calls for FakeConnection."""
+
     def next(self) -> Call: ...
 
 
 class SeqCallQueue:
+    """Implements CallQueue as a strict sequential list of Calls."""
+
     def __init__(self, *calls: Call) -> None:
         self._calls = list(calls)
         self._index = 0
 
     def next(self) -> Call:
+        """Returns the next Call in the sequence, or raises RuntimeError if exhausted."""
         if self._index >= len(self._calls):
             raise RuntimeError("queue exhausted")
         call = self._calls[self._index]
@@ -82,14 +105,24 @@ class SeqCallQueue:
         return call
 
     def calls(self) -> list[Call]:
+        """Returns the calls consumed so far."""
         return self._calls[: self._index]
 
 
 class FakeConnection:
+    """Implements Connection with canned responses for use in tests.
+
+    Misconfiguration raises RuntimeError rather than silently passing.
+    """
+
     def __init__(self, queue: CallQueue) -> None:
         self._queue = queue
 
     def do(self, method: Method, _: Payload, adapter: TypeAdapter[T]) -> T:
+        """Draws the next Call from the queue and returns its canned response.
+
+        Raises RuntimeError if the queue is exhausted or the method does not match.
+        """
         try:
             call = self._queue.next()
         except RuntimeError as e:

@@ -9,13 +9,13 @@ class {{$name}}Method(BaseModel):
 {{template "method_fields" .}}
 
     async def call(self, conn: Connection) -> {{$ret}}:
-        payload = MultipartPayload()
+        payload = _MultipartPayload()
 {{- range .Fields | fields}}
 {{- if .Optional}}
         if self.{{.Name}} is not None:
-            {{.Part}}.write(payload, "{{.Key}}")
+            {{.Part}}._write(payload, "{{.Key}}")
 {{- else}}
-        {{.Part}}.write(payload, "{{.Key}}")
+        {{.Part}}._write(payload, "{{.Key}}")
 {{- end}}
 {{- end}}
         return await conn.do(Method.{{$name}}, payload, TypeAdapter({{$ret}}))

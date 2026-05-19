@@ -10,12 +10,12 @@ import (
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var parts = map[string]string{
-	"Integer": "IntPart",
-	"Int":     "IntPart",
-	"Float":   "FloatPart",
-	"String":  "StrPart",
-	"Boolean": "BoolPart",
-	"True":    "BoolPart",
+	"Integer": "_IntPart",
+	"Int":     "_IntPart",
+	"Float":   "_FloatPart",
+	"String":  "_StrPart",
+	"Boolean": "_BoolPart",
+	"True":    "_BoolPart",
 }
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
@@ -72,7 +72,7 @@ func (t Type) Part() (string, error) {
 		return "%s", nil
 	}
 	if dim == 1 && !isPrim {
-		return "ListFormJsonPart(%s)", nil
+		return "_ObjectListPart(%s)", nil
 	}
-	return "ListPart(%s)", nil
+	return "_PrimitiveListPart(%s)", nil
 }

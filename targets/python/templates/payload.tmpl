@@ -12,7 +12,9 @@ import httpx
 from pydantic import TypeAdapter
 
 
-class MultipartPayload:
+class _MultipartPayload:
+    """Accumulates form fields and file parts, then builds the HTTP request body."""
+
     def __init__(self) -> None:
         self._data: dict[str, str] = {}
         self._files: dict[str, tuple[str, IO[bytes]]] = {}
@@ -24,7 +26,7 @@ class MultipartPayload:
     def file(self, key: str, name: str, reader: IO[bytes]) -> None:
         self._files[key] = (name, reader)
 
-    def attach_key(self) -> str:
+    def _attach_key(self) -> str:
         key = f"attachment_{self._counter}"
         self._counter += 1
         return key
@@ -35,59 +37,78 @@ class MultipartPayload:
         return httpx.Request(method, url, data=self._data, files=self._files)
 
 
-class Part(Protocol):
-    def write(self, payload: MultipartPayload, key: str) -> None: ...
+class _Part(Protocol):
+    """Writes a value into a multipart form at the given key."""
+
+    def _write(self, payload: _MultipartPayload, key: str) -> None: ...
 
 
-class StrPart:
+class _StrPart:
+    """Writes a string value as a plain-text form field."""
+
     def __init__(self, value: str) -> None:
         self._value = value
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
         payload.text(key, self._value)
 
 
-class IntPart:
+class _IntPart:
+    """Writes an int value as a decimal plain-text form field."""
+
     def __init__(self, value: int) -> None:
         self._value = value
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
         payload.text(key, str(self._value))
 
 
-class FloatPart:
+class _FloatPart:
+    """Writes a float value as a decimal plain-text form field."""
+
     def __init__(self, value: float) -> None:
         self._value = value
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
         payload.text(key, str(self._value))
 
 
-class BoolPart:
+class _BoolPart:
+    """Writes a bool value as a plain-text form field."""
+
     def __init__(self, value: bool) -> None:
         self._value = value
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
         payload.text(key, "true" if self._value else "false")
 
 
-class ListPart:
+class _PrimitiveListPart:
+    """Writes a list of primitive values as a JSON-encoded plain-text form field,
+    without file resolution."""
+
     def __init__(self, value: Any) -> None:
         self._value = value
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
         payload.text(key, TypeAdapter(type(self._value)).dump_json(self._value).decode())
 
 
-class FormJSON(Protocol):
-    def form_json(self, payload: MultipartPayload) -> str: ...
+class _FormJSON(Protocol):
+    """Serializes a value to JSON, registering any file uploads in the payload
+    as side effects."""
+
+    def _form_json(self, payload: _MultipartPayload) -> str: ...
 
 
-class ListFormJsonPart:
-    def __init__(self, value: Sequence[FormJSON]) -> None:
+class _ObjectListPart:
+    """Writes a list of _FormJSON values as a JSON-encoded plain-text form field,
+    resolving file attachments in each element."""
+
+    def __init__(self, value: Sequence[_FormJSON]) -> None:
         self._value = value
 
-    def write(self, payload: MultipartPayload, key: str) -> None:
-        items = [json.loads(item.form_json(payload)) for item in self._value]
+    def _write(self, payload: _MultipartPayload, key: str) -> None:
+        items = [json.loads(item._form_json(payload)) for item in self._value]
         payload.text(key, json.dumps(items))
 {{- end }}
