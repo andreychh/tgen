@@ -47,7 +47,7 @@ func unmarshalMaybeMessage(data []byte) (MaybeMessage, error) {
 // ChatID represents a chat identifier, either a numeric ID or a username.
 //
 //sumtype:decl
-type ChatID interface{ Part; sealedChatID() }
+type ChatID interface{ part; sealedChatID() }
 
 func (v ID) sealedChatID()       {}
 func (v Username) sealedChatID() {}
@@ -60,8 +60,8 @@ func unmarshalChatID(data []byte) (ChatID, error) {
 //
 //sumtype:decl
 type InputFile interface {
-    Part
-    Attach(p *MultipartPayload) (string, error)
+    part
+    attach(p *multipartPayload) (string, error)
     sealedInputFile()
 }
 
@@ -75,7 +75,7 @@ func unmarshalInputFile(data []byte) (InputFile, error) {
 // ReplyMarkup represents a reply markup attached to a message.
 //
 //sumtype:decl
-type ReplyMarkup interface{ Part; FormJSON; sealedReplyMarkup() }
+type ReplyMarkup interface{ part; formJSON; sealedReplyMarkup() }
 
 func (v InlineKeyboardMarkup) sealedReplyMarkup() {}
 func (v ReplyKeyboardMarkup) sealedReplyMarkup()  {}
@@ -89,23 +89,24 @@ func unmarshalReplyMarkup(data []byte) (ReplyMarkup, error) {
 // InputMediaGroup represents a media element in a media group.
 //
 //sumtype:decl
-type InputMediaGroup interface{ Part; FormJSON; sealedInputMediaGroup() }
+type InputMediaGroup interface{ part; formJSON; sealedInputMediaGroup() }
 
-func (v InputMediaAudio) sealedInputMediaGroup()    {}
-func (v InputMediaDocument) sealedInputMediaGroup() {}
+func (v InputMediaAudio) sealedInputMediaGroup()     {}
+func (v InputMediaDocument) sealedInputMediaGroup()  {}
 func (v InputMediaLivePhoto) sealedInputMediaGroup() {}
-func (v InputMediaPhoto) sealedInputMediaGroup()    {}
-func (v InputMediaVideo) sealedInputMediaGroup()    {}
+func (v InputMediaPhoto) sealedInputMediaGroup()     {}
+func (v InputMediaVideo) sealedInputMediaGroup()     {}
 
 func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
 	return nil, nil
 }
 
-// InputMessageContent represents the content of a message to be sent as an
-// inline query result.
+// This object represents the content of a message to be sent as a result of an
+// inline query.
 //
+// See https://core.telegram.org/bots/api#inputmessagecontent
 //sumtype:decl
-type InputMessageContent interface{ Part; FormJSON; sealedInputMessageContent() }
+type InputMessageContent interface{ part; formJSON; sealedInputMessageContent() }
 
 func (v InputInvoiceMessageContent) sealedInputMessageContent()  {}
 func (v InputVenueMessageContent) sealedInputMessageContent()    {}
@@ -117,9 +118,9 @@ func unmarshalInputMessageContent(data []byte) (InputMessageContent, error) {
 	return nil, nil
 }
 
-// MaybeInaccessibleMessage represents a message that is either accessible or
-// has been deleted and is inaccessible to the bot.
+// This object describes a message that can be inaccessible to the bot.
 //
+// See https://core.telegram.org/bots/api#maybeinaccessiblemessage
 //sumtype:decl
 type MaybeInaccessibleMessage interface{ sealedMaybeInaccessibleMessage() }
 
@@ -149,34 +150,33 @@ func unmarshalMaybeInaccessibleMessage(data []byte) (MaybeInaccessibleMessage, e
 	}
 }
 
-// This object represents one result of an inline query. Telegram clients
-// currently support results of the following 20 types:
+// This object represents one result of an inline query.
 //
 // Note: All URLs passed in inline query results will be available to end users
 // and therefore must be assumed to be public.
 //
 // See https://core.telegram.org/bots/api#inlinequeryresult
 //sumtype:decl
-type InlineQueryResult interface{ Part; FormJSON; sealedInlineQueryResult() }
+type InlineQueryResult interface{ part; formJSON; sealedInlineQueryResult() }
 
-func (v InlineQueryResultCachedAudio) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedAudio) sealedInlineQueryResult()    {}
 func (v InlineQueryResultCachedDocument) sealedInlineQueryResult() {}
-func (v InlineQueryResultCachedGif) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedGif) sealedInlineQueryResult()      {}
 func (v InlineQueryResultCachedMpeg4Gif) sealedInlineQueryResult() {}
-func (v InlineQueryResultCachedPhoto) sealedInlineQueryResult() {}
-func (v InlineQueryResultCachedSticker) sealedInlineQueryResult() {}
-func (v InlineQueryResultCachedVideo) sealedInlineQueryResult() {}
-func (v InlineQueryResultCachedVoice) sealedInlineQueryResult() {}
-func (v InlineQueryResultArticle) sealedInlineQueryResult() {}
-func (v InlineQueryResultAudio) sealedInlineQueryResult() {}
-func (v InlineQueryResultContact) sealedInlineQueryResult() {}
-func (v InlineQueryResultGame) sealedInlineQueryResult() {}
-func (v InlineQueryResultDocument) sealedInlineQueryResult() {}
-func (v InlineQueryResultGif) sealedInlineQueryResult() {}
-func (v InlineQueryResultLocation) sealedInlineQueryResult() {}
-func (v InlineQueryResultMpeg4Gif) sealedInlineQueryResult() {}
-func (v InlineQueryResultPhoto) sealedInlineQueryResult() {}
-func (v InlineQueryResultVenue) sealedInlineQueryResult() {}
-func (v InlineQueryResultVideo) sealedInlineQueryResult() {}
-func (v InlineQueryResultVoice) sealedInlineQueryResult() {}
+func (v InlineQueryResultCachedPhoto) sealedInlineQueryResult()    {}
+func (v InlineQueryResultCachedSticker) sealedInlineQueryResult()  {}
+func (v InlineQueryResultCachedVideo) sealedInlineQueryResult()    {}
+func (v InlineQueryResultCachedVoice) sealedInlineQueryResult()    {}
+func (v InlineQueryResultArticle) sealedInlineQueryResult()        {}
+func (v InlineQueryResultAudio) sealedInlineQueryResult()          {}
+func (v InlineQueryResultContact) sealedInlineQueryResult()        {}
+func (v InlineQueryResultGame) sealedInlineQueryResult()           {}
+func (v InlineQueryResultDocument) sealedInlineQueryResult()       {}
+func (v InlineQueryResultGif) sealedInlineQueryResult()            {}
+func (v InlineQueryResultLocation) sealedInlineQueryResult()       {}
+func (v InlineQueryResultMpeg4Gif) sealedInlineQueryResult()       {}
+func (v InlineQueryResultPhoto) sealedInlineQueryResult()          {}
+func (v InlineQueryResultVenue) sealedInlineQueryResult()          {}
+func (v InlineQueryResultVideo) sealedInlineQueryResult()          {}
+func (v InlineQueryResultVoice) sealedInlineQueryResult()          {}
 {{- end}}

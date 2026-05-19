@@ -42,12 +42,12 @@ var zeros = map[string]string{
 
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var parts = map[string]string{
-	typeInteger: "NewInt64Part",
-	typeInt:     "NewInt64Part",
-	typeFloat:   "NewFloat64Part",
-	typeString:  "NewStringPart",
-	typeBoolean: "NewBoolPart",
-	typeTrue:    "NewBoolPart",
+	typeInteger: "newInt64Part",
+	typeInt:     "newInt64Part",
+	typeFloat:   "newFloat64Part",
+	typeString:  "newStringPart",
+	typeBoolean: "newBoolPart",
+	typeTrue:    "newBoolPart",
 }
 
 const zeroNil = "nil"
@@ -131,9 +131,9 @@ func (t Type) Part() (string, error) {
 	}
 	if depth > 0 {
 		if _, ok := parts[name]; ok {
-			return "NewJSONPart(%s)", nil
+			return "newPrimitiveSlicePart(%s)", nil
 		}
-		return "NewSlicePart(%s)", nil
+		return "newObjectSlicePart(%s)", nil
 	}
 	part, ok := parts[name]
 	if !ok {

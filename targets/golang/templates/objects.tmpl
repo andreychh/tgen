@@ -19,15 +19,15 @@ import (
 // ID represents a numeric Telegram chat or user identifier.
 type ID int64
 
-func (i ID) Write(p *MultipartPayload, key string) error {
-	return NewInt64Part(i).Write(p, key)
+func (i ID) write(p *multipartPayload, key string) error {
+	return newInt64Part(i).write(p, key)
 }
 
 // Username represents a Telegram username.
 type Username string
 
-func (u Username) Write(p *MultipartPayload, key string) error {
-	return NewStringPart(u).Write(p, key)
+func (u Username) write(p *multipartPayload, key string) error {
+	return newStringPart(u).write(p, key)
 }
 
 // True represents the boolean true value in Telegram API responses.
@@ -36,11 +36,11 @@ type True bool
 // FileID represents a Telegram file identifier.
 type FileID string
 
-func (i FileID) Write(p *MultipartPayload, key string) error {
-	return NewStringPart(i).Write(p, key)
+func (i FileID) write(p *multipartPayload, key string) error {
+	return newStringPart(i).write(p, key)
 }
 
-func (i FileID) Attach(_ *MultipartPayload) (string, error) {
+func (i FileID) attach(_ *multipartPayload) (string, error) {
 	return string(i), nil
 }
 
@@ -50,16 +50,16 @@ type Upload struct {
 	Reader io.Reader
 }
 
-func (u Upload) Write(p *MultipartPayload, key string) error {
+func (u Upload) write(p *multipartPayload, key string) error {
 	if u.Name == "" {
 		u.Name = "file"
 	}
-	return p.File(key, u.Name, u.Reader)
+	return p.file(key, u.Name, u.Reader)
 }
 
-func (u Upload) Attach(p *MultipartPayload) (string, error) {
-	key := p.AttachKey()
-	if err := u.Write(p, key); err != nil {
+func (u Upload) attach(p *multipartPayload) (string, error) {
+	key := p.attachKey()
+	if err := u.write(p, key); err != nil {
 		return "", err
 	}
 	return "attach://" + key, nil
