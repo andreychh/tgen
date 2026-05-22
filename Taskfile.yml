@@ -204,11 +204,12 @@ tasks:
         fi
 
   stands:check:go:
-    desc: Verify the generated Go code compiles
+    desc: Verify the generated Go code compiles and tests pass
     dir: stands/go
     cmds:
       - mise trust --quiet
       - mise run check
+      - mise run test
 
   stands:check:python:
     desc: Verify the generated Python code passes type checking
