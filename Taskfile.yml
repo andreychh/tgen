@@ -217,6 +217,7 @@ tasks:
     cmds:
       - mise trust --quiet
       - mise run check
+      - mise run test
 
   # --- Release ---
 

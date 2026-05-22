@@ -14,3 +14,8 @@ run = "uv sync --python $(mise which python)"
 description = "Verify the generated Python code passes type checking"
 depends = ["setup"]
 run = "uv run mypy api/"
+
+[tasks.test]
+description = "Run behavioral tests for the generated stand"
+depends = ["setup"]
+run = "uv run pytest"
