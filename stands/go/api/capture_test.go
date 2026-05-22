@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime"
@@ -86,4 +87,22 @@ func (c *CapturingConnection) Do(ctx context.Context, _ api.Method, payload api.
 		}
 	}
 	return nil
+}
+
+// RespondingConnection implements api.Connection by injecting a fixed JSON
+// payload into the response parameter via json.Unmarshal. It mirrors what the
+// real HTTPConnection does after unwrapping the Telegram API envelope.
+type RespondingConnection struct {
+	data []byte
+}
+
+// NewRespondingConnection creates a RespondingConnection that unmarshals data
+// into the response on every Do call.
+func NewRespondingConnection(data []byte) *RespondingConnection {
+	return &RespondingConnection{data: data}
+}
+
+// Do unmarshals the fixed JSON payload into response.
+func (c *RespondingConnection) Do(_ context.Context, _ api.Method, _ api.Payload, response any) error {
+	return json.Unmarshal(c.data, response)
 }
