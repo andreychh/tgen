@@ -5,8 +5,8 @@ version = 1
 path = [
     "**/*.json",
     "**/.gitignore",
-    "go.sum",
-    "stands/python/uv.lock",
+    "**/go.sum",
+    "**/uv.lock",
 ]
 SPDX-FileCopyrightText = "2026 Andrey Chernykh"
 SPDX-License-Identifier = "MIT"
