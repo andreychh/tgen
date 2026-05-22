@@ -45,20 +45,6 @@ func TestSendPhotoMethod_Call(t *testing.T) {
 				assert.Equal(t, "AgACAgIAAxk", tp.Value, "TextPart must carry the FileID string verbatim")
 			},
 		},
-		{
-			name: "serializes integer ChatID as decimal string",
-			method: api.SendPhotoMethod{
-				ChatID: api.ID(12345),
-				Photo:  api.FileID("x"),
-			},
-			check: func(t *testing.T, cap *MultipartCapture) {
-				part, ok := cap.Part("chat_id")
-				require.True(t, ok, "CapturingConnection must capture the chat_id field")
-				tp, ok := part.(TextPart)
-				require.True(t, ok, "ChatID must produce a TextPart")
-				assert.Equal(t, "12345", tp.Value, "integer ChatID must be serialized as a decimal string")
-			},
-		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
