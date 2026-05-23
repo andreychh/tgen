@@ -5,6 +5,9 @@
 [tools]
 "go" = "1.22.0"
 
+[env]
+GOROOT = ""
+
 [tasks.check]
 description = "Verify the generated Go code compiles"
 dir = "api"

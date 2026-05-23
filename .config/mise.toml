@@ -6,6 +6,9 @@
 always_keep_download = false
 legacy_version_file = false
 
+[env]
+GOROOT = ""
+
 [tools]
 "go" = "1.26.3"
 "github:caarlos0/svu" = "3.4.1"
