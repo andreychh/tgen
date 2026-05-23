@@ -66,11 +66,11 @@
       "matchFileNames": [
         ".config/mise.toml"
       ],
-      "excludePackageNames": [
-        "go"
-      ],
-      "groupName": "dev tools"
-    }
+      "groupName": "dev tools",
+      "matchPackageNames": [
+        "!go"
+      ]
+    },
   ],
   "vulnerabilityAlerts": {
     "enabled": true
