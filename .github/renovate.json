@@ -2,10 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests",
-    "group:allNonMajor"
+    "helpers:pinGitHubActionDigests"
   ],
-  "minimumReleaseAge": "3 days",
+  "minimumReleaseAge": "7 days",
   "rebaseWhen": "behind-base-branch",
   "semanticCommits": "enabled",
   "postUpdateOptions": [
@@ -14,14 +13,7 @@
   "packageRules": [
     {
       "matchUpdateTypes": [
-        "major"
-      ],
-      "schedule": [
-        "every weekend"
-      ]
-    },
-    {
-      "matchUpdateTypes": [
+        "major",
         "minor",
         "patch",
         "pin",
@@ -31,8 +23,75 @@
         "every weekend"
       ],
       "automerge": true
+    },
+    {
+      "description": "Sync Go toolchain version across go.mod and root mise.toml in one PR",
+      "matchPackageNames": [
+        "go"
+      ],
+      "matchFileNames": [
+        ".config/mise.toml",
+        "go.mod"
+      ],
+      "groupName": "go toolchain"
+    },
+    {
+      "description": "Stand Go version is a minimum-compatibility pin — update manually",
+      "matchPackageNames": [
+        "go"
+      ],
+      "matchFileNames": [
+        "stands/go/mise.toml",
+        "stands/go/go.mod"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Stand Python version is a minimum-compatibility pin — update manually",
+      "matchPackageNames": [
+        "python"
+      ],
+      "matchFileNames": [
+        "stands/python/mise.toml"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Runtime deps of generated code — raising the lower bound drops user support, update manually",
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "matchFileNames": [
+        "stands/python/pyproject.toml"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Group all dev tools in root mise.toml into one PR to reduce noise",
+      "matchManagers": [
+        "mise"
+      ],
+      "matchFileNames": [
+        ".config/mise.toml"
+      ],
+      "excludePackageNames": [
+        "go"
+      ],
+      "groupName": "dev tools"
+    },
+    {
+      "description": "Vulnerability fixes bypass the weekend schedule",
+      "isVulnerabilityAlert": true,
+      "schedule": [
+        "at any time"
+      ],
+      "automerge": true
     }
   ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "osvVulnerabilityAlerts": true,
   "customManagers": [
     {
       "customType": "regex",
