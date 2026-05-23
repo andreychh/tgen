@@ -3,7 +3,7 @@
 # yaml-language-server: $schema=https://mise.jdx.dev/schema/mise.json
 
 [tools]
-"python"              = "3.14.5"
+"python" = "3.13.0"
 "github:astral-sh/uv" = "0.11.15"
 
 [tasks.setup]

@@ -36,35 +36,33 @@
       "groupName": "go toolchain"
     },
     {
-      "description": "Stand Go version is a minimum-compatibility pin — update manually",
+      "description": "Stand language versions are minimum-compatibility pins — open PR as EOL signal, no automerge",
       "matchPackageNames": [
-        "go"
-      ],
-      "matchFileNames": [
-        "stands/go/mise.toml",
-        "stands/go/go.mod"
-      ],
-      "enabled": false
-    },
-    {
-      "description": "Stand Python version is a minimum-compatibility pin — update manually",
-      "matchPackageNames": [
+        "go",
         "python"
       ],
       "matchFileNames": [
+        "stands/go/mise.toml",
+        "stands/go/go.mod",
         "stands/python/mise.toml"
       ],
-      "enabled": false
+      "automerge": false,
+      "schedule": [
+        "at any time"
+      ]
     },
     {
-      "description": "Runtime deps of generated code — raising the lower bound drops user support, update manually",
+      "description": "Runtime deps of generated code — raising the lower bound drops user support, open PR as signal, no automerge",
       "matchDepTypes": [
         "dependencies"
       ],
       "matchFileNames": [
         "stands/python/pyproject.toml"
       ],
-      "enabled": false
+      "automerge": false,
+      "schedule": [
+        "at any time"
+      ]
     },
     {
       "description": "Group all dev tools in root mise.toml into one PR to reduce noise",
@@ -81,7 +79,7 @@
     },
     {
       "description": "Vulnerability fixes bypass the weekend schedule",
-      "isVulnerabilityAlert": true,
+      "matchIsVulnerabilityAlert": true,
       "schedule": [
         "at any time"
       ],
