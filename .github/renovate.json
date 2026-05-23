@@ -36,7 +36,7 @@
       "groupName": "go toolchain"
     },
     {
-      "description": "Stand language versions are minimum-compatibility pins — open PR as EOL signal, no automerge",
+      "description": "Stand language versions are minimum-compatibility pins — update manually when EOL",
       "matchPackageNames": [
         "go",
         "python"
@@ -46,23 +46,17 @@
         "stands/go/go.mod",
         "stands/python/mise.toml"
       ],
-      "automerge": false,
-      "schedule": [
-        "at any time"
-      ]
+      "enabled": false
     },
     {
-      "description": "Runtime deps of generated code — raising the lower bound drops user support, open PR as signal, no automerge",
+      "description": "Runtime deps of generated code — raising the lower bound drops user support, update manually",
       "matchDepTypes": [
         "dependencies"
       ],
       "matchFileNames": [
         "stands/python/pyproject.toml"
       ],
-      "automerge": false,
-      "schedule": [
-        "at any time"
-      ]
+      "enabled": false
     },
     {
       "description": "Group all dev tools in root mise.toml into one PR to reduce noise",
@@ -76,7 +70,7 @@
         "go"
       ],
       "groupName": "dev tools"
-    },
+    }
   ],
   "vulnerabilityAlerts": {
     "enabled": true
