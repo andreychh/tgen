@@ -6,9 +6,6 @@
 always_keep_download = false
 legacy_version_file = false
 
-[env]
-GOROOT = ""
-
 [tools]
 "go" = "1.26.3"
 "github:caarlos0/svu" = "3.4.1"
@@ -22,3 +19,7 @@ GOROOT = ""
 "npm:markdownlint-cli2" = "0.22.1"
 "pipx:reuse" = "6.2.0"
 "pipx:yamllint" = "1.38.0"
+
+[env]
+_.file = ".env"
+GOROOT = ""
