@@ -3,7 +3,7 @@
 
 module stand
 
-go 1.22.0
+go 1.23.10
 
 require github.com/stretchr/testify v1.11.1
 
