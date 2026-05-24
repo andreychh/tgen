@@ -1082,7 +1082,7 @@ func (v ID) sealedChatID()       {}
 func (v Username) sealedChatID() {}
 
 func unmarshalChatID(data []byte) (ChatID, error) {
-	return nil, nil
+	panic("ChatID is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
 }
 
 // InputFile represents a file to send, either by file ID or by uploading.
@@ -1098,7 +1098,7 @@ func (v FileID) sealedInputFile() {}
 func (v Upload) sealedInputFile() {}
 
 func unmarshalInputFile(data []byte) (InputFile, error) {
-	return nil, nil
+	panic("InputFile is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
 }
 
 // ReplyMarkup represents a reply markup attached to a message.
@@ -1112,7 +1112,7 @@ func (v ReplyKeyboardRemove) sealedReplyMarkup()  {}
 func (v ForceReply) sealedReplyMarkup()           {}
 
 func unmarshalReplyMarkup(data []byte) (ReplyMarkup, error) {
-	return nil, nil
+	panic("ReplyMarkup is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
 }
 
 // InputMediaGroup represents a media element in a media group.
@@ -1127,7 +1127,7 @@ func (v InputMediaPhoto) sealedInputMediaGroup()     {}
 func (v InputMediaVideo) sealedInputMediaGroup()     {}
 
 func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
-	return nil, nil
+	panic("InputMediaGroup is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
 }
 
 // This object represents the content of a message to be sent as a result of an
@@ -1144,7 +1144,7 @@ func (v InputContactMessageContent) sealedInputMessageContent()  {}
 func (v InputTextMessageContent) sealedInputMessageContent()     {}
 
 func unmarshalInputMessageContent(data []byte) (InputMessageContent, error) {
-	return nil, nil
+	panic("InputMessageContent is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
 }
 
 // This object describes a message that can be inaccessible to the bot.
