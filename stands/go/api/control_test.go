@@ -32,7 +32,7 @@ func announceHoshiCup(
 	msg, err := api.SendPhotoMethod{
 		ChatID:  chatID,
 		Photo:   api.Upload{Name: "poster.jpg", Reader: poster},
-		Caption: ptr("Hoshi Cup IX is open for registration.\nAll ranks welcome."),
+		Caption: ptr("Hoshi Cup IX is open for registration."),
 		ReplyMarkup: api.InlineKeyboardMarkup{
 			InlineKeyboard: [][]api.InlineKeyboardButton{
 				{{Text: "Register", URL: ptr("https://hoshicup.ru/register")}},

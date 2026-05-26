@@ -30,7 +30,7 @@ def announce_hoshi_cup(conn: Connection, chat_id: ChatID, poster: IO[bytes], rng
     msg = SendPhotoMethod(
         chat_id=chat_id,
         photo=Upload(name="poster.jpg", reader=poster),
-        caption="Hoshi Cup IX is open for registration.\nAll ranks welcome.",
+        caption="Hoshi Cup IX is open for registration.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Register", url="https://hoshicup.ru/register")]
         ]),
