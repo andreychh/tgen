@@ -192,6 +192,8 @@ linters:
           - godoclint
           - gosec
           - varnamelen
+          - goconst
+          - gocritic
 formatters:
   enable:
     - gofumpt

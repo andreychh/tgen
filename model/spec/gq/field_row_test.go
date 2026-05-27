@@ -82,8 +82,12 @@ func TestFieldRow_Kind(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, gq.NewFieldRow(trWith(tc.desc)).Kind(),
-				"FieldRow must classify a row as discriminator only when its description matches the Always-quoted or must-be pattern")
+			assert.Equal(
+				t,
+				tc.want,
+				gq.NewFieldRow(trWith(tc.desc)).Kind(),
+				"FieldRow must classify a row as discriminator only when its description matches the Always-quoted or must-be pattern",
+			)
 		})
 	}
 }
