@@ -194,6 +194,7 @@ linters:
           - varnamelen
           - goconst
           - gocritic
+          - gochecknoglobals
 formatters:
   enable:
     - gofumpt
