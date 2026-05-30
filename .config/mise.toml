@@ -9,7 +9,7 @@ legacy_version_file = false
 [tools]
 "go" = "1.26.3"
 "github:caarlos0/svu" = "3.4.1"
-"github:crate-ci/typos" = "1.46.2"
+"github:crate-ci/typos" = "1.46.3"
 "github:golangci/golangci-lint" = "2.12.2"
 "github:goreleaser/goreleaser" = "2.15.4"
 "github:go-task/task" = "3.51.1"
