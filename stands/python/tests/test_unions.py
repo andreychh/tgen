@@ -12,6 +12,11 @@ from api.types import (
     InputLocationMessageContent,
     InputTextMessageContent,
     Message,
+    RichBlockCaption,
+    RichTextBold,
+    RichTextItalic,
+    RichTextPlain,
+    RichTextSequence,
 )
 
 from helpers import CapturingConnection, RespondingConnection
@@ -54,6 +59,46 @@ def test_maybe_inaccessible_message_nonzero_date_deserialises_as_message() -> No
         "non-zero date must be deserialised as Message, not InaccessibleMessage"
     assert result.pinned_message.message_id == 5, \
         "Message must carry the message_id from the response"
+
+
+def test_rich_text_deserialises_a_json_string_into_rich_text_plain() -> None:
+    caption = RichBlockCaption.model_validate({"text": "plain"})
+    assert isinstance(caption.text, RichTextPlain), \
+        "a JSON string must deserialise into RichTextPlain"
+    assert caption.text.root == "plain", \
+        "RichTextPlain must carry the plain-text value"
+
+
+def test_rich_text_deserialises_a_json_array_into_rich_text_sequence() -> None:
+    caption = RichBlockCaption.model_validate(
+        {"text": ["lead ", {"type": "bold", "text": "bold"}]}
+    )
+    assert isinstance(caption.text, RichTextSequence), \
+        "a JSON array must deserialise into RichTextSequence"
+    assert isinstance(caption.text.root[1], RichTextBold), \
+        "nested objects inside a RichTextSequence must dispatch by their type discriminator"
+
+
+def test_rich_text_deserialises_a_json_object_into_the_variant_named_by_its_type() -> None:
+    caption = RichBlockCaption.model_validate({"text": {"type": "italic", "text": "x"}})
+    assert isinstance(caption.text, RichTextItalic), \
+        "a JSON object must dispatch to the RichText variant named by its type discriminator"
+
+
+def test_rich_text_serialises_plain_text_as_a_bare_json_string() -> None:
+    caption = RichBlockCaption(text=RichTextPlain("plain"))
+    body = json.loads(caption.model_dump_json(exclude_none=True, by_alias=True))
+    assert body["text"] == "plain", \
+        "RichTextPlain must serialise to a bare JSON string"
+
+
+def test_rich_text_serialises_a_sequence_as_a_json_array_carrying_discriminators() -> None:
+    caption = RichBlockCaption(
+        text=RichTextSequence(["lead ", RichTextBold(text=RichTextPlain("bold"))])
+    )
+    body = json.loads(caption.model_dump_json(exclude_none=True, by_alias=True))
+    assert body["text"] == ["lead ", {"type": "bold", "text": "bold"}], \
+        "RichTextSequence must serialise to a JSON array whose object elements carry their type discriminator"
 
 
 def test_input_message_content_text_produces_json_with_message_text_field() -> None:
