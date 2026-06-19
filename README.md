@@ -8,7 +8,7 @@ SPDX-License-Identifier: MIT
 [![REUSE status](https://api.reuse.software/badge/github.com/andreychh/tgen)](https://api.reuse.software/info/github.com/andreychh/tgen)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/andreychh/tgen)](https://github.com/andreychh/tgen/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/andreychh/tgen)](https://goreportcard.com/report/github.com/andreychh/tgen)
-[![Telegram Bot API v10.0](https://img.shields.io/static/v1?label=Telegram%20Bot%20API&color=2AABEE&logo=telegram&message=v10.0)](https://core.telegram.org/bots/api#may-8-2026)
+[![Telegram Bot API v10.1](https://img.shields.io/static/v1?label=Telegram%20Bot%20API&color=2AABEE&logo=telegram&message=v10.1)](https://core.telegram.org/bots/api#june-11-2026)
 <!--
 [![codecov](https://codecov.io/gh/andreychh/tgen/graph/badge.svg?token=CRAB598PR3)](https://codecov.io/gh/andreychh/tgen)
 -->
