@@ -36,6 +36,7 @@ tasks:
       - lint:yml
       - lint:toml
       - lint:gha
+      - lint:renovate
       - lint:reuse
       - lint:typos
 
@@ -73,6 +74,13 @@ tasks:
       - '.github/workflows/*.yml'
     cmds:
       - actionlint
+
+  lint:renovate:
+    desc: Validate Renovate config
+    sources:
+      - '.github/renovate.json'
+    cmds:
+      - renovate-config-validator --strict .github/renovate.json
 
   lint:reuse:
     desc: Verify license compliance

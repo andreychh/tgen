@@ -4,11 +4,6 @@
     "config:recommended",
     "helpers:pinGitHubActionDigests"
   ],
-  "ignorePaths": [
-    "stands/go/mise.toml",
-    "stands/go/go.mod",
-    "stands/python/mise.toml"
-  ],
   "minimumReleaseAge": "7 days",
   "rebaseWhen": "behind-base-branch",
   "semanticCommits": "enabled",
@@ -17,6 +12,7 @@
   ],
   "packageRules": [
     {
+      "description": "Batch every non-security update into a single weekly PR",
       "matchUpdateTypes": [
         "major",
         "minor",
@@ -24,21 +20,10 @@
         "pin",
         "digest"
       ],
+      "groupName": "all dependencies",
       "schedule": [
-        "every weekend"
-      ],
-      "automerge": true
-    },
-    {
-      "description": "Sync Go toolchain version across go.mod and root mise.toml in one PR",
-      "matchPackageNames": [
-        "go"
-      ],
-      "matchFileNames": [
-        ".config/mise.toml",
-        "go.mod"
-      ],
-      "groupName": "go toolchain"
+        "before 6am on monday"
+      ]
     },
     {
       "description": "Runtime deps of generated code — raising the lower bound drops user support, update manually",
@@ -51,17 +36,48 @@
       "enabled": false
     },
     {
-      "description": "Group all dev tools in root mise.toml into one PR to reduce noise",
+      "description": "Bump the root go.mod go directive so the language version stays in sync with the mise toolchain",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchFileNames": [
+        "go.mod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
+      "matchDepNames": [
+        "go"
+      ],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Go stand pins the minimum supported Go version — bump the language manually, not via Renovate",
+      "matchManagers": [
+        "mise",
+        "gomod"
+      ],
+      "matchFileNames": [
+        "stands/go/mise.toml",
+        "stands/go/go.mod"
+      ],
+      "matchDepNames": [
+        "go"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Python stand pins the minimum supported Python version — bump the language manually, not via Renovate",
       "matchManagers": [
         "mise"
       ],
       "matchFileNames": [
-        ".config/mise.toml"
+        "stands/python/mise.toml"
       ],
-      "groupName": "dev tools",
-      "matchPackageNames": [
-        "!go"
-      ]
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": false
     }
   ],
   "vulnerabilityAlerts": {

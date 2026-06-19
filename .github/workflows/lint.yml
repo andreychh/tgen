@@ -19,6 +19,7 @@ jobs:
           - yml
           - toml
           - gha
+          - renovate
           - reuse
           - typos
     timeout-minutes: 15
