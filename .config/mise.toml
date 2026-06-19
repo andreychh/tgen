@@ -20,6 +20,9 @@ legacy_version_file = false
 "pipx:reuse" = "6.2.0"
 "pipx:yamllint" = "1.38.0"
 
+# indirect
+"node" = "24.14.0"
+
 [env]
 _.file = ".env"
 GOROOT = ""
