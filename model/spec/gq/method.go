@@ -34,8 +34,15 @@ func (m Method) Description() model.Description {
 	return NewDefinitionDescription(m.h4)
 }
 
-func (m Method) ReturnType() (types.Expression, error) {
-	return NewReturnType(m.root, m.h4).Value()
+func (m Method) Result() (spec.Result, error) {
+	expr, err := NewReturnType(m.root, m.h4).Value()
+	if err != nil {
+		return nil, err
+	}
+	if expr.Equals(types.NewNamed("True", types.KindPrimitive)) {
+		return spec.NewCommand(), nil
+	}
+	return spec.NewValue(expr), nil
 }
 
 func (m Method) Fields() iter.Seq[spec.Field] {

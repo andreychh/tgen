@@ -45,13 +45,13 @@ var (
 )
 
 type stubMethod struct {
-	returnType types.Expression
-	returnErr  error
-	fields     []spec.Field
+	result    spec.Result
+	resultErr error
+	fields    []spec.Field
 }
 
-func (m stubMethod) Reference() (model.Reference, error)   { return "", nil }
-func (m stubMethod) Name() (model.Name, error)             { return "", nil }
-func (m stubMethod) Description() model.Description        { return stubDesc{} }
-func (m stubMethod) ReturnType() (types.Expression, error) { return m.returnType, m.returnErr }
-func (m stubMethod) Fields() iter.Seq[spec.Field]          { return slices.Values(m.fields) }
+func (m stubMethod) Reference() (model.Reference, error) { return "", nil }
+func (m stubMethod) Name() (model.Name, error)           { return "", nil }
+func (m stubMethod) Description() model.Description      { return stubDesc{} }
+func (m stubMethod) Result() (spec.Result, error)        { return m.result, m.resultErr }
+func (m stubMethod) Fields() iter.Seq[spec.Field]        { return slices.Values(m.fields) }

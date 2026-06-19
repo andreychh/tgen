@@ -34,7 +34,7 @@ type Method interface {
 	Reference() (model.Reference, error)
 	Name() (model.Name, error)
 	Description() model.Description
-	ReturnType() (types.Expression, error)
+	Result() (Result, error)
 	Fields() iter.Seq[Field]
 }
 

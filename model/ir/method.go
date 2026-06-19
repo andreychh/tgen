@@ -4,6 +4,7 @@
 package ir
 
 import (
+	"fmt"
 	"iter"
 
 	"github.com/andreychh/tgen/model"
@@ -34,12 +35,19 @@ func (m Method) Description() model.Description {
 	return m.inner.Description()
 }
 
-func (m Method) ReturnType() (Type, error) {
-	expr, err := m.inner.ReturnType()
+func (m Method) Result() (Result, error) {
+	result, err := m.inner.Result()
 	if err != nil {
-		return Type{}, err
+		return nil, err
 	}
-	return NewType(expr), nil
+	switch result := result.(type) {
+	case spec.Command:
+		return NewCommand(), nil
+	case spec.Value:
+		return NewValue(NewType(result.Type())), nil
+	default:
+		return nil, fmt.Errorf("narrowing method result: unexpected result type %T", result)
+	}
 }
 
 func (m Method) Fields() iter.Seq[Field] {

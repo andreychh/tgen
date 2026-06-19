@@ -4,6 +4,7 @@
 package overlays
 
 import (
+	"fmt"
 	"iter"
 
 	"github.com/andreychh/tgen/model"
@@ -34,18 +35,25 @@ func (r MaybeMessage) Description() model.Description {
 	return r.inner.Description()
 }
 
-func (r MaybeMessage) ReturnType() (types.Expression, error) {
-	expr, err := r.inner.ReturnType()
+func (r MaybeMessage) Result() (spec.Result, error) {
+	result, err := r.inner.Result()
 	if err != nil {
 		return nil, err
 	}
-	if !expr.Equals(types.NewUnion(
-		types.NewNamed("Message", types.KindObject),
-		types.NewNamed("True", types.KindPrimitive),
-	)) {
-		return expr, nil
+	switch result := result.(type) {
+	case spec.Command:
+		return result, nil
+	case spec.Value:
+		if !result.Type().Equals(types.NewUnion(
+			types.NewNamed("Message", types.KindObject),
+			types.NewNamed("True", types.KindPrimitive),
+		)) {
+			return result, nil
+		}
+		return spec.NewValue(types.NewNamed("MaybeMessage", types.KindUnion)), nil
+	default:
+		return nil, fmt.Errorf("classifying method result: unexpected result type %T", result)
 	}
-	return types.NewNamed("MaybeMessage", types.KindUnion), nil
 }
 
 func (r MaybeMessage) Fields() iter.Seq[spec.Field] {
