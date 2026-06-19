@@ -22,6 +22,7 @@ const (
 	DefinitionKindDiscriminatedUnion  DefinitionKind = "discriminated_union"
 	DefinitionKindFallbackUnion       DefinitionKind = "fallback_union"
 	DefinitionKindGroupedUnion        DefinitionKind = "grouped_union"
+	DefinitionKindHeterogeneousUnion  DefinitionKind = "heterogeneous_union"
 )
 
 // Header classifies an h4 section within a Telegram Bot API document. root is
@@ -90,6 +91,9 @@ func (h Header) objectKind(body gq.Selection) DefinitionKind {
 }
 
 func (h Header) unionKind(body gq.Selection) DefinitionKind {
+	if h.heterogeneous(body) {
+		return DefinitionKindHeterogeneousUnion
+	}
 	all, discriminated := 0, 0
 	seen := make(map[string]struct{})
 	unique := true
@@ -111,16 +115,18 @@ func (h Header) unionKind(body gq.Selection) DefinitionKind {
 				return NewFieldRow(tr).Kind() == FieldKindDiscriminator
 			}).
 			IsEmpty()
-		if hasDiscriminator {
-			discriminated++
-			val, err := NewDiscriminatedObject(h.root, variant).Fields().Discriminator().Value()
-			if err == nil {
-				if _, ok := seen[string(val)]; ok {
-					unique = false
-				}
-				seen[string(val)] = struct{}{}
-			}
+		if !hasDiscriminator {
+			continue
 		}
+		discriminated++
+		val, err := NewDiscriminatedObject(h.root, variant).Fields().Discriminator().Value()
+		if err != nil {
+			continue
+		}
+		if _, ok := seen[string(val)]; ok {
+			unique = false
+		}
+		seen[string(val)] = struct{}{}
 	}
 	switch {
 	case all == 0 || discriminated == 0:
@@ -132,4 +138,17 @@ func (h Header) unionKind(body gq.Selection) DefinitionKind {
 	default:
 		return DefinitionKindFallbackUnion
 	}
+}
+
+func (h Header) heterogeneous(body gq.Selection) bool {
+	intro := body.Filter("p").At(0).Text()
+	if strings.Contains(intro, "Array of") {
+		return true
+	}
+	for _, prim := range []string{"String", "Integer", "Float", "Boolean", "True"} {
+		if strings.Contains(intro, prim) {
+			return true
+		}
+	}
+	return false
 }

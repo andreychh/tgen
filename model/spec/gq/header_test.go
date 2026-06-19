@@ -146,6 +146,25 @@ func TestHeader_Kind(t *testing.T) {
 				`</tbody></table>`,
 			want: gq.DefinitionKindFallbackUnion,
 		},
+		{
+			name: "returns HeterogeneousUnion when the intro lists a primitive and an array alongside named variants",
+			inner: `<h4><a class="anchor" href="#richtext">RichText</a></h4>` +
+				`<p>Currently, it can be either a String for plain text, ` +
+				`an Array of <a href="#richtext">RichText</a>, or any of the following types:</p>` +
+				`<ul>` +
+				`<li><a href="#richtextbold">RichTextBold</a></li>` +
+				`<li><a href="#richtextitalic">RichTextItalic</a></li>` +
+				`</ul>` +
+				`<h4><a class="anchor" href="#richtextbold">RichTextBold</a></h4>` +
+				`<table><tbody>` +
+				"<tr><td>type</td><td>String</td><td>Always “bold”</td></tr>" +
+				`</tbody></table>` +
+				`<h4><a class="anchor" href="#richtextitalic">RichTextItalic</a></h4>` +
+				`<table><tbody>` +
+				"<tr><td>type</td><td>String</td><td>Always “italic”</td></tr>" +
+				`</tbody></table>`,
+			want: gq.DefinitionKindHeterogeneousUnion,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

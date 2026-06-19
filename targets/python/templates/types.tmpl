@@ -130,6 +130,7 @@ type InputMediaGroup = (
 # See https://core.telegram.org/bots/api#inputmessagecontent
 type InputMessageContent = (
         InputTextMessageContent
+        | InputRichMessageContent
         | InputLocationMessageContent
         | InputVenueMessageContent
         | InputContactMessageContent
@@ -165,5 +166,46 @@ type InlineQueryResult = (
         | InlineQueryResultVenue
         | InlineQueryResultVideo
         | InlineQueryResultVoice
+)
+
+class RichTextPlain(RootModel[str]):
+    """The plain-text variant of a RichText value."""
+
+
+class RichTextSequence(RootModel[list["RichText"]]):
+    """The nested-array variant of a RichText value."""
+
+
+# A rich formatted text: either plain text, a nested array of RichText, or one
+# of the named RichText* formatting types.
+# See https://core.telegram.org/bots/api#richtext
+type RichText = (
+        RichTextPlain
+        | RichTextSequence
+        | RichTextBold
+        | RichTextItalic
+        | RichTextUnderline
+        | RichTextStrikethrough
+        | RichTextSpoiler
+        | RichTextDateTime
+        | RichTextTextMention
+        | RichTextSubscript
+        | RichTextSuperscript
+        | RichTextMarked
+        | RichTextCode
+        | RichTextCustomEmoji
+        | RichTextMathematicalExpression
+        | RichTextURL
+        | RichTextEmailAddress
+        | RichTextPhoneNumber
+        | RichTextBankCardNumber
+        | RichTextMention
+        | RichTextHashtag
+        | RichTextCashtag
+        | RichTextBotCommand
+        | RichTextAnchor
+        | RichTextAnchorLink
+        | RichTextReference
+        | RichTextReferenceLink
 )
 {{- end }}

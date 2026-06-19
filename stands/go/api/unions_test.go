@@ -106,6 +106,86 @@ func TestInputMessageContent_MarshalJSON(t *testing.T) {
 	}
 }
 
+func TestRichText_Marshal(t *testing.T) {
+	cases := []struct {
+		name string
+		text api.RichText
+		want string
+	}{
+		{
+			name: "encodes RichTextPlain as a bare JSON string",
+			text: api.RichTextPlain("plain"),
+			want: `"plain"`,
+		},
+		{
+			name: "encodes RichTextSequence as a JSON array",
+			text: api.RichTextSequence{
+				api.RichTextPlain("lead "),
+				api.RichTextBold{Text: api.RichTextPlain("bold")},
+			},
+			want: `["lead ", {"type": "bold", "text": "bold"}]`,
+		},
+		{
+			name: "encodes a named variant as a JSON object carrying its type discriminator",
+			text: api.RichTextItalic{Text: api.RichTextPlain("x")},
+			want: `{"type": "italic", "text": "x"}`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			data, err := json.Marshal(api.RichBlockCaption{Text: tc.text})
+			require.NoError(t, err)
+			var got struct {
+				Text json.RawMessage `json:"text"`
+			}
+			require.NoError(t, json.Unmarshal(data, &got))
+			assert.JSONEq(t, tc.want, string(got.Text), "RichText must serialize each variant to its native JSON shape")
+		})
+	}
+}
+
+func TestRichText_Unmarshal(t *testing.T) {
+	cases := []struct {
+		name  string
+		text  string
+		check func(*testing.T, api.RichText)
+	}{
+		{
+			name: "decodes a JSON string into RichTextPlain",
+			text: `"plain"`,
+			check: func(t *testing.T, v api.RichText) {
+				assert.Equal(t, api.RichTextPlain("plain"), v, "a JSON string must deserialize into RichTextPlain")
+			},
+		},
+		{
+			name: "decodes a JSON array into RichTextSequence preserving element types",
+			text: `["lead ", {"type":"bold","text":"bold"}]`,
+			check: func(t *testing.T, v api.RichText) {
+				seq, ok := v.(api.RichTextSequence)
+				require.True(t, ok, "a JSON array must deserialize into RichTextSequence")
+				require.Len(t, seq, 2, "RichTextSequence must preserve every element of the array")
+				_, ok = seq[1].(api.RichTextBold)
+				assert.True(t, ok, "nested objects inside a RichTextSequence must dispatch by their type discriminator")
+			},
+		},
+		{
+			name: "decodes a JSON object into the variant named by its type discriminator",
+			text: `{"type":"italic","text":"x"}`,
+			check: func(t *testing.T, v api.RichText) {
+				_, ok := v.(api.RichTextItalic)
+				assert.True(t, ok, "a JSON object must dispatch to the RichText variant named by its type discriminator")
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var caption api.RichBlockCaption
+			require.NoError(t, json.Unmarshal([]byte(`{"text":`+tc.text+`}`), &caption))
+			tc.check(t, caption.Text)
+		})
+	}
+}
+
 func TestMaybeInaccessibleMessage_Unmarshal(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -169,7 +249,7 @@ func TestEditMessageTextMethod_Call(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			conn := NewRespondingConnection([]byte(tc.data))
-			result, err := api.EditMessageTextMethod{Text: "hi"}.Call(context.Background(), conn)
+			result, err := api.EditMessageTextMethod{Text: ptr("hi")}.Call(context.Background(), conn)
 			require.NoError(t, err)
 			tc.check(t, result)
 		})
