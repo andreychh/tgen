@@ -15,46 +15,52 @@ import (
 	"github.com/andreychh/tgen/model/types"
 )
 
-func TestMaybeMessage_ReturnType(t *testing.T) {
+func TestMaybeMessage_Result(t *testing.T) {
 	message := types.NewNamed("Message", types.KindObject)
 	trueType := types.NewNamed("True", types.KindPrimitive)
+	chat := types.NewNamed("Chat", types.KindObject)
 	cases := []struct {
 		name    string
 		method  spec.Method
-		want    types.Expression
+		want    spec.Result
 		wantErr bool
 	}{
 		{
-			name:   "replaces Message or True union return type with MaybeMessage named type",
-			method: stubMethod{returnType: types.NewUnion(message, trueType)},
-			want:   types.NewNamed("MaybeMessage", types.KindUnion),
+			name:   "replaces a Message or True Value with a MaybeMessage Value",
+			method: stubMethod{result: spec.NewValue(types.NewUnion(message, trueType))},
+			want:   spec.NewValue(types.NewNamed("MaybeMessage", types.KindUnion)),
 		},
 		{
-			name:   "passes through Message return type without replacement",
-			method: stubMethod{returnType: message},
-			want:   message,
+			name:   "passes through a Message Value without replacement",
+			method: stubMethod{result: spec.NewValue(message)},
+			want:   spec.NewValue(message),
 		},
 		{
-			name: "passes through a non-matching union return type without replacement",
+			name: "passes through a non-matching union Value without replacement",
 			method: stubMethod{
-				returnType: types.NewUnion(message, types.NewNamed("Chat", types.KindObject)),
+				result: spec.NewValue(types.NewUnion(message, chat)),
 			},
-			want: types.NewUnion(message, types.NewNamed("Chat", types.KindObject)),
+			want: spec.NewValue(types.NewUnion(message, chat)),
 		},
 		{
-			name:    "propagates error when the inner method's ReturnType returns an error",
-			method:  stubMethod{returnErr: errors.New("no return type")},
+			name:   "passes through a Command without replacement",
+			method: stubMethod{result: spec.NewCommand()},
+			want:   spec.NewCommand(),
+		},
+		{
+			name:    "propagates error when the inner method's Result returns an error",
+			method:  stubMethod{resultErr: errors.New("no result")},
 			wantErr: true,
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := overlays.NewMaybeMessage(tc.method).ReturnType()
+			got, err := overlays.NewMaybeMessage(tc.method).Result()
 			if tc.wantErr {
 				assert.Error(
 					t,
 					err,
-					"MaybeMessage.ReturnType must propagate errors from the inner method",
+					"MaybeMessage.Result must propagate errors from the inner method",
 				)
 				return
 			}
@@ -63,7 +69,7 @@ func TestMaybeMessage_ReturnType(t *testing.T) {
 				t,
 				tc.want,
 				got,
-				"MaybeMessage.ReturnType must replace Message|True with MaybeMessage and pass through all other return types",
+				"MaybeMessage.Result must replace a Message|True Value with a MaybeMessage Value and pass through all other results",
 			)
 		})
 	}

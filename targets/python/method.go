@@ -4,9 +4,11 @@
 package python
 
 import (
+	"fmt"
 	"iter"
 
 	"github.com/andreychh/tgen/model/ir"
+	"github.com/andreychh/tgen/model/types"
 	"github.com/andreychh/tgen/pkg/iters"
 )
 
@@ -39,11 +41,18 @@ func (m Method) Doc() (string, error) {
 }
 
 func (m Method) ReturnType() (Type, error) {
-	typ, err := m.inner.ReturnType()
+	result, err := m.inner.Result()
 	if err != nil {
 		return Type{}, err
 	}
-	return NewType(typ), nil
+	switch result := result.(type) {
+	case ir.Command:
+		return NewType(ir.NewType(types.NewNamed("True", types.KindPrimitive))), nil
+	case ir.Value:
+		return NewType(result.Type()), nil
+	default:
+		return Type{}, fmt.Errorf("rendering method result: unexpected result type %T", result)
+	}
 }
 
 func (m Method) Fields() iter.Seq[Field] {
