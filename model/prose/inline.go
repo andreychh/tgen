@@ -3,14 +3,29 @@
 
 package prose
 
-// Text represents a run of plain text.
+// Style is the emphasis applied to a text run.
+type Style int
+
+const (
+	// StylePlain marks a run with no emphasis.
+	StylePlain Style = iota
+	// StyleItalic marks an emphasized run.
+	StyleItalic
+	// StyleBold marks a strongly emphasized run.
+	StyleBold
+	// StyleCode marks a verbatim monowidth run.
+	StyleCode
+)
+
+// Text represents a run of text rendered with a single style.
 type Text struct {
 	content string
+	style   Style
 }
 
-// NewText constructs a plain-text run from its content.
-func NewText(content string) Text {
-	return Text{content: content}
+// NewText constructs a styled text run from its content and style.
+func NewText(content string, style Style) Text {
+	return Text{content: content, style: style}
 }
 
 // Content returns the text of the run.
@@ -18,78 +33,38 @@ func (t Text) Content() string {
 	return t.content
 }
 
+// Style returns the emphasis applied to the run.
+func (t Text) Style() Style {
+	return t.style
+}
+
 func (Text) isInline() {}
 
-// Bold represents inline content rendered with strong emphasis.
-type Bold struct {
-	inlines []Inline
-}
-
-// NewBold constructs bold content from inline children.
-func NewBold(inlines ...Inline) Bold {
-	return Bold{inlines: inlines}
-}
-
-// Inlines returns the inline children of the bold run.
-func (b Bold) Inlines() []Inline {
-	return b.inlines
-}
-
-func (Bold) isInline() {}
-
-// Italic represents inline content rendered with emphasis.
-type Italic struct {
-	inlines []Inline
-}
-
-// NewItalic constructs emphasized content from inline children.
-func NewItalic(inlines ...Inline) Italic {
-	return Italic{inlines: inlines}
-}
-
-// Inlines returns the inline children of the emphasized run.
-func (i Italic) Inlines() []Inline {
-	return i.inlines
-}
-
-func (Italic) isInline() {}
-
-// Code represents a verbatim monowidth span.
-type Code struct {
-	content string
-}
-
-// NewCode constructs a verbatim span from its content.
-func NewCode(content string) Code {
-	return Code{content: content}
-}
-
-// Content returns the verbatim text of the span.
-func (c Code) Content() string {
-	return c.content
-}
-
-func (Code) isInline() {}
-
-// Link represents inline content addressing a target URL or anchor.
+// Link represents a styled text run that addresses a target URL or anchor.
 type Link struct {
-	target  string
-	inlines []Inline
+	content string
+	style   Style
+	href    string
 }
 
-// NewLink constructs a link to target from inline children.
-func NewLink(target string, inlines ...Inline) Link {
-	return Link{target: target, inlines: inlines}
+// NewLink constructs a link to href from a styled run of content.
+func NewLink(content string, style Style, href string) Link {
+	return Link{content: content, style: style, href: href}
 }
 
-// Target returns the URL or anchor the link addresses.
-func (l Link) Target() string {
-	return l.target
+// Content returns the text of the link.
+func (l Link) Content() string {
+	return l.content
 }
 
-// Inlines returns the inline children of the link.
-func (l Link) Inlines() []Inline {
-	return l.inlines
+// Style returns the emphasis applied to the link.
+func (l Link) Style() Style {
+	return l.style
+}
+
+// Href returns the URL or anchor the link addresses.
+func (l Link) Href() string {
+	return l.href
 }
 
 func (Link) isInline() {}
