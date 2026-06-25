@@ -22,8 +22,8 @@ type Fields = pipeline.Table[model.FieldKey, Field]
 // Methods represents the table of API methods, keyed by reference.
 type Methods = pipeline.Table[model.Reference, Method]
 
-// Params represents the table of method parameters, keyed by owner reference and
-// parameter key.
+// Params represents the table of method parameters, keyed by owner reference
+// and parameter key.
 type Params = pipeline.Table[model.FieldKey, Param]
 
 // Unions represents the table of discriminated unions, keyed by reference.

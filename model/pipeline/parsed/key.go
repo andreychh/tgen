@@ -15,7 +15,8 @@ import (
 // keyPattern matches a field or parameter key: a snake_case identifier.
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
-// Key is the first cell of a field or parameter row, holding its snake_case key.
+// Key is the first cell of a field or parameter row, holding its snake_case
+// key.
 type Key struct {
 	td *goquery.Selection
 }

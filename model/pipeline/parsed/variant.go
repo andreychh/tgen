@@ -54,9 +54,9 @@ func NewVariantItems(doc *goquery.Document) VariantItems {
 	return VariantItems{doc: doc}
 }
 
-// Table returns the variants table, one record per variant item, keyed by owning
-// union and variant reference. It fails when any reference or variant item is
-// malformed.
+// Table returns the variants table, one record per variant item, keyed by
+// owning union and variant reference. It fails when any reference or variant
+// item is malformed.
 func (i VariantItems) Table() (pipeline.MapTable[model.VariantKey, Variant], error) {
 	out := pipeline.NewMapTable[model.VariantKey, Variant]()
 	for _, h4 := range i.doc.Find("h4").EachIter() {

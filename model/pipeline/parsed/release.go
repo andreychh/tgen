@@ -20,9 +20,10 @@ var releaseRefPattern = regexp.MustCompile(`^#[a-z]+-\d+-\d+$`)
 // releaseVersionPattern captures the Bot API version from its strong element.
 var releaseVersionPattern = regexp.MustCompile(`^Bot API (\d+\.\d+)$`)
 
-// Release is the decoded record of a Bot API release: its reference and version.
-// Unlike the rest of the decoded data it is a single value, not a table. The
-// release date stays encoded in the reference for a later pass to lift.
+// Release is the decoded record of a Bot API release: its reference and
+// version. Unlike the rest of the decoded data it is a single value, not a
+// table. The release date stays encoded in the reference for a later pass to
+// lift.
 type Release struct {
 	Ref     model.Reference
 	Version model.ReleaseVersion
