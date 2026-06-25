@@ -44,6 +44,35 @@ func (i VariantItem) Record() (Variant, error) {
 	return Variant{Ref: model.Reference(ref)}, nil
 }
 
+// UnionVariants are the variant items declared under one union's heading.
+type UnionVariants struct {
+	h4 *goquery.Selection
+}
+
+// NewUnionVariants constructs a UnionVariants over a union's <h4> header.
+func NewUnionVariants(h4 *goquery.Selection) UnionVariants {
+	return UnionVariants{h4: h4}
+}
+
+// Records returns the variants under the heading, paired with the owning union
+// reference. It fails when the reference or any variant item is malformed.
+func (v UnionVariants) Records() (model.Reference, []Variant, error) {
+	owner, err := NewReference(v.h4).Value()
+	if err != nil {
+		return "", nil, fmt.Errorf("parsing union reference: %w", err)
+	}
+	var variants []Variant
+	items := v.h4.NextUntil("h3, h4, hr").Filter("ul").First().Find("li")
+	for _, li := range items.EachIter() {
+		variant, err := NewVariantItem(li).Record()
+		if err != nil {
+			return "", nil, fmt.Errorf("parsing variant: %w", err)
+		}
+		variants = append(variants, variant)
+	}
+	return owner, variants, nil
+}
+
 // VariantItems are the variant items of every union on a documentation page.
 type VariantItems struct {
 	doc *goquery.Document
@@ -63,16 +92,11 @@ func (i VariantItems) Table() (pipeline.MapTable[model.VariantKey, Variant], err
 		if NewHeading(h4).Kind() != KindUnion {
 			continue
 		}
-		owner, err := NewReference(h4).Value()
+		owner, variants, err := NewUnionVariants(h4).Records()
 		if err != nil {
-			return out, fmt.Errorf("parsing union reference: %w", err)
+			return out, err
 		}
-		items := h4.NextUntil("h3, h4, hr").Filter("ul").First().Find("li")
-		for _, li := range items.EachIter() {
-			variant, err := NewVariantItem(li).Record()
-			if err != nil {
-				return out, fmt.Errorf("parsing variant: %w", err)
-			}
+		for _, variant := range variants {
 			out.Insert(model.VariantKey{Owner: owner, Ref: variant.Ref}, variant)
 		}
 	}

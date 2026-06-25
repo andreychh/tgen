@@ -66,6 +66,36 @@ func (r ParamRow) cell(index int) *goquery.Selection {
 	return r.tr.ChildrenFiltered("td").Eq(index)
 }
 
+// MethodParams are the parameter rows declared under one method's heading.
+type MethodParams struct {
+	h4 *goquery.Selection
+}
+
+// NewMethodParams constructs a MethodParams over a method's <h4> header.
+func NewMethodParams(h4 *goquery.Selection) MethodParams {
+	return MethodParams{h4: h4}
+}
+
+// Records returns the parameters under the heading, paired with the owning
+// method reference. It fails when the reference or any parameter row is
+// malformed.
+func (p MethodParams) Records() (model.Reference, []Param, error) {
+	owner, err := NewReference(p.h4).Value()
+	if err != nil {
+		return "", nil, fmt.Errorf("parsing method reference: %w", err)
+	}
+	var params []Param
+	rows := p.h4.NextUntil("h3, h4, hr").Filter("table.table").First().Find("tbody > tr")
+	for _, tr := range rows.EachIter() {
+		param, err := NewParamRow(tr).Record()
+		if err != nil {
+			return "", nil, fmt.Errorf("parsing parameter: %w", err)
+		}
+		params = append(params, param)
+	}
+	return owner, params, nil
+}
+
 // ParamRows are the parameter rows of every method on a documentation page.
 type ParamRows struct {
 	doc *goquery.Document
@@ -85,17 +115,12 @@ func (r ParamRows) Table() (pipeline.MapTable[model.FieldKey, Param], error) {
 		if NewHeading(h4).Kind() != KindMethod {
 			continue
 		}
-		ref, err := NewReference(h4).Value()
+		owner, params, err := NewMethodParams(h4).Records()
 		if err != nil {
-			return out, fmt.Errorf("parsing method reference: %w", err)
+			return out, err
 		}
-		rows := h4.NextUntil("h3, h4, hr").Filter("table.table").First().Find("tbody > tr")
-		for _, tr := range rows.EachIter() {
-			param, err := NewParamRow(tr).Record()
-			if err != nil {
-				return out, fmt.Errorf("parsing parameter: %w", err)
-			}
-			out.Insert(model.FieldKey{Owner: ref, Key: param.Key}, param)
+		for _, param := range params {
+			out.Insert(model.FieldKey{Owner: owner, Key: param.Key}, param)
 		}
 	}
 	return out, nil

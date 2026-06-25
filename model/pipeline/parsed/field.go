@@ -60,6 +60,35 @@ func (r FieldRow) cell(index int) *goquery.Selection {
 	return r.tr.ChildrenFiltered("td").Eq(index)
 }
 
+// ObjectFields are the field rows declared under one object's heading.
+type ObjectFields struct {
+	h4 *goquery.Selection
+}
+
+// NewObjectFields constructs an ObjectFields over an object's <h4> header.
+func NewObjectFields(h4 *goquery.Selection) ObjectFields {
+	return ObjectFields{h4: h4}
+}
+
+// Records returns the fields under the heading, paired with the owning object
+// reference. It fails when the reference or any field row is malformed.
+func (f ObjectFields) Records() (model.Reference, []Field, error) {
+	owner, err := NewReference(f.h4).Value()
+	if err != nil {
+		return "", nil, fmt.Errorf("parsing object reference: %w", err)
+	}
+	var fields []Field
+	rows := f.h4.NextUntil("h3, h4, hr").Filter("table.table").First().Find("tbody > tr")
+	for _, tr := range rows.EachIter() {
+		field, err := NewFieldRow(tr).Record()
+		if err != nil {
+			return "", nil, fmt.Errorf("parsing field: %w", err)
+		}
+		fields = append(fields, field)
+	}
+	return owner, fields, nil
+}
+
 // FieldRows are the field rows of every object on a documentation page.
 type FieldRows struct {
 	doc *goquery.Document
@@ -78,17 +107,12 @@ func (r FieldRows) Table() (pipeline.MapTable[model.FieldKey, Field], error) {
 		if NewHeading(h4).Kind() != KindObject {
 			continue
 		}
-		ref, err := NewReference(h4).Value()
+		owner, fields, err := NewObjectFields(h4).Records()
 		if err != nil {
-			return out, fmt.Errorf("parsing object reference: %w", err)
+			return out, err
 		}
-		rows := h4.NextUntil("h3, h4, hr").Filter("table.table").First().Find("tbody > tr")
-		for _, tr := range rows.EachIter() {
-			field, err := NewFieldRow(tr).Record()
-			if err != nil {
-				return out, fmt.Errorf("parsing field: %w", err)
-			}
-			out.Insert(model.FieldKey{Owner: ref, Key: field.Key}, field)
+		for _, field := range fields {
+			out.Insert(model.FieldKey{Owner: owner, Key: field.Key}, field)
 		}
 	}
 	return out, nil
