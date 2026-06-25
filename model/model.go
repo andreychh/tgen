@@ -25,3 +25,17 @@ type DiscriminatorValue string
 type ReleaseVersion string
 
 type ReleaseDate time.Time
+
+// FieldKey identifies a field or parameter within the object or method that
+// owns it, pairing the owner's reference with the field's own key.
+type FieldKey struct {
+	Owner Reference
+	Key   Key
+}
+
+// VariantKey identifies a variant within the union that owns it, pairing the
+// owner's reference with the variant's own reference.
+type VariantKey struct {
+	Owner Reference
+	Ref   Reference
+}

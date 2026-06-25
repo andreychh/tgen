@@ -20,23 +20,6 @@ func (p Paragraph) Inlines() []Inline {
 
 func (Paragraph) isBlock() {}
 
-// CodeBlock represents a verbatim monowidth block.
-type CodeBlock struct {
-	content string
-}
-
-// NewCodeBlock constructs a verbatim block from its content.
-func NewCodeBlock(content string) CodeBlock {
-	return CodeBlock{content: content}
-}
-
-// Content returns the verbatim text of the block.
-func (c CodeBlock) Content() string {
-	return c.content
-}
-
-func (CodeBlock) isBlock() {}
-
 // List represents a sequence of items. Entity-section prose carries only
 // unordered lists, so the tree models no ordering.
 type List struct {
