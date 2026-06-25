@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
-	
+
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/parsed/prose"
@@ -19,8 +19,8 @@ import (
 // are left for later passes.
 type Field struct {
 	Key         model.Key
-	Type        prosetree.Tree
-	Description prosetree.Tree
+	Type        prosetree.Phrase
+	Description prosetree.Phrase
 }
 
 // FieldRow is one field's row of an object's table.
@@ -41,11 +41,11 @@ func (r FieldRow) Record() (Field, error) {
 	if err != nil {
 		return Field{}, fmt.Errorf("parsing field key: %w", err)
 	}
-	typ, err := prose.NewParser(r.cell(1).Contents()).Parse()
+	typ, err := prose.NewPhrase(r.cell(1).Contents()).Value()
 	if err != nil {
 		return Field{}, fmt.Errorf("parsing field type: %w", err)
 	}
-	description, err := prose.NewParser(r.cell(2).Contents()).Parse()
+	description, err := prose.NewPhrase(r.cell(2).Contents()).Value()
 	if err != nil {
 		return Field{}, fmt.Errorf("parsing field description: %w", err)
 	}

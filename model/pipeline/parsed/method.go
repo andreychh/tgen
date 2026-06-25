@@ -19,7 +19,7 @@ import (
 type Method struct {
 	Ref         model.Reference
 	Name        model.Name
-	Description prosetree.Tree
+	Description prosetree.Passage
 }
 
 // MethodSection is one method's section of the documentation page, headed by
@@ -46,8 +46,7 @@ func (s MethodSection) Record() (Method, error) {
 	if err != nil {
 		return Method{}, fmt.Errorf("parsing method name: %w", err)
 	}
-	description, err := prose.NewParser(s.h4.NextUntil("h3, h4, hr").Not("table.table")).
-		Parse()
+	description, err := prose.NewPassage(s.h4.NextUntil("h3, h4, hr").Not("table.table")).Value()
 	if err != nil {
 		return Method{}, fmt.Errorf("parsing method description: %w", err)
 	}

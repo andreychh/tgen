@@ -19,7 +19,7 @@ import (
 type Object struct {
 	Ref         model.Reference
 	Name        model.Name
-	Description prosetree.Tree
+	Description prosetree.Passage
 }
 
 // ObjectSection is one object's section of the documentation page, headed by
@@ -46,8 +46,7 @@ func (s ObjectSection) Record() (Object, error) {
 	if err != nil {
 		return Object{}, fmt.Errorf("parsing object name: %w", err)
 	}
-	description, err := prose.NewParser(s.h4.NextUntil("h3, h4, hr").Not("table.table")).
-		Parse()
+	description, err := prose.NewPassage(s.h4.NextUntil("h3, h4, hr").Not("table.table")).Value()
 	if err != nil {
 		return Object{}, fmt.Errorf("parsing object description: %w", err)
 	}

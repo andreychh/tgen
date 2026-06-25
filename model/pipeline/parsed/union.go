@@ -14,12 +14,12 @@ import (
 	prosetree "github.com/andreychh/tgen/model/prose"
 )
 
-// Union is the decoded record of a documentation union: its reference, name, and
-// description. Its variants form a separate table.
+// Union is the decoded record of a documentation union: its reference, name,
+// and description. Its variants form a separate table.
 type Union struct {
 	Ref         model.Reference
 	Name        model.Name
-	Description prosetree.Tree
+	Description prosetree.Passage
 }
 
 // UnionSection is one union's section of the documentation page, headed by its
@@ -45,7 +45,7 @@ func (s UnionSection) Record() (Union, error) {
 	if err != nil {
 		return Union{}, fmt.Errorf("parsing union name: %w", err)
 	}
-	description, err := prose.NewParser(s.h4.NextUntil("h3, h4, hr").Not("ul")).Parse()
+	description, err := prose.NewPassage(s.h4.NextUntil("h3, h4, hr").Not("ul")).Value()
 	if err != nil {
 		return Union{}, fmt.Errorf("parsing union description: %w", err)
 	}

@@ -19,9 +19,9 @@ import (
 // for a later pass, as with object fields.
 type Param struct {
 	Key         model.Key
-	Type        prosetree.Tree
-	Required    prosetree.Tree
-	Description prosetree.Tree
+	Type        prosetree.Phrase
+	Required    prosetree.Phrase
+	Description prosetree.Phrase
 }
 
 // ParamRow is one parameter's row of a method's table.
@@ -42,15 +42,15 @@ func (r ParamRow) Record() (Param, error) {
 	if err != nil {
 		return Param{}, fmt.Errorf("parsing parameter key: %w", err)
 	}
-	typ, err := prose.NewParser(r.cell(1).Contents()).Parse()
+	typ, err := prose.NewPhrase(r.cell(1).Contents()).Value()
 	if err != nil {
 		return Param{}, fmt.Errorf("parsing parameter type: %w", err)
 	}
-	required, err := prose.NewParser(r.cell(2).Contents()).Parse()
+	required, err := prose.NewPhrase(r.cell(2).Contents()).Value()
 	if err != nil {
 		return Param{}, fmt.Errorf("parsing parameter required: %w", err)
 	}
-	description, err := prose.NewParser(r.cell(3).Contents()).Parse()
+	description, err := prose.NewPhrase(r.cell(3).Contents()).Value()
 	if err != nil {
 		return Param{}, fmt.Errorf("parsing parameter description: %w", err)
 	}
