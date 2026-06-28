@@ -24,16 +24,22 @@
 // [Text] or [Link] carries one [Style] rather than a subtree of inline nodes.
 package prose
 
+import "slices"
+
 // Block represents a block-level node in a prose tree. The concrete variants
 // are [Paragraph] and [List].
 type Block interface {
 	isBlock()
+	// Equals reports whether other is the same block variant with equal content.
+	Equals(other Block) bool
 }
 
 // Inline represents an inline-level node within a block or phrase. The concrete
 // variants are [Text], [Link], and [LineBreak].
 type Inline interface {
 	isInline()
+	// Equals reports whether other is the same inline variant with equal content.
+	Equals(other Inline) bool
 }
 
 // Passage represents prose as a sequence of blocks.
@@ -49,6 +55,11 @@ func NewPassage(blocks ...Block) Passage {
 // Blocks returns the blocks of the passage.
 func (p Passage) Blocks() []Block {
 	return p.blocks
+}
+
+// Equals reports whether other holds the same blocks in the same order.
+func (p Passage) Equals(other Passage) bool {
+	return slices.EqualFunc(p.blocks, other.blocks, Block.Equals)
 }
 
 // Phrase represents prose as a sequence of inline runs, with no block
@@ -67,4 +78,9 @@ func NewPhrase(inlines ...Inline) Phrase {
 // Inlines returns the inline content of the phrase.
 func (p Phrase) Inlines() []Inline {
 	return p.inlines
+}
+
+// Equals reports whether other holds the same inline runs in the same order.
+func (p Phrase) Equals(other Phrase) bool {
+	return slices.EqualFunc(p.inlines, other.inlines, Inline.Equals)
 }
