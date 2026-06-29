@@ -27,10 +27,9 @@ func NewParser(tokens *Cursor[Token]) Parser {
 	return Parser{tokens: tokens}
 }
 
-// Expression returns the type expression decoded from the whole token stream. It
-// fails when the tokens are malformed or do not all form a single expression.
-//
-//nolint:ireturn // types.Expression is the intentional decoded contract.
+// Expression returns the type expression decoded from the whole token stream.
+// It fails when the tokens are malformed or do not all form a single
+// expression.
 func (p Parser) Expression() (types.Expression, error) {
 	expr, err := p.expression()
 	if err != nil {
@@ -44,8 +43,6 @@ func (p Parser) Expression() (types.Expression, error) {
 
 // expression parses a term, then folds any separator-joined terms that follow
 // into a Union. It fails when a term is malformed.
-//
-//nolint:ireturn // types.Expression is the recursive node contract.
 func (p Parser) expression() (types.Expression, error) {
 	first, err := p.term()
 	if err != nil {
@@ -69,8 +66,6 @@ func (p Parser) expression() (types.Expression, error) {
 // term parses an "Array of" wrapper around a nested expression, or a single
 // reference or primitive. It fails on the end of input or a token that cannot
 // begin a type.
-//
-//nolint:ireturn // types.Expression is the recursive node contract.
 func (p Parser) term() (types.Expression, error) {
 	node, ok := p.tokens.Take()
 	if !ok {

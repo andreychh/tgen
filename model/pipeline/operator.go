@@ -14,8 +14,8 @@ type Operator[K comparable, R Record] interface {
 	Apply() (Table[K, R], error)
 }
 
-// Mapping transforms one record into another. It fails when the record cannot be
-// transformed.
+// Mapping transforms one record into another. It fails when the record cannot
+// be transformed.
 type Mapping[A, B Record] interface {
 	Apply(record A) (B, error)
 }
@@ -34,8 +34,8 @@ func NewMappedTable[K comparable, A, B Record](
 	return MappedTable[K, A, B]{source: source, mapping: mapping}
 }
 
-// Apply returns the projected table, one record per source record under the same
-// key. It fails when the mapping fails on any record.
+// Apply returns the projected table, one record per source record under the
+// same key. It fails when the mapping fails on any record.
 func (t MappedTable[K, A, B]) Apply() (Table[K, B], error) {
 	out := NewMapTableWithCapacity[K, B](t.source.Count())
 	for key, record := range t.source.All() {
@@ -60,8 +60,8 @@ func NewMergedTable[K comparable, R Record](left, right Table[K, R]) MergedTable
 	return MergedTable[K, R]{left: left, right: right}
 }
 
-// Apply returns the union of the two tables. It fails when a key appears in both,
-// since a key identifies at most one record.
+// Apply returns the union of the two tables. It fails when a key appears in
+// both, since a key identifies at most one record.
 func (t MergedTable[K, R]) Apply() (Table[K, R], error) {
 	out := NewMapTableWithCapacity[K, R](t.left.Count() + t.right.Count())
 	for _, source := range []Table[K, R]{t.left, t.right} {

@@ -12,8 +12,8 @@ import (
 	"github.com/andreychh/tgen/model/types/v2"
 )
 
-// Expression is the prose of a field's type column, ready to be decoded into
-// a type expression.
+// Expression is the prose of a field's type column, ready to be decoded into a
+// type expression.
 type Expression struct {
 	phrase prose.Phrase
 }
@@ -25,8 +25,6 @@ func NewExpression(phrase prose.Phrase) Expression {
 
 // Value returns the type expression decoded from the prose. It fails when the
 // prose lexes to an unknown token or does not form a valid type expression.
-//
-//nolint:ireturn // types.Expression is the intentional decoded contract.
 func (e Expression) Value() (types.Expression, error) {
 	tokens, err := NewLexer(e.phrase).Tokens()
 	if err != nil {
