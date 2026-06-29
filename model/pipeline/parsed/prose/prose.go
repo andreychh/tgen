@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 // Package prose decodes the documentation source of an entity section into the
-// flat prose model: a passage of blocks for a section body, a phrase of runs for
-// a table cell. It maps the closed set of HTML nodes that occur in such
+// flat prose model: a passage of blocks for a section body, a phrase of runs
+// for a table cell. It maps the closed set of HTML nodes that occur in such
 // sections, and rejects any markup the model cannot represent.
 package prose
 

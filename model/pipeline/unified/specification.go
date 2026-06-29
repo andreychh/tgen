@@ -13,7 +13,8 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 )
 
-// Fields is the table of unified fields, keyed by owner reference and field key.
+// Fields is the table of unified fields, keyed by owner reference and field
+// key.
 type Fields = pipeline.Table[model.FieldKey, Field]
 
 // Specification is the database after object fields and method parameters are

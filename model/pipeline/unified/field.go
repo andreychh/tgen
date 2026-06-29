@@ -33,8 +33,8 @@ func NewFieldMapping() FieldMapping {
 	return FieldMapping{}
 }
 
-// Apply implements [pipeline.Mapping]. It fails when the description carries the
-// "Optional" marker without its following ". " separator.
+// Apply implements [pipeline.Mapping]. It fails when the description carries
+// the "Optional" marker without its following ". " separator.
 func (m FieldMapping) Apply(field parsed.Field) (Field, error) {
 	description, optional, err := m.resolveDescription(field.Description)
 	if err != nil {
@@ -51,8 +51,8 @@ func (m FieldMapping) Apply(field parsed.Field) (Field, error) {
 // resolveDescription splits a field's description into its optionality and
 // normalized prose. A description that does not open with the italic "Optional"
 // marker belongs to a required field and rides through unchanged. One that does
-// is optional: the marker and the ". " separator that follows it are removed. It
-// fails when the marker is present but the ". " separator is not.
+// is optional: the marker and the ". " separator that follows it are removed.
+// It fails when the marker is present but the ". " separator is not.
 func (m FieldMapping) resolveDescription(
 	description prose.Phrase,
 ) (prose.Phrase, bool, error) {
@@ -102,7 +102,8 @@ func (m ParamMapping) Apply(param parsed.Param) (Field, error) {
 }
 
 // resolveRequired reads a parameter's Required column, yielding true when it
-// holds "Optional" and false when it holds "Yes". It fails on any other content.
+// holds "Optional" and false when it holds "Yes". It fails on any other
+// content.
 func (m ParamMapping) resolveRequired(required prose.Phrase) (bool, error) {
 	inlines := required.Inlines()
 	optional := prose.NewText("Optional", prose.StylePlain)
