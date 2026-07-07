@@ -4,7 +4,7 @@
 
 [tools]
 "python" = "3.13.3"
-"github:astral-sh/uv" = "0.11.23"
+"github:astral-sh/uv" = "0.11.25"
 
 [tasks.setup]
 description = "Create venv and install dependencies"
