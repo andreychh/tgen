@@ -2638,14 +2638,14 @@ func (o SuggestedPostDeclined) write(p *multipartPayload, key string) error {
 // See https://core.telegram.org/bots/api#suggestedpostpaid
 type SuggestedPostPaid struct { 
 	// Currency in which the payment was made. Currently, one of “XTR” for Telegram
-	// Stars or “TON” for toncoins.
+	// Stars or “TON” for TON grams.
     Currency string `json:"currency"` 
 	// Message containing the suggested post. Note that the Message object in this
 	// field will not contain the reply_to_message field even if it itself is a
 	// reply.
     SuggestedPostMessage *Message `json:"suggested_post_message,omitempty"` 
-	// The amount of the currency that was received by the channel in nanotoncoins;
-	// for payments in toncoins only
+	// The amount of the currency that was received by the channel in nanograms; for
+	// payments in TON grams only
     Amount *int64 `json:"amount,omitempty"` 
 	// The amount of Telegram Stars that was received by the channel; for payments
 	// in Telegram Stars only
@@ -2863,12 +2863,12 @@ func (o LinkPreviewOptions) write(p *multipartPayload, key string) error {
 // See https://core.telegram.org/bots/api#suggestedpostprice
 type SuggestedPostPrice struct { 
 	// Currency in which the post will be paid. Currently, must be one of “XTR” for
-	// Telegram Stars or “TON” for toncoins.
+	// Telegram Stars or “TON” for TON grams.
     Currency string `json:"currency"` 
 	// The amount of the currency that will be paid for the post in the smallest
-	// units of the currency, i.e. Telegram Stars or nanotoncoins. Currently, price
-	// in Telegram Stars must be between 5 and 100000, and price in nanotoncoins
-	// must be between 10000000 and 10000000000000.
+	// units of the currency, i.e. Telegram Stars or nanograms. Currently, price in
+	// Telegram Stars must be between 5 and 100000, and price in nanograms must be
+	// between 10000000 and 10000000000000.
     Amount int64 `json:"amount"`
 } 
 
@@ -4670,11 +4670,11 @@ type UniqueGiftInfo struct {
 	// through gift purchase offers.
     Origin string `json:"origin"` 
 	// For gifts bought from other users, the currency in which the payment for the
-	// gift was done. Currently, one of “XTR” for Telegram Stars or “TON” for
-	// toncoins.
+	// gift was done. Currently, one of “XTR” for Telegram Stars or “TON” for TON
+	// grams.
     LastResaleCurrency *string `json:"last_resale_currency,omitempty"` 
 	// For gifts bought from other users, the price paid for the gift in either
-	// Telegram Stars or nanotoncoins
+	// Telegram Stars or nanograms
     LastResaleAmount *int64 `json:"last_resale_amount,omitempty"` 
 	// Unique identifier of the received gift for the bot; only present for gifts
 	// received on behalf of business accounts

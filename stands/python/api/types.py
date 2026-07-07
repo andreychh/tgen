@@ -3093,7 +3093,7 @@ class SuggestedPostPaid(BaseModel):
     currency: str
     """
     Currency in which the payment was made. Currently, one of “XTR” for
-    Telegram Stars or “TON” for toncoins.
+    Telegram Stars or “TON” for TON grams.
     """ 
     suggested_post_message: Message | None = None
     """
@@ -3104,7 +3104,7 @@ class SuggestedPostPaid(BaseModel):
     amount: int | None = None
     """
     The amount of the currency that was received by the channel in
-    nanotoncoins; for payments in toncoins only
+    nanograms; for payments in TON grams only
     """ 
     star_amount: StarAmount | None = None
     """
@@ -3387,14 +3387,14 @@ class SuggestedPostPrice(BaseModel):
     currency: str
     """
     Currency in which the post will be paid. Currently, must be one of “XTR”
-    for Telegram Stars or “TON” for toncoins.
+    for Telegram Stars or “TON” for TON grams.
     """ 
     amount: int
     """
     The amount of the currency that will be paid for the post in the
-    smallest units of the currency, i.e. Telegram Stars or nanotoncoins.
+    smallest units of the currency, i.e. Telegram Stars or nanograms.
     Currently, price in Telegram Stars must be between 5 and 100000, and
-    price in nanotoncoins must be between 10000000 and 10000000000000.
+    price in nanograms must be between 10000000 and 10000000000000.
     """
 
     def _form_json(self, _: _MultipartPayload) -> str:
@@ -5489,12 +5489,12 @@ class UniqueGiftInfo(BaseModel):
     """
     For gifts bought from other users, the currency in which the payment for
     the gift was done. Currently, one of “XTR” for Telegram Stars or “TON”
-    for toncoins.
+    for TON grams.
     """ 
     last_resale_amount: int | None = None
     """
     For gifts bought from other users, the price paid for the gift in either
-    Telegram Stars or nanotoncoins
+    Telegram Stars or nanograms
     """ 
     owned_gift_id: str | None = None
     """
