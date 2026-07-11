@@ -13,10 +13,12 @@ import (
 )
 
 // Field is a field of an object or a parameter of a method, reduced to a single
-// shape: its key, the verbatim prose of its type, whether it is optional, and
-// its description with the optional marker removed.
+// shape: its key, its position among its owner's other fields, the verbatim
+// prose of its type, whether it is optional, and its description with the
+// optional marker removed.
 type Field struct {
 	Key         model.Key
+	Position    model.Position
 	Type        prose.Phrase
 	Optionality model.Optionality
 	Description prose.Phrase
@@ -42,6 +44,7 @@ func (m FieldMapping) Apply(field parsed.Field) (Field, error) {
 	}
 	return Field{
 		Key:         field.Key,
+		Position:    field.Position,
 		Type:        field.Type,
 		Optionality: model.Optionality(optional),
 		Description: description,
@@ -95,6 +98,7 @@ func (m ParamMapping) Apply(param parsed.Param) (Field, error) {
 	}
 	return Field{
 		Key:         param.Key,
+		Position:    param.Position,
 		Type:        param.Type,
 		Optionality: model.Optionality(optional),
 		Description: param.Description,

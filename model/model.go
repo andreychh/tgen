@@ -13,12 +13,11 @@ type Reference string
 
 type Optionality bool
 
-type Description interface {
-	Value() (string, error)
-	Links() ([]string, error)
-}
-
 type Key string
+
+// Position identifies a field's place among the other fields owned by the
+// same reference: zero-based, unique and gapless within that owner's fields.
+type Position int
 
 type DiscriminatorValue string
 
@@ -38,4 +37,9 @@ type FieldKey struct {
 type VariantKey struct {
 	Owner Reference
 	Ref   Reference
+}
+
+type Description interface {
+	Value() (string, error)
+	Links() ([]string, error)
 }

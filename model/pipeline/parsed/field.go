@@ -14,28 +14,32 @@ import (
 	prosetree "github.com/andreychh/tgen/model/prose"
 )
 
-// Field is the decoded record of one object field: its key and the verbatim
-// prose of its type and description. Resolving the type and lifting optionality
-// are left for later passes.
+// Field is the decoded record of one object field: its key, its position
+// among the object's other fields, and the verbatim prose of its type and
+// description. Resolving the type and lifting optionality are left for later
+// passes.
 type Field struct {
 	Key         model.Key
+	Position    model.Position
 	Type        prosetree.Phrase
 	Description prosetree.Phrase
 }
 
-// FieldRow is one field's row of an object's table.
+// FieldRow is one field's row of an object's table, at its position among
+// sibling rows.
 type FieldRow struct {
+	at int
 	tr *goquery.Selection
 }
 
-// NewFieldRow constructs a FieldRow over a table row.
-func NewFieldRow(tr *goquery.Selection) FieldRow {
-	return FieldRow{tr: tr}
+// NewFieldRow constructs a FieldRow over a table row at position at.
+func NewFieldRow(at int, tr *goquery.Selection) FieldRow {
+	return FieldRow{at: at, tr: tr}
 }
 
-// Record returns the field decoded from the row: its key and the prose of its
-// type and description. It fails when the key, type, or description is
-// malformed.
+// Record returns the field decoded from the row: its key, its position, and
+// the prose of its type and description. It fails when the key, type, or
+// description is malformed.
 func (r FieldRow) Record() (Field, error) {
 	key, err := NewKey(r.cell(0)).Value()
 	if err != nil {
@@ -51,6 +55,7 @@ func (r FieldRow) Record() (Field, error) {
 	}
 	return Field{
 		Key:         key,
+		Position:    model.Position(r.at),
 		Type:        typ,
 		Description: description,
 	}, nil
@@ -79,8 +84,8 @@ func (f ObjectFields) Records() (model.Reference, []Field, error) {
 	}
 	var fields []Field
 	rows := f.h4.NextUntil("h3, h4, hr").Filter("table.table").First().Find("tbody > tr")
-	for _, tr := range rows.EachIter() {
-		field, err := NewFieldRow(tr).Record()
+	for at, tr := range rows.EachIter() {
+		field, err := NewFieldRow(at, tr).Record()
 		if err != nil {
 			return "", nil, fmt.Errorf("parsing field: %w", err)
 		}
