@@ -14,29 +14,33 @@ import (
 	prosetree "github.com/andreychh/tgen/model/prose"
 )
 
-// Param is the decoded record of one method parameter: its key and the verbatim
-// prose of its type, requiredness, and description. Lifting optionality is left
-// for a later pass, as with object fields.
+// Param is the decoded record of one method parameter: its key, its position
+// among the method's other parameters, and the verbatim prose of its type,
+// requiredness, and description. Lifting optionality is left for a later
+// pass, as with object fields.
 type Param struct {
 	Key         model.Key
+	Position    model.Position
 	Type        prosetree.Phrase
 	Required    prosetree.Phrase
 	Description prosetree.Phrase
 }
 
-// ParamRow is one parameter's row of a method's table.
+// ParamRow is one parameter's row of a method's table, at its position among
+// sibling rows.
 type ParamRow struct {
+	at int
 	tr *goquery.Selection
 }
 
-// NewParamRow constructs a ParamRow over a table row.
-func NewParamRow(tr *goquery.Selection) ParamRow {
-	return ParamRow{tr: tr}
+// NewParamRow constructs a ParamRow over a table row at position at.
+func NewParamRow(at int, tr *goquery.Selection) ParamRow {
+	return ParamRow{at: at, tr: tr}
 }
 
-// Record returns the parameter decoded from the row: its key and the prose of
-// its type, requiredness, and description. It fails when the key, type,
-// requiredness, or description is malformed.
+// Record returns the parameter decoded from the row: its key, its position,
+// and the prose of its type, requiredness, and description. It fails when the
+// key, type, requiredness, or description is malformed.
 func (r ParamRow) Record() (Param, error) {
 	key, err := NewKey(r.cell(0)).Value()
 	if err != nil {
@@ -56,6 +60,7 @@ func (r ParamRow) Record() (Param, error) {
 	}
 	return Param{
 		Key:         key,
+		Position:    model.Position(r.at),
 		Type:        typ,
 		Required:    required,
 		Description: description,
@@ -86,8 +91,8 @@ func (p MethodParams) Records() (model.Reference, []Param, error) {
 	}
 	var params []Param
 	rows := p.h4.NextUntil("h3, h4, hr").Filter("table.table").First().Find("tbody > tr")
-	for _, tr := range rows.EachIter() {
-		param, err := NewParamRow(tr).Record()
+	for at, tr := range rows.EachIter() {
+		param, err := NewParamRow(at, tr).Record()
 		if err != nil {
 			return "", nil, fmt.Errorf("parsing parameter: %w", err)
 		}

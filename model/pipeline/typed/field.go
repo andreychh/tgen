@@ -14,10 +14,11 @@ import (
 )
 
 // Field is a field of an object or a parameter of a method whose type is
-// resolved from prose into a type expression. Its key, optionality, and
-// description carry over from the unified stage.
+// resolved from prose into a type expression. Its key, position, optionality,
+// and description carry over from the unified stage.
 type Field struct {
 	Key         model.Key
+	Position    model.Position
 	Type        typetree.Expression
 	Optionality model.Optionality
 	Description prose.Phrase
@@ -41,6 +42,7 @@ func (m FieldMapping) Apply(field unified.Field) (Field, error) {
 	}
 	return Field{
 		Key:         field.Key,
+		Position:    field.Position,
 		Type:        expr,
 		Optionality: field.Optionality,
 		Description: field.Description,
