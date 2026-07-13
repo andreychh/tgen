@@ -7498,7 +7498,7 @@ func (m EditMessageCaptionMethod) Call(ctx context.Context, conn Connection) (Ma
 //
 // See https://core.telegram.org/bots/api#editmessagemedia
 type EditMessageMediaMethod struct { 
-	// A JSON-serialized object for a new media content of the message
+	// A JSON-serialized object for the new media content of the message
     Media InputMedia `json:"media"` 
 	// Unique identifier of the business connection on behalf of which the message
 	// to be edited was sent
