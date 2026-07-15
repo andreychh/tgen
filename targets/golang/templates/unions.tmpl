@@ -102,6 +102,21 @@ func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
 	panic("InputMediaGroup is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
 }
 
+// InputRichMedia represents a media element embedded in a rich message.
+//
+//sumtype:decl
+type InputRichMedia interface{ part; formJSON; sealedInputRichMedia() }
+
+func (v InputMediaAnimation) sealedInputRichMedia() {}
+func (v InputMediaAudio) sealedInputRichMedia()     {}
+func (v InputMediaPhoto) sealedInputRichMedia()     {}
+func (v InputMediaVideo) sealedInputRichMedia()     {}
+func (v InputMediaVoiceNote) sealedInputRichMedia() {}
+
+func unmarshalInputRichMedia(data []byte) (InputRichMedia, error) {
+	panic("InputRichMedia is outbound-only — deserialization is unreachable; see https://github.com/andreychh/tgen/issues/96")
+}
+
 // This object represents the content of a message to be sent as a result of an
 // inline query.
 //

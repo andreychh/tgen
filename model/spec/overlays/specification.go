@@ -25,6 +25,7 @@ func NewSpecification(s spec.Specification) Specification {
 			ChatID{},
 			ReplyMarkup{},
 			InputMediaGroup{},
+			InputRichMedia{},
 			InputFile{},
 		),
 	}

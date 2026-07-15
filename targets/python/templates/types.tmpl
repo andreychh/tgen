@@ -126,6 +126,15 @@ type InputMediaGroup = (
         | InputMediaVideo
 )
 
+# A media element embedded in a rich message.
+type InputRichMedia = (
+        InputMediaAnimation
+        | InputMediaAudio
+        | InputMediaPhoto
+        | InputMediaVideo
+        | InputMediaVoiceNote
+)
+
 # The content of a message to be sent as a result of an inline query.
 # See https://core.telegram.org/bots/api#inputmessagecontent
 type InputMessageContent = (
