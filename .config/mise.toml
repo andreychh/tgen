@@ -7,7 +7,7 @@ always_keep_download = false
 legacy_version_file = false
 
 [tools]
-"go" = "1.26.4"
+"go" = "1.26.5"
 "github:caarlos0/svu" = "3.4.1"
 "github:crate-ci/typos" = "1.48.0"
 "github:golangci/golangci-lint" = "2.12.2"
@@ -16,8 +16,8 @@ legacy_version_file = false
 "github:rhysd/actionlint" = "1.7.12"
 "github:tamasfe/taplo" = "0.10.0"
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.1.4"
-"npm:markdownlint-cli2" = "0.23.0"
-"npm:renovate" = "43.252.1"
+"npm:markdownlint-cli2" = "0.23.1"
+"npm:renovate" = "43.268.0"
 "pipx:reuse" = "6.2.0"
 "pipx:yamllint" = "1.38.0"
 
