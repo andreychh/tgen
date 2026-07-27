@@ -9,16 +9,18 @@ import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/resolved/types"
+	"github.com/andreychh/tgen/model/prose"
 	"github.com/andreychh/tgen/model/result"
 	typetree "github.com/andreychh/tgen/model/types/v2"
 )
 
 // Method is the decoded record of a documentation method after its return type
-// is resolved: its reference, name, and what it returns.
+// is resolved: its reference, name, description, and what it returns.
 type Method struct {
-	Ref    model.Reference
-	Name   model.Name
-	Result result.Result
+	Ref         model.Reference
+	Name        model.Name
+	Description prose.Passage
+	Result      result.Result
 }
 
 // MethodMapping maps a parsed method into a resolved method by decoding its
@@ -38,9 +40,10 @@ func (m MethodMapping) Apply(method parsed.Method) (Method, error) {
 		return Method{}, fmt.Errorf("decoding return type: %w", err)
 	}
 	return Method{
-		Ref:    method.Ref,
-		Name:   method.Name,
-		Result: m.classify(expr),
+		Ref:         method.Ref,
+		Name:        method.Name,
+		Description: method.Description,
+		Result:      m.classify(expr),
 	}, nil
 }
 
