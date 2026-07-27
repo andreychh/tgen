@@ -10,6 +10,7 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
+	"github.com/andreychh/tgen/model/pipeline/classified"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 )
 
@@ -18,25 +19,27 @@ import (
 type Fields = pipeline.Table[model.FieldKey, Field]
 
 // Specification is the database after object fields and method parameters are
-// merged into a single table of fields. The object, method, union, and variant
-// tables and the release ride through from the parsed stage unchanged.
+// merged into a single table of fields. The object, method, discriminator,
+// union, and variant tables and the release ride through from the classified
+// stage unchanged.
 type Specification struct {
-	Objects  parsed.Objects
-	Methods  parsed.Methods
-	Fields   Fields
-	Unions   parsed.Unions
-	Variants parsed.Variants
-	Release  parsed.Release
+	Objects        parsed.Objects
+	Methods        parsed.Methods
+	Fields         Fields
+	Discriminators classified.Discriminators
+	Unions         parsed.Unions
+	Variants       parsed.Variants
+	Release        parsed.Release
 }
 
-// Pass is the unification stage: it rewrites a parsed specification into a
+// Pass is the unification stage: it rewrites a classified specification into a
 // unified one, merging object fields and method parameters into a single table.
 type Pass struct {
-	spec parsed.Specification
+	spec classified.Specification
 }
 
-// NewPass constructs a Pass over a parsed specification.
-func NewPass(spec parsed.Specification) Pass {
+// NewPass constructs a Pass over a classified specification.
+func NewPass(spec classified.Specification) Pass {
 	return Pass{spec: spec}
 }
 
@@ -57,11 +60,12 @@ func (p Pass) Specification() (Specification, error) {
 		return Specification{}, fmt.Errorf("merging fields and parameters: %w", err)
 	}
 	return Specification{
-		Objects:  p.spec.Objects,
-		Methods:  p.spec.Methods,
-		Fields:   merged,
-		Unions:   p.spec.Unions,
-		Variants: p.spec.Variants,
-		Release:  p.spec.Release,
+		Objects:        p.spec.Objects,
+		Methods:        p.spec.Methods,
+		Fields:         merged,
+		Discriminators: p.spec.Discriminators,
+		Unions:         p.spec.Unions,
+		Variants:       p.spec.Variants,
+		Release:        p.spec.Release,
 	}, nil
 }

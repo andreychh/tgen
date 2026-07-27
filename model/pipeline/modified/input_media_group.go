@@ -47,13 +47,14 @@ func (r InputMediaGroup) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting input media group fields: %w", err)
 	}
 	return Specification{
-		Objects:  spec.Objects,
-		Methods:  spec.Methods,
-		Fields:   fields,
-		Unions:   unions,
-		Variants: variants,
-		Aliases:  spec.Aliases,
-		Release:  spec.Release,
+		Objects:        spec.Objects,
+		Methods:        spec.Methods,
+		Fields:         fields,
+		Discriminators: spec.Discriminators,
+		Unions:         unions,
+		Variants:       variants,
+		Aliases:        spec.Aliases,
+		Release:        spec.Release,
 	}, nil
 }
 

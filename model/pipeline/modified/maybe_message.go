@@ -51,13 +51,14 @@ func (r MaybeMessage) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting maybe message methods: %w", err)
 	}
 	return Specification{
-		Objects:  spec.Objects,
-		Methods:  methods,
-		Fields:   spec.Fields,
-		Unions:   unions,
-		Variants: variants,
-		Aliases:  aliases,
-		Release:  spec.Release,
+		Objects:        spec.Objects,
+		Methods:        methods,
+		Fields:         spec.Fields,
+		Discriminators: spec.Discriminators,
+		Unions:         unions,
+		Variants:       variants,
+		Aliases:        aliases,
+		Release:        spec.Release,
 	}, nil
 }
 

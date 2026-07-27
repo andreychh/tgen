@@ -7,7 +7,7 @@ import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/classified/discriminator"
-	"github.com/andreychh/tgen/model/pipeline/typed"
+	"github.com/andreychh/tgen/model/pipeline/parsed"
 )
 
 // Discriminator is the fixed value a field's description decodes for the
@@ -22,11 +22,11 @@ type Discriminator struct {
 // position zero for the fixed discriminator value its description may carry,
 // keyed by the reference of the field's owner.
 type DiscriminatorTable struct {
-	fields typed.Fields
+	fields parsed.Fields
 }
 
 // NewDiscriminatorTable constructs a DiscriminatorTable over fields.
-func NewDiscriminatorTable(fields typed.Fields) DiscriminatorTable {
+func NewDiscriminatorTable(fields parsed.Fields) DiscriminatorTable {
 	return DiscriminatorTable{fields: fields}
 }
 
