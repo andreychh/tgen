@@ -10,6 +10,7 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
+	"github.com/andreychh/tgen/model/pipeline/classified"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/typed"
 )
@@ -18,16 +19,17 @@ import (
 type Methods = pipeline.Table[model.Reference, Method]
 
 // Specification is the database after every method's return type is decoded
-// from its description prose into a [result.Result]. The object, field, union,
-// and variant tables and the release ride through from the typed stage
-// unchanged.
+// from its description prose into a [result.Result]. The object, field,
+// discriminator, union, and variant tables and the release ride through from
+// the typed stage unchanged.
 type Specification struct {
-	Objects  parsed.Objects
-	Methods  Methods
-	Fields   typed.Fields
-	Unions   parsed.Unions
-	Variants parsed.Variants
-	Release  parsed.Release
+	Objects        parsed.Objects
+	Methods        Methods
+	Fields         typed.Fields
+	Discriminators classified.Discriminators
+	Unions         parsed.Unions
+	Variants       parsed.Variants
+	Release        parsed.Release
 }
 
 // Pass is the resolution stage: it rewrites a typed specification into a
@@ -50,11 +52,12 @@ func (p Pass) Specification() (Specification, error) {
 		return Specification{}, fmt.Errorf("resolving methods: %w", err)
 	}
 	return Specification{
-		Objects:  p.spec.Objects,
-		Methods:  methods,
-		Fields:   p.spec.Fields,
-		Unions:   p.spec.Unions,
-		Variants: p.spec.Variants,
-		Release:  p.spec.Release,
+		Objects:        p.spec.Objects,
+		Methods:        methods,
+		Fields:         p.spec.Fields,
+		Discriminators: p.spec.Discriminators,
+		Unions:         p.spec.Unions,
+		Variants:       p.spec.Variants,
+		Release:        p.spec.Release,
 	}, nil
 }

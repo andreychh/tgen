@@ -9,7 +9,6 @@ import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
-	"github.com/andreychh/tgen/model/pipeline/resolved"
 )
 
 // Fields is the table of classified fields, keyed by owner reference and
@@ -23,28 +22,29 @@ type Discriminators = pipeline.Table[model.Reference, Discriminator]
 
 // Specification is the database after every field's description is decoded
 // for the fixed discriminator value it may carry: a field that decodes one
-// moves from Fields into Discriminators. The object, method, union, and
-// variant tables and the release ride through from the resolved stage
+// moves from Fields into Discriminators. The object, method, parameter, union,
+// and variant tables and the release ride through from the parsed stage
 // unchanged.
 type Specification struct {
 	Objects        parsed.Objects
-	Methods        resolved.Methods
+	Methods        parsed.Methods
 	Fields         Fields
+	Params         parsed.Params
 	Discriminators Discriminators
 	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Release        parsed.Release
 }
 
-// Pass is the classification stage: it rewrites a resolved specification into
-// a classified one, moving each field whose description decodes a fixed
+// Pass is the classification stage: it rewrites a parsed specification into a
+// classified one, moving each field whose description decodes a fixed
 // discriminator value out of Fields and into Discriminators.
 type Pass struct {
-	spec resolved.Specification
+	spec parsed.Specification
 }
 
-// NewPass constructs a Pass over a resolved specification.
-func NewPass(spec resolved.Specification) Pass {
+// NewPass constructs a Pass over a parsed specification.
+func NewPass(spec parsed.Specification) Pass {
 	return Pass{spec: spec}
 }
 
@@ -58,6 +58,7 @@ func (p Pass) Specification() Specification {
 		Objects:        p.spec.Objects,
 		Methods:        p.spec.Methods,
 		Fields:         fields,
+		Params:         p.spec.Params,
 		Discriminators: discriminators,
 		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,

@@ -5,13 +5,13 @@ package classified
 
 import (
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/pipeline/typed"
+	"github.com/andreychh/tgen/model/pipeline/parsed"
 )
 
-// Field is a classified field, an alias of [typed.Field]: the classified
+// Field is a classified field, an alias of [parsed.Field]: the classified
 // stage changes which fields belong to Fields, not the shape of any single
 // field.
-type Field = typed.Field
+type Field = parsed.Field
 
 // FieldFilter is a [pipeline.Filter] that excludes a field already extracted
 // into discriminators.

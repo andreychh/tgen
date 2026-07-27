@@ -51,13 +51,14 @@ func (r InputFile) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting input file fields: %w", err)
 	}
 	return Specification{
-		Objects:  objects,
-		Methods:  spec.Methods,
-		Fields:   fields,
-		Unions:   unions,
-		Variants: variants,
-		Aliases:  aliases,
-		Release:  spec.Release,
+		Objects:        objects,
+		Methods:        spec.Methods,
+		Fields:         fields,
+		Discriminators: spec.Discriminators,
+		Unions:         unions,
+		Variants:       variants,
+		Aliases:        aliases,
+		Release:        spec.Release,
 	}, nil
 }
 

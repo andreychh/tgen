@@ -42,13 +42,14 @@ func (r RichText) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("introducing rich text variants: %w", err)
 	}
 	return Specification{
-		Objects:  spec.Objects,
-		Methods:  spec.Methods,
-		Fields:   spec.Fields,
-		Unions:   spec.Unions,
-		Variants: variants,
-		Aliases:  aliases,
-		Release:  spec.Release,
+		Objects:        spec.Objects,
+		Methods:        spec.Methods,
+		Fields:         spec.Fields,
+		Discriminators: spec.Discriminators,
+		Unions:         spec.Unions,
+		Variants:       variants,
+		Aliases:        aliases,
+		Release:        spec.Release,
 	}, nil
 }
 

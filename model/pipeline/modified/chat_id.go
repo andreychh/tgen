@@ -50,13 +50,14 @@ func (r ChatID) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting chat id fields: %w", err)
 	}
 	return Specification{
-		Objects:  spec.Objects,
-		Methods:  spec.Methods,
-		Fields:   fields,
-		Unions:   unions,
-		Variants: variants,
-		Aliases:  aliases,
-		Release:  spec.Release,
+		Objects:        spec.Objects,
+		Methods:        spec.Methods,
+		Fields:         fields,
+		Discriminators: spec.Discriminators,
+		Unions:         unions,
+		Variants:       variants,
+		Aliases:        aliases,
+		Release:        spec.Release,
 	}, nil
 }
 

@@ -12,6 +12,7 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
+	"github.com/andreychh/tgen/model/pipeline/classified"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/resolved"
 	"github.com/andreychh/tgen/model/pipeline/typed"
@@ -25,13 +26,14 @@ type Aliases = pipeline.Table[model.Reference, Alias]
 // the documentation does not name, and redirect matching field or method
 // types to them.
 type Specification struct {
-	Objects  parsed.Objects
-	Methods  resolved.Methods
-	Fields   typed.Fields
-	Unions   parsed.Unions
-	Variants parsed.Variants
-	Aliases  Aliases
-	Release  parsed.Release
+	Objects        parsed.Objects
+	Methods        resolved.Methods
+	Fields         typed.Fields
+	Discriminators classified.Discriminators
+	Unions         parsed.Unions
+	Variants       parsed.Variants
+	Aliases        Aliases
+	Release        parsed.Release
 }
 
 // Rule is a single tgen-introduced correction: given a specification, it
@@ -60,13 +62,14 @@ func NewPass(spec resolved.Specification) Pass {
 // fails when any rule fails.
 func (p Pass) Specification() (Specification, error) {
 	spec := Specification{
-		Objects:  p.spec.Objects,
-		Methods:  p.spec.Methods,
-		Fields:   p.spec.Fields,
-		Unions:   p.spec.Unions,
-		Variants: p.spec.Variants,
-		Aliases:  pipeline.NewMapTable[model.Reference, Alias](),
-		Release:  p.spec.Release,
+		Objects:        p.spec.Objects,
+		Methods:        p.spec.Methods,
+		Fields:         p.spec.Fields,
+		Discriminators: p.spec.Discriminators,
+		Unions:         p.spec.Unions,
+		Variants:       p.spec.Variants,
+		Aliases:        pipeline.NewMapTable[model.Reference, Alias](),
+		Release:        p.spec.Release,
 	}
 	rules := []Rule{
 		ChatID{},
