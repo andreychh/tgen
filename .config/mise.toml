@@ -17,7 +17,7 @@ legacy_version_file = false
 "github:tamasfe/taplo" = "0.10.0"
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.1.4"
 "npm:markdownlint-cli2" = "0.23.1"
-"npm:renovate" = "43.269.2"
+"npm:renovate" = "43.272.5"
 "pipx:reuse" = "6.2.0"
 "pipx:yamllint" = "1.38.0"
 
