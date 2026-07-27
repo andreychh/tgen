@@ -127,8 +127,9 @@ func (maybeMessageMapping) Apply(method resolved.Method) (resolved.Method, error
 		return method, nil
 	}
 	return resolved.Method{
-		Ref:    method.Ref,
-		Name:   method.Name,
-		Result: result.NewValue(typetree.NewNamed(maybeMessageRef)),
+		Ref:         method.Ref,
+		Name:        method.Name,
+		Description: method.Description,
+		Result:      result.NewValue(typetree.NewNamed(maybeMessageRef)),
 	}, nil
 }
