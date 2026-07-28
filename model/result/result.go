@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-// Package result classifies what a Telegram Bot API method returns into one of
-// two variants: a [Confirmation] that only signals success, or a [Value] that
-// carries a typed return expression.
+// Package result models what a Telegram Bot API method returns as one of two
+// variants: a [Confirmation] that only signals success, or a [Value] that
+// carries the type it returns.
 package result
 
-import "github.com/andreychh/tgen/model/types/v2"
+import (
+	"github.com/andreychh/tgen/model/typeform"
+)
 
 // Result represents what a Telegram Bot API method returns. The concrete
 // variants are [Confirmation] and [Value].
@@ -26,19 +28,19 @@ func NewConfirmation() Confirmation {
 
 func (Confirmation) isResult() {}
 
-// Value represents a method result that carries a typed return expression.
+// Value represents a method result that carries the type it returns.
 type Value struct {
-	expr types.Expression
+	typ typeform.Type
 }
 
-// NewValue constructs a Value from a return type expression.
-func NewValue(expr types.Expression) Value {
-	return Value{expr: expr}
+// NewValue constructs a Value from a returned type.
+func NewValue(typ typeform.Type) Value {
+	return Value{typ: typ}
 }
 
-// Type returns the return type expression carried by the Value.
-func (v Value) Type() types.Expression {
-	return v.expr
+// Type returns the type carried by the Value.
+func (v Value) Type() typeform.Type {
+	return v.typ
 }
 
 func (Value) isResult() {}

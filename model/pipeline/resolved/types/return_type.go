@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // ReturnType is a method's description ready to be decoded into the type it
@@ -24,7 +24,7 @@ func NewReturnType(description prose.Passage) ReturnType {
 // Value returns the type expression decoded from the return clause in the first
 // paragraph of the description. It fails when the description has no first
 // paragraph or no rule recognizes the return clause.
-func (r ReturnType) Value() (types.Expression, error) {
+func (r ReturnType) Value() (typeexpr.Expression, error) {
 	blocks := r.description.Blocks()
 	if len(blocks) == 0 {
 		return nil, errors.New("method description has no blocks")

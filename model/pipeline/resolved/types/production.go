@@ -5,7 +5,7 @@ package types
 
 import (
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // ProductionRule is a [Rule] composed of other rules tried in priority order.
@@ -20,7 +20,7 @@ func NewProductionRule(rules ...Rule) ProductionRule {
 }
 
 // Match implements [Rule].
-func (p ProductionRule) Match(inlines []prose.Inline) (types.Expression, bool) {
+func (p ProductionRule) Match(inlines []prose.Inline) (typeexpr.Expression, bool) {
 	for _, rule := range p.rules {
 		if expr, ok := rule.Match(inlines); ok {
 			return expr, true

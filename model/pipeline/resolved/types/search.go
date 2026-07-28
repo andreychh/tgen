@@ -5,7 +5,7 @@ package types
 
 import (
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Search represents a scan of an inline run for the first position where a
@@ -21,7 +21,7 @@ func NewSearch(rule Rule) Search {
 
 // Find returns the type expression decoded at the first position in inlines
 // where the rule matches, or false when no position matches.
-func (s Search) Find(inlines []prose.Inline) (types.Expression, bool) {
+func (s Search) Find(inlines []prose.Inline) (typeexpr.Expression, bool) {
 	for offset := range inlines {
 		if expr, ok := s.rule.Match(inlines[offset:]); ok {
 			return expr, true

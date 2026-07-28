@@ -11,7 +11,7 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/typed"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 const (
@@ -104,18 +104,18 @@ type replyMarkupMapping struct{}
 
 // Apply implements [pipeline.Mapping]. It never fails.
 func (replyMarkupMapping) Apply(field typed.Field) (typed.Field, error) {
-	if !field.Type.Equals(typetree.NewUnion(
-		typetree.NewNamed(inlineKeyboardMarkupRef),
-		typetree.NewNamed(replyKeyboardMarkupRef),
-		typetree.NewNamed(replyKeyboardRemoveRef),
-		typetree.NewNamed(forceReplyRef),
+	if !field.Type.Equals(typeexpr.NewUnion(
+		typeexpr.NewNamed(inlineKeyboardMarkupRef),
+		typeexpr.NewNamed(replyKeyboardMarkupRef),
+		typeexpr.NewNamed(replyKeyboardRemoveRef),
+		typeexpr.NewNamed(forceReplyRef),
 	)) {
 		return field, nil
 	}
 	return typed.Field{
 		Key:         field.Key,
 		Position:    field.Position,
-		Type:        typetree.NewNamed(replyMarkupRef),
+		Type:        typeexpr.NewNamed(replyMarkupRef),
 		Optionality: field.Optionality,
 		Description: field.Description,
 	}, nil

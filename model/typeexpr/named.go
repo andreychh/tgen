@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package types
+package typeexpr
 
 import "github.com/andreychh/tgen/model"
 

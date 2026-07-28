@@ -5,7 +5,7 @@ package types
 
 import (
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/primitive"
 )
 
 // Token is one lexical unit of a type expression. Its variants split into value
@@ -32,18 +32,18 @@ func (r Ref) Reference() model.Reference {
 
 func (Ref) isToken() {}
 
-// Primitive is a built-in type word, one of the closed PrimitiveKind set.
+// Primitive is a built-in type word, one of the closed [primitive.Kind] set.
 type Primitive struct {
-	kind types.PrimitiveKind
+	kind primitive.Kind
 }
 
 // NewPrimitive constructs a Primitive denoting the built-in type kind.
-func NewPrimitive(kind types.PrimitiveKind) Primitive {
+func NewPrimitive(kind primitive.Kind) Primitive {
 	return Primitive{kind: kind}
 }
 
 // Kind returns the built-in type the token denotes.
-func (p Primitive) Kind() types.PrimitiveKind {
+func (p Primitive) Kind() primitive.Kind {
 	return p.kind
 }
 

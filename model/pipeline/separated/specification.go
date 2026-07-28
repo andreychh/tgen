@@ -1,0 +1,65 @@
+// SPDX-FileCopyrightText: 2026 Andrey Chernykh
+// SPDX-License-Identifier: MIT
+
+// Package separated splits each method's return into what the method signals:
+// a command that only reports success, or a value that carries data.
+package separated
+
+import (
+	"fmt"
+
+	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/pipeline"
+	"github.com/andreychh/tgen/model/pipeline/classified"
+	"github.com/andreychh/tgen/model/pipeline/flattened"
+	"github.com/andreychh/tgen/model/pipeline/parsed"
+)
+
+// Methods is the table of separated methods, keyed by reference.
+type Methods = pipeline.Table[model.Reference, Method]
+
+// Specification is the database after every method's return is split into what
+// the method signals. The object, field, discriminator, union, variant, and
+// alias tables and the release ride through from the flattened stage unchanged.
+type Specification struct {
+	Objects        parsed.Objects
+	Methods        Methods
+	Fields         flattened.Fields
+	Discriminators classified.Discriminators
+	Unions         parsed.Unions
+	Variants       parsed.Variants
+	Aliases        flattened.Aliases
+	Release        parsed.Release
+}
+
+// Pass is the separation stage: it rewrites a flattened specification into a
+// separated one, deciding for every method whether its return carries data or
+// only reports success.
+type Pass struct {
+	spec flattened.Specification
+}
+
+// NewPass constructs a Pass over a flattened specification.
+func NewPass(spec flattened.Specification) Pass {
+	return Pass{spec: spec}
+}
+
+// Specification returns the separated specification, splitting every method's
+// return into a command or a value. Classifying a return cannot fail, so the
+// returned error is always nil.
+func (p Pass) Specification() (Specification, error) {
+	methods, err := pipeline.NewMappedTable(p.spec.Methods, NewMethodMapping()).Apply()
+	if err != nil {
+		return Specification{}, fmt.Errorf("separating methods: %w", err)
+	}
+	return Specification{
+		Objects:        p.spec.Objects,
+		Methods:        methods,
+		Fields:         p.spec.Fields,
+		Discriminators: p.spec.Discriminators,
+		Unions:         p.spec.Unions,
+		Variants:       p.spec.Variants,
+		Aliases:        p.spec.Aliases,
+		Release:        p.spec.Release,
+	}, nil
+}
