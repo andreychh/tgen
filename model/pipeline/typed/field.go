@@ -10,7 +10,7 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/typed/types"
 	"github.com/andreychh/tgen/model/pipeline/unified"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Field is a field of an object or a parameter of a method whose type is
@@ -19,7 +19,7 @@ import (
 type Field struct {
 	Key         model.Key
 	Position    model.Position
-	Type        typetree.Expression
+	Type        typeexpr.Expression
 	Optionality model.Optionality
 	Description prose.Phrase
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Expression is the prose of a field's type column, ready to be decoded into a
@@ -25,7 +25,7 @@ func NewExpression(phrase prose.Phrase) Expression {
 
 // Value returns the type expression decoded from the prose. It fails when the
 // prose lexes to an unknown token or does not form a valid type expression.
-func (e Expression) Value() (types.Expression, error) {
+func (e Expression) Value() (typeexpr.Expression, error) {
 	tokens, err := NewLexer(e.phrase).Tokens()
 	if err != nil {
 		return nil, fmt.Errorf("lexing type expression: %w", err)

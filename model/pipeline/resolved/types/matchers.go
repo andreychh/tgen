@@ -18,8 +18,9 @@ import (
 	"strings"
 
 	"github.com/andreychh/tgen/model"
+	"github.com/andreychh/tgen/model/primitive"
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Marker represents a prose signal word — "Returns", "is returned", "Array of"
@@ -66,18 +67,18 @@ func (Named) Matches(inline prose.Inline) (model.Reference, bool) {
 // Primitive represents the italic keyword form that a return clause uses for
 // built-in types such as True, String, and Float.
 type Primitive struct {
-	primitives types.Primitives
+	primitives typeexpr.Primitives
 }
 
 // NewPrimitive constructs a Primitive over the default primitive vocabulary.
 func NewPrimitive() Primitive {
-	return Primitive{primitives: types.NewPrimitives()}
+	return Primitive{primitives: typeexpr.NewPrimitives()}
 }
 
 // Matches reports whether the inline is an italic text run naming a built-in
 // type and returns the kind it names. The kind is empty when the report is
 // false.
-func (p Primitive) Matches(inline prose.Inline) (types.PrimitiveKind, bool) {
+func (p Primitive) Matches(inline prose.Inline) (primitive.Kind, bool) {
 	text, ok := inline.(prose.Text)
 	if !ok || text.Style() != prose.StyleItalic {
 		return "", false

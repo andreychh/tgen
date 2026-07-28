@@ -10,9 +10,9 @@ import (
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/resolved"
+	"github.com/andreychh/tgen/model/primitive"
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/result"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 const (
@@ -70,7 +70,7 @@ func (r MaybeMessage) aliases() Aliases {
 	out.Insert(trueRef, Alias{
 		Ref:  trueRef,
 		Name: "True",
-		Type: typetree.NewPrimitive(typetree.True),
+		Type: typeexpr.NewPrimitive(primitive.True),
 		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"True represents the boolean true value in Telegram API responses.",
 			prose.StylePlain,
@@ -116,13 +116,9 @@ type maybeMessageMapping struct{}
 
 // Apply implements [pipeline.Mapping]. It never fails.
 func (maybeMessageMapping) Apply(method resolved.Method) (resolved.Method, error) {
-	value, ok := method.Result.(result.Value)
-	if !ok {
-		return method, nil
-	}
-	if !value.Type().Equals(typetree.NewUnion(
-		typetree.NewNamed(messageRef),
-		typetree.NewPrimitive(typetree.True),
+	if !method.Type.Equals(typeexpr.NewUnion(
+		typeexpr.NewNamed(messageRef),
+		typeexpr.NewPrimitive(primitive.True),
 	)) {
 		return method, nil
 	}
@@ -130,6 +126,6 @@ func (maybeMessageMapping) Apply(method resolved.Method) (resolved.Method, error
 		Ref:         method.Ref,
 		Name:        method.Name,
 		Description: method.Description,
-		Result:      result.NewValue(typetree.NewNamed(maybeMessageRef)),
+		Type:        typeexpr.NewNamed(maybeMessageRef),
 	}, nil
 }

@@ -6,7 +6,7 @@ package types
 import (
 	"errors"
 
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Parser decodes a stream of type tokens into a type expression by recursive
@@ -30,7 +30,7 @@ func NewParser(tokens *Cursor[Token]) Parser {
 // Expression returns the type expression decoded from the whole token stream.
 // It fails when the tokens are malformed or do not all form a single
 // expression.
-func (p Parser) Expression() (types.Expression, error) {
+func (p Parser) Expression() (typeexpr.Expression, error) {
 	expr, err := p.expression()
 	if err != nil {
 		return nil, err
@@ -43,12 +43,12 @@ func (p Parser) Expression() (types.Expression, error) {
 
 // expression parses a term, then folds any separator-joined terms that follow
 // into a Union. It fails when a term is malformed.
-func (p Parser) expression() (types.Expression, error) {
+func (p Parser) expression() (typeexpr.Expression, error) {
 	first, err := p.term()
 	if err != nil {
 		return nil, err
 	}
-	variants := []types.Expression{first}
+	variants := []typeexpr.Expression{first}
 	for p.atSeparator() {
 		p.tokens.Skip()
 		next, err := p.term()
@@ -60,13 +60,13 @@ func (p Parser) expression() (types.Expression, error) {
 	if len(variants) == 1 {
 		return variants[0], nil
 	}
-	return types.NewUnion(variants...), nil
+	return typeexpr.NewUnion(variants...), nil
 }
 
 // term parses an "Array of" wrapper around a nested expression, or a single
 // reference or primitive. It fails on the end of input or a token that cannot
 // begin a type.
-func (p Parser) term() (types.Expression, error) {
+func (p Parser) term() (typeexpr.Expression, error) {
 	node, ok := p.tokens.Take()
 	if !ok {
 		return nil, errors.New("expected a type, found end of input")
@@ -77,11 +77,11 @@ func (p Parser) term() (types.Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return types.NewArray(element), nil
+		return typeexpr.NewArray(element), nil
 	case Ref:
-		return types.NewNamed(node.Reference()), nil
+		return typeexpr.NewNamed(node.Reference()), nil
 	case Primitive:
-		return types.NewPrimitive(node.Kind()), nil
+		return typeexpr.NewPrimitive(node.Kind()), nil
 	default:
 		return nil, errors.New("expected a type")
 	}

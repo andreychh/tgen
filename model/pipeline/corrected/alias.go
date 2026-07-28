@@ -6,7 +6,7 @@ package corrected
 import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Alias is a name tgen introduces for a type expression the documentation
@@ -15,6 +15,6 @@ import (
 type Alias struct {
 	Ref         model.Reference
 	Name        model.Name
-	Type        typetree.Expression
+	Type        typeexpr.Expression
 	Description prose.Passage
 }

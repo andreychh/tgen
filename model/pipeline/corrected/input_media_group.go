@@ -11,7 +11,7 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/typed"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 const (
@@ -107,19 +107,19 @@ type inputMediaGroupMapping struct{}
 
 // Apply implements [pipeline.Mapping]. It never fails.
 func (inputMediaGroupMapping) Apply(field typed.Field) (typed.Field, error) {
-	if !field.Type.Equals(typetree.NewArray(typetree.NewUnion(
-		typetree.NewNamed(inputMediaAudioRef),
-		typetree.NewNamed(inputMediaDocumentRef),
-		typetree.NewNamed(inputMediaLivePhotoRef),
-		typetree.NewNamed(inputMediaPhotoRef),
-		typetree.NewNamed(inputMediaVideoRef),
+	if !field.Type.Equals(typeexpr.NewArray(typeexpr.NewUnion(
+		typeexpr.NewNamed(inputMediaAudioRef),
+		typeexpr.NewNamed(inputMediaDocumentRef),
+		typeexpr.NewNamed(inputMediaLivePhotoRef),
+		typeexpr.NewNamed(inputMediaPhotoRef),
+		typeexpr.NewNamed(inputMediaVideoRef),
 	))) {
 		return field, nil
 	}
 	return typed.Field{
 		Key:         field.Key,
 		Position:    field.Position,
-		Type:        typetree.NewArray(typetree.NewNamed(inputMediaGroupRef)),
+		Type:        typeexpr.NewArray(typeexpr.NewNamed(inputMediaGroupRef)),
 		Optionality: field.Optionality,
 		Description: field.Description,
 	}, nil

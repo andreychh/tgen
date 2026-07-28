@@ -10,8 +10,9 @@ import (
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/typed"
+	"github.com/andreychh/tgen/model/primitive"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 const (
@@ -68,7 +69,7 @@ func (r ChatID) aliases() Aliases {
 	out.Insert(idRef, Alias{
 		Ref:  idRef,
 		Name: "Id",
-		Type: typetree.NewPrimitive(typetree.Integer),
+		Type: typeexpr.NewPrimitive(primitive.Integer),
 		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"ID represents a numeric Telegram chat or user identifier.",
 			prose.StylePlain,
@@ -77,7 +78,7 @@ func (r ChatID) aliases() Aliases {
 	out.Insert(usernameRef, Alias{
 		Ref:  usernameRef,
 		Name: "Username",
-		Type: typetree.NewPrimitive(typetree.String),
+		Type: typeexpr.NewPrimitive(primitive.String),
 		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"Username represents a Telegram username.",
 			prose.StylePlain,
@@ -121,16 +122,16 @@ type chatIDMapping struct{}
 
 // Apply implements [pipeline.Mapping]. It never fails.
 func (chatIDMapping) Apply(field typed.Field) (typed.Field, error) {
-	if !field.Type.Equals(typetree.NewUnion(
-		typetree.NewPrimitive(typetree.Integer),
-		typetree.NewPrimitive(typetree.String),
+	if !field.Type.Equals(typeexpr.NewUnion(
+		typeexpr.NewPrimitive(primitive.Integer),
+		typeexpr.NewPrimitive(primitive.String),
 	)) {
 		return field, nil
 	}
 	return typed.Field{
 		Key:         field.Key,
 		Position:    field.Position,
-		Type:        typetree.NewNamed(chatIDRef),
+		Type:        typeexpr.NewNamed(chatIDRef),
 		Optionality: field.Optionality,
 		Description: field.Description,
 	}, nil

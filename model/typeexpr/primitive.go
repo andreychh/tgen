@@ -1,20 +1,24 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package types
+package typeexpr
+
+import (
+	"github.com/andreychh/tgen/model/primitive"
+)
 
 // Primitive represents a built-in type the spec uses without an anchor.
 type Primitive struct {
-	kind PrimitiveKind
+	kind primitive.Kind
 }
 
 // NewPrimitive constructs a primitive type of the given kind.
-func NewPrimitive(kind PrimitiveKind) Primitive {
+func NewPrimitive(kind primitive.Kind) Primitive {
 	return Primitive{kind: kind}
 }
 
 // Kind returns the kind of the primitive.
-func (p Primitive) Kind() PrimitiveKind {
+func (p Primitive) Kind() primitive.Kind {
 	return p.kind
 }
 

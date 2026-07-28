@@ -10,20 +10,20 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Lexer tokenizes the prose of a type cell, recognizing built-in type words
 // through a primitive vocabulary.
 type Lexer struct {
 	phrase     prose.Phrase
-	primitives types.Primitives
+	primitives typeexpr.Primitives
 }
 
 // NewLexer constructs a Lexer over the prose of a type cell, using the default
 // primitive vocabulary.
 func NewLexer(phrase prose.Phrase) Lexer {
-	return Lexer{phrase: phrase, primitives: types.NewPrimitives()}
+	return Lexer{phrase: phrase, primitives: typeexpr.NewPrimitives()}
 }
 
 // Tokens lexes the phrase into its tokens. It fails on a non-anchor link, an

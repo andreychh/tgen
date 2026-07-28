@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // Package resolved decodes the return type of each method from its description
-// prose into a [result.Result].
+// prose into a type expression.
 package resolved
 
 import (
@@ -19,7 +19,7 @@ import (
 type Methods = pipeline.Table[model.Reference, Method]
 
 // Specification is the database after every method's return type is decoded
-// from its description prose into a [result.Result]. The object, field,
+// from its description prose into a type expression. The object, field,
 // discriminator, union, and variant tables and the release ride through from
 // the typed stage unchanged.
 type Specification struct {
@@ -44,7 +44,7 @@ func NewPass(spec typed.Specification) Pass {
 }
 
 // Specification returns the resolved specification, decoding every method's
-// return type from its description prose into a [result.Result]. It fails when
+// return type from its description prose into a type expression. It fails when
 // any method's return type prose cannot be decoded.
 func (p Pass) Specification() (Specification, error) {
 	methods, err := pipeline.NewMappedTable(p.spec.Methods, NewMethodMapping()).Apply()

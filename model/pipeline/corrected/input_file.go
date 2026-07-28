@@ -10,8 +10,9 @@ import (
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/typed"
+	"github.com/andreychh/tgen/model/primitive"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 const (
@@ -70,7 +71,7 @@ func (r InputFile) aliases() Aliases {
 	out.Insert(fileIDRef, Alias{
 		Ref:  fileIDRef,
 		Name: "FileId",
-		Type: typetree.NewPrimitive(typetree.String),
+		Type: typeexpr.NewPrimitive(primitive.String),
 		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"FileID represents a Telegram file identifier.",
 			prose.StylePlain,
@@ -129,7 +130,7 @@ func (m inputFileMapping) Apply(field typed.Field) (typed.Field, error) {
 	return typed.Field{
 		Key:         field.Key,
 		Position:    field.Position,
-		Type:        typetree.NewNamed(inputFileRef),
+		Type:        typeexpr.NewNamed(inputFileRef),
 		Optionality: field.Optionality,
 		Description: field.Description,
 	}, nil
@@ -139,12 +140,12 @@ func (m inputFileMapping) Apply(field typed.Field) (typed.Field, error) {
 // String, or as a bare String field whose description links to the
 // sending-files guide.
 func (m inputFileMapping) matches(field typed.Field) bool {
-	return field.Type.Equals(typetree.NewNamed(inputFileRef)) ||
-		field.Type.Equals(typetree.NewUnion(
-			typetree.NewNamed(inputFileRef),
-			typetree.NewPrimitive(typetree.String),
+	return field.Type.Equals(typeexpr.NewNamed(inputFileRef)) ||
+		field.Type.Equals(typeexpr.NewUnion(
+			typeexpr.NewNamed(inputFileRef),
+			typeexpr.NewPrimitive(primitive.String),
 		)) ||
-		field.Type.Equals(typetree.NewPrimitive(typetree.String)) &&
+		field.Type.Equals(typeexpr.NewPrimitive(primitive.String)) &&
 			hasSendingFilesLink(field.Description)
 }
 

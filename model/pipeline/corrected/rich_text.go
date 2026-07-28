@@ -9,8 +9,9 @@ import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
+	"github.com/andreychh/tgen/model/primitive"
 	"github.com/andreychh/tgen/model/prose"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 const (
@@ -60,7 +61,7 @@ func (r RichText) aliases() Aliases {
 	out.Insert(richTextPlainRef, Alias{
 		Ref:  richTextPlainRef,
 		Name: "RichTextPlain",
-		Type: typetree.NewPrimitive(typetree.String),
+		Type: typeexpr.NewPrimitive(primitive.String),
 		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"RichTextPlain represents the plain-text variant of a RichText value.",
 			prose.StylePlain,
@@ -69,7 +70,7 @@ func (r RichText) aliases() Aliases {
 	out.Insert(richTextSequenceRef, Alias{
 		Ref:  richTextSequenceRef,
 		Name: "RichTextSequence",
-		Type: typetree.NewArray(typetree.NewNamed(richTextRef)),
+		Type: typeexpr.NewArray(typeexpr.NewNamed(richTextRef)),
 		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"RichTextSequence represents the nested-array variant of a RichText value.",
 			prose.StylePlain,

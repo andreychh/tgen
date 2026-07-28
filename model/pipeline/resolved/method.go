@@ -10,21 +10,20 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/resolved/types"
 	"github.com/andreychh/tgen/model/prose"
-	"github.com/andreychh/tgen/model/result"
-	typetree "github.com/andreychh/tgen/model/types/v2"
+	"github.com/andreychh/tgen/model/typeexpr"
 )
 
 // Method is the decoded record of a documentation method after its return type
-// is resolved: its reference, name, description, and what it returns.
+// is resolved: its reference, name, description, and the type it returns.
 type Method struct {
 	Ref         model.Reference
 	Name        model.Name
 	Description prose.Passage
-	Result      result.Result
+	Type        typeexpr.Expression
 }
 
 // MethodMapping maps a parsed method into a resolved method by decoding its
-// return type from description prose into a result.
+// return type from description prose into a type expression.
 type MethodMapping struct{}
 
 // NewMethodMapping constructs a MethodMapping.
@@ -43,15 +42,6 @@ func (m MethodMapping) Apply(method parsed.Method) (Method, error) {
 		Ref:         method.Ref,
 		Name:        method.Name,
 		Description: method.Description,
-		Result:      m.classify(expr),
+		Type:        expr,
 	}, nil
-}
-
-// classify returns [result.Confirmation] when expr is the True primitive, and
-// [result.Value] otherwise.
-func (m MethodMapping) classify(expr typetree.Expression) result.Result {
-	if expr.Equals(typetree.NewPrimitive(typetree.True)) {
-		return result.NewConfirmation()
-	}
-	return result.NewValue(expr)
 }
