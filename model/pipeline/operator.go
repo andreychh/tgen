@@ -48,47 +48,6 @@ func (t MappedTable[K, A, B]) Apply() (Table[K, B], error) {
 	return out, nil
 }
 
-// PartialMapping transforms one record into another, or reports that no
-// record results. It fails when the record cannot be evaluated.
-type PartialMapping[A, B Record] interface {
-	Apply(record A) (B, bool, error)
-}
-
-// PartialMappedTable is the filter-projection operator: it applies a partial
-// mapping to every record of a source table, keeping only the records for
-// which the mapping produces one, and carrying each kept record's key through
-// unchanged.
-type PartialMappedTable[K comparable, A, B Record] struct {
-	source  Table[K, A]
-	mapping PartialMapping[A, B]
-}
-
-// NewPartialMappedTable constructs the filtered projection of source through
-// mapping.
-func NewPartialMappedTable[K comparable, A, B Record](
-	source Table[K, A], mapping PartialMapping[A, B],
-) PartialMappedTable[K, A, B] {
-	return PartialMappedTable[K, A, B]{source: source, mapping: mapping}
-}
-
-// Apply returns the projected table, one record per source record for which
-// mapping produced one, under the same key. It fails when the mapping fails on
-// any record.
-func (t PartialMappedTable[K, A, B]) Apply() (Table[K, B], error) {
-	out := NewMapTableWithCapacity[K, B](t.source.Count())
-	for key, record := range t.source.All() {
-		mapped, ok, err := t.mapping.Apply(record)
-		if err != nil {
-			return out, fmt.Errorf("mapping record %v: %w", key, err)
-		}
-		if !ok {
-			continue
-		}
-		out.Insert(key, mapped)
-	}
-	return out, nil
-}
-
 // Filter decides whether a record, held under key, belongs in a filtered
 // table. It never fails: every key and record combination yields a definite
 // yes or no.
