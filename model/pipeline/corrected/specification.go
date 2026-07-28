@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-// Package modified applies tgen's own type corrections on top of the
+// Package corrected applies tgen's own type corrections on top of the
 // resolved specification: it introduces union and alias definitions the
 // documentation does not name, and redirects matching field or method types
 // to them.
-package modified
+package corrected
 
 import (
 	"fmt"
@@ -46,7 +46,7 @@ type Rule interface {
 }
 
 // Pass is the correction stage: it rewrites a resolved specification into a
-// modified one, applying tgen's own rules in order.
+// corrected one, applying tgen's own rules in order.
 type Pass struct {
 	spec resolved.Specification
 }
@@ -56,7 +56,7 @@ func NewPass(spec resolved.Specification) Pass {
 	return Pass{spec: spec}
 }
 
-// Specification returns the modified specification, applying every rule tgen
+// Specification returns the corrected specification, applying every rule tgen
 // introduces, in order. No rule matches a type shape another rule produces, so
 // the order is not significant; a rule added here must keep that true. It
 // fails when any rule fails.
