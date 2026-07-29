@@ -15,10 +15,15 @@ import (
 	"github.com/andreychh/tgen/model/typeexpr"
 )
 
+// InputFileRef is the reference of the InputFile union this stage introduces.
+// A later stage decides which definitions can carry a file, and it starts from
+// here: InputFile is the only type that is one, and the documentation never
+// names it, so nothing downstream can find it on its own.
+const InputFileRef = model.Reference("inputfile")
+
 const (
-	inputFileRef = model.Reference("inputfile")
-	fileIDRef    = model.Reference("fileid")
-	uploadRef    = model.Reference("upload")
+	fileIDRef = model.Reference("fileid")
+	uploadRef = model.Reference("upload")
 )
 
 // InputFile is a [Rule] that introduces the InputFile union — a file to
@@ -63,7 +68,7 @@ func (r InputFile) Apply(spec Specification) (Specification, error) {
 func (r InputFile) definitions(base parsed.Definitions) (parsed.Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
-		inputFileRef,
+		InputFileRef,
 		"InputFile",
 		model.DefinitionKindUnion,
 		prose.NewPassage(prose.NewParagraph(prose.NewText(
@@ -102,7 +107,7 @@ func (r InputFile) aliases() Aliases {
 // so it still needs its own design before it can join the union. It fails when
 // the union already lists FileId.
 func (r InputFile) variants(base parsed.Variants) (parsed.Variants, error) {
-	out := NewVariantTable(base, inputFileRef)
+	out := NewVariantTable(base, InputFileRef)
 	err := out.Insert(
 		fileIDRef,
 	)
@@ -119,7 +124,7 @@ type inputFileFilter struct{}
 // Apply implements [pipeline.Filter]. It reports whether definition belongs in
 // the filtered result: false when ref is inputfile.
 func (inputFileFilter) Apply(ref model.Reference, definition parsed.Definition) bool {
-	return ref != inputFileRef
+	return ref != InputFileRef
 }
 
 // inputFileMapping is a [pipeline.Mapping] that redirects a field that could
@@ -135,7 +140,7 @@ func (m inputFileMapping) Apply(field typed.Field) (typed.Field, error) {
 	return typed.Field{
 		Key:         field.Key,
 		Position:    field.Position,
-		Type:        typeexpr.NewNamed(inputFileRef),
+		Type:        typeexpr.NewNamed(InputFileRef),
 		Optionality: field.Optionality,
 		Description: field.Description,
 	}, nil
@@ -145,9 +150,9 @@ func (m inputFileMapping) Apply(field typed.Field) (typed.Field, error) {
 // String, or as a bare String field whose description links to the
 // sending-files guide.
 func (m inputFileMapping) matches(field typed.Field) bool {
-	return field.Type.Equals(typeexpr.NewNamed(inputFileRef)) ||
+	return field.Type.Equals(typeexpr.NewNamed(InputFileRef)) ||
 		field.Type.Equals(typeexpr.NewUnion(
-			typeexpr.NewNamed(inputFileRef),
+			typeexpr.NewNamed(InputFileRef),
 			typeexpr.NewPrimitive(primitive.String),
 		)) ||
 		field.Type.Equals(typeexpr.NewPrimitive(primitive.String)) &&
