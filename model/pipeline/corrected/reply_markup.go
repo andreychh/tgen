@@ -30,17 +30,11 @@ type ReplyMarkup struct{}
 // Apply implements [Rule]. It fails when replymarkup already names something
 // else in spec.
 func (r ReplyMarkup) Apply(spec Specification) (Specification, error) {
-	if alreadyExists(spec, replyMarkupRef) {
-		return Specification{}, fmt.Errorf(
-			"%s already names something else in spec",
-			replyMarkupRef,
-		)
-	}
-	unions, err := pipeline.NewMergedTable(spec.Unions, r.union()).Apply()
+	definitions, err := r.definitions(spec.Definitions)
 	if err != nil {
-		return Specification{}, fmt.Errorf("introducing reply markup union: %w", err)
+		return Specification{}, fmt.Errorf("introducing reply markup definitions: %w", err)
 	}
-	variants, err := pipeline.NewMergedTable(spec.Variants, r.variants()).Apply()
+	variants, err := r.variants(spec.Variants)
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing reply markup variants: %w", err)
 	}
@@ -49,52 +43,50 @@ func (r ReplyMarkup) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting reply markup fields: %w", err)
 	}
 	return Specification{
-		Objects:        spec.Objects,
+		Definitions:    definitions,
 		Methods:        spec.Methods,
 		Fields:         fields,
 		Discriminators: spec.Discriminators,
-		Unions:         unions,
 		Variants:       variants,
 		Aliases:        spec.Aliases,
 		Release:        spec.Release,
 	}, nil
 }
 
-// union returns the table holding the single ReplyMarkup union definition.
-func (r ReplyMarkup) union() parsed.Unions {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, parsed.Union](1)
-	out.Insert(replyMarkupRef, parsed.Union{
-		Ref:  replyMarkupRef,
-		Name: "ReplyMarkup",
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
+// definitions returns base holding what ReplyMarkup names too: the union
+// itself. Its variants are documented objects and name themselves. It fails
+// when the reference is taken.
+func (r ReplyMarkup) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+	out := NewDefinitionTable(base)
+	err := out.Insert(
+		replyMarkupRef,
+		"ReplyMarkup",
+		model.DefinitionKindUnion,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"ReplyMarkup represents a reply markup attached to a message.",
 			prose.StylePlain,
 		))),
-	})
-	return out
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the reply markup union: %w", err)
+	}
+	return out, nil
 }
 
-// variants returns the table of ReplyMarkup's four variants, each already a
-// documented object.
-func (r ReplyMarkup) variants() parsed.Variants {
-	out := pipeline.NewMapTableWithCapacity[model.VariantKey, parsed.Variant](4)
-	out.Insert(
-		model.VariantKey{Owner: replyMarkupRef, Ref: inlineKeyboardMarkupRef},
-		parsed.Variant{Ref: inlineKeyboardMarkupRef},
+// variants returns base listing ReplyMarkup's four variants, each already a
+// documented object. It fails when the union already lists one of them.
+func (r ReplyMarkup) variants(base parsed.Variants) (parsed.Variants, error) {
+	out := NewVariantTable(base, replyMarkupRef)
+	err := out.Insert(
+		inlineKeyboardMarkupRef,
+		replyKeyboardMarkupRef,
+		replyKeyboardRemoveRef,
+		forceReplyRef,
 	)
-	out.Insert(
-		model.VariantKey{Owner: replyMarkupRef, Ref: replyKeyboardMarkupRef},
-		parsed.Variant{Ref: replyKeyboardMarkupRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: replyMarkupRef, Ref: replyKeyboardRemoveRef},
-		parsed.Variant{Ref: replyKeyboardRemoveRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: replyMarkupRef, Ref: forceReplyRef},
-		parsed.Variant{Ref: forceReplyRef},
-	)
-	return out
+	if err != nil {
+		return nil, fmt.Errorf("listing reply markup variants: %w", err)
+	}
+	return out, nil
 }
 
 // replyMarkupMapping is a [pipeline.Mapping] that redirects a field typed as

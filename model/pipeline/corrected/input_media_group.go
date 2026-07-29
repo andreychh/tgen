@@ -28,17 +28,11 @@ type InputMediaGroup struct{}
 // Apply implements [Rule]. It fails when inputmediagroup already names
 // something else in spec.
 func (r InputMediaGroup) Apply(spec Specification) (Specification, error) {
-	if alreadyExists(spec, inputMediaGroupRef) {
-		return Specification{}, fmt.Errorf(
-			"%s already names something else in spec",
-			inputMediaGroupRef,
-		)
-	}
-	unions, err := pipeline.NewMergedTable(spec.Unions, r.union()).Apply()
+	definitions, err := r.definitions(spec.Definitions)
 	if err != nil {
-		return Specification{}, fmt.Errorf("introducing input media group union: %w", err)
+		return Specification{}, fmt.Errorf("introducing input media group definitions: %w", err)
 	}
-	variants, err := pipeline.NewMergedTable(spec.Variants, r.variants()).Apply()
+	variants, err := r.variants(spec.Variants)
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing input media group variants: %w", err)
 	}
@@ -47,57 +41,51 @@ func (r InputMediaGroup) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting input media group fields: %w", err)
 	}
 	return Specification{
-		Objects:        spec.Objects,
+		Definitions:    definitions,
 		Methods:        spec.Methods,
 		Fields:         fields,
 		Discriminators: spec.Discriminators,
-		Unions:         unions,
 		Variants:       variants,
 		Aliases:        spec.Aliases,
 		Release:        spec.Release,
 	}, nil
 }
 
-// union returns the table holding the single InputMediaGroup union
-// definition.
-func (r InputMediaGroup) union() parsed.Unions {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, parsed.Union](1)
-	out.Insert(inputMediaGroupRef, parsed.Union{
-		Ref:  inputMediaGroupRef,
-		Name: "InputMediaGroup",
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
+// definitions returns base holding what InputMediaGroup names too: the union
+// itself. Its variants are documented objects and name themselves. It fails
+// when the reference is taken.
+func (r InputMediaGroup) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+	out := NewDefinitionTable(base)
+	err := out.Insert(
+		inputMediaGroupRef,
+		"InputMediaGroup",
+		model.DefinitionKindUnion,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"InputMediaGroup represents a media element in a media group.",
 			prose.StylePlain,
 		))),
-	})
-	return out
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the input media group union: %w", err)
+	}
+	return out, nil
 }
 
-// variants returns the table of InputMediaGroup's five variants, each
-// already a documented object.
-func (r InputMediaGroup) variants() parsed.Variants {
-	out := pipeline.NewMapTableWithCapacity[model.VariantKey, parsed.Variant](5)
-	out.Insert(
-		model.VariantKey{Owner: inputMediaGroupRef, Ref: inputMediaAudioRef},
-		parsed.Variant{Ref: inputMediaAudioRef},
+// variants returns base listing InputMediaGroup's five variants, each already
+// a documented object. It fails when the union already lists one of them.
+func (r InputMediaGroup) variants(base parsed.Variants) (parsed.Variants, error) {
+	out := NewVariantTable(base, inputMediaGroupRef)
+	err := out.Insert(
+		inputMediaAudioRef,
+		inputMediaDocumentRef,
+		inputMediaLivePhotoRef,
+		inputMediaPhotoRef,
+		inputMediaVideoRef,
 	)
-	out.Insert(
-		model.VariantKey{Owner: inputMediaGroupRef, Ref: inputMediaDocumentRef},
-		parsed.Variant{Ref: inputMediaDocumentRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: inputMediaGroupRef, Ref: inputMediaLivePhotoRef},
-		parsed.Variant{Ref: inputMediaLivePhotoRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: inputMediaGroupRef, Ref: inputMediaPhotoRef},
-		parsed.Variant{Ref: inputMediaPhotoRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: inputMediaGroupRef, Ref: inputMediaVideoRef},
-		parsed.Variant{Ref: inputMediaVideoRef},
-	)
-	return out
+	if err != nil {
+		return nil, fmt.Errorf("listing input media group variants: %w", err)
+	}
+	return out, nil
 }
 
 // inputMediaGroupMapping is a [pipeline.Mapping] that redirects a field

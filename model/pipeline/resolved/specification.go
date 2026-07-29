@@ -15,19 +15,20 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/typed"
 )
 
-// Methods is the table of resolved methods, keyed by reference.
+// Methods is the table of what each method has of its own, keyed by reference.
+// Only a definition of method kind has a record here, so the table holds fewer
+// records than there are definitions.
 type Methods = pipeline.Table[model.Reference, Method]
 
 // Specification is the database after every method's return type is decoded
-// from its description prose into a type expression. The object, field,
-// discriminator, union, and variant tables and the release ride through from
-// the typed stage unchanged.
+// from its description prose into a type expression. The definition, field,
+// discriminator, and variant tables and the release ride through from the
+// typed stage unchanged.
 type Specification struct {
-	Objects        parsed.Objects
+	Definitions    parsed.Definitions
 	Methods        Methods
 	Fields         typed.Fields
 	Discriminators classified.Discriminators
-	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Release        parsed.Release
 }
@@ -43,20 +44,23 @@ func NewPass(spec typed.Specification) Pass {
 	return Pass{spec: spec}
 }
 
-// Specification returns the resolved specification, decoding every method's
-// return type from its description prose into a type expression. It fails when
-// any method's return type prose cannot be decoded.
+// Specification returns the resolved specification, decoding the return type of
+// every definition of method kind from its description prose into a type
+// expression. It fails when any method's return type prose cannot be decoded.
 func (p Pass) Specification() (Specification, error) {
-	methods, err := pipeline.NewMappedTable(p.spec.Methods, NewMethodMapping()).Apply()
+	definitions := pipeline.NewFilteredTable(
+		p.spec.Definitions,
+		parsed.NewKindFilter(model.DefinitionKindMethod),
+	).Apply()
+	methods, err := pipeline.NewMappedTable(definitions, NewMethodMapping()).Apply()
 	if err != nil {
-		return Specification{}, fmt.Errorf("resolving methods: %w", err)
+		return Specification{}, fmt.Errorf("resolving return types: %w", err)
 	}
 	return Specification{
-		Objects:        p.spec.Objects,
+		Definitions:    p.spec.Definitions,
 		Methods:        methods,
 		Fields:         p.spec.Fields,
 		Discriminators: p.spec.Discriminators,
-		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,
 		Release:        p.spec.Release,
 	}, nil

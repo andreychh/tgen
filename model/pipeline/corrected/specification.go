@@ -5,6 +5,10 @@
 // resolved specification: it introduces union and alias definitions the
 // documentation does not name, and redirects matching field or method types
 // to them.
+//
+// A definition tgen introduces has no place on the page, so it stands after
+// every definition the page provides, in the order the rules run. Positions
+// downstream of this stage therefore no longer index the page's headings.
 package corrected
 
 import (
@@ -18,7 +22,8 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/typed"
 )
 
-// Aliases is the table of tgen-introduced aliases, keyed by reference.
+// Aliases is the table of what each alias has of its own, keyed by reference.
+// Only a definition of alias kind has a record here.
 type Aliases = pipeline.Table[model.Reference, Alias]
 
 // Specification is the database after tgen's own corrections are applied on
@@ -26,11 +31,10 @@ type Aliases = pipeline.Table[model.Reference, Alias]
 // the documentation does not name, and redirect matching field or method
 // types to them.
 type Specification struct {
-	Objects        parsed.Objects
+	Definitions    parsed.Definitions
 	Methods        resolved.Methods
 	Fields         typed.Fields
 	Discriminators classified.Discriminators
-	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Aliases        Aliases
 	Release        parsed.Release
@@ -62,11 +66,10 @@ func NewPass(spec resolved.Specification) Pass {
 // fails when any rule fails.
 func (p Pass) Specification() (Specification, error) {
 	spec := Specification{
-		Objects:        p.spec.Objects,
+		Definitions:    p.spec.Definitions,
 		Methods:        p.spec.Methods,
 		Fields:         p.spec.Fields,
 		Discriminators: p.spec.Discriminators,
-		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,
 		Aliases:        pipeline.NewMapTable[model.Reference, Alias](),
 		Release:        p.spec.Release,
@@ -88,21 +91,4 @@ func (p Pass) Specification() (Specification, error) {
 		spec = next
 	}
 	return spec, nil
-}
-
-// alreadyExists reports whether ref already names an object, method, union, or
-// alias in spec. Methods count: a target renders each one as a type, so a
-// method and a union sharing a reference collide there.
-func alreadyExists(spec Specification, ref model.Reference) bool {
-	if _, ok := spec.Objects.Lookup(ref); ok {
-		return true
-	}
-	if _, ok := spec.Methods.Lookup(ref); ok {
-		return true
-	}
-	if _, ok := spec.Unions.Lookup(ref); ok {
-		return true
-	}
-	_, ok := spec.Aliases.Lookup(ref)
-	return ok
 }

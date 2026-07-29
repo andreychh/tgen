@@ -5,16 +5,13 @@ package corrected
 
 import (
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/prose"
 	"github.com/andreychh/tgen/model/typeexpr"
 )
 
-// Alias is a name tgen introduces for a type expression the documentation
-// leaves unnamed. Its description is tgen's own, since the documentation has
-// none for a type it never names.
+// Alias is the type a name tgen introduces stands for. What the alias is
+// called and how it is described lives in the definitions table under the
+// alias kind, alongside everything else the pipeline names.
 type Alias struct {
-	Ref         model.Reference
-	Name        model.Name
-	Type        typeexpr.Expression
-	Description prose.Passage
+	Ref  model.Reference
+	Type typeexpr.Expression
 }

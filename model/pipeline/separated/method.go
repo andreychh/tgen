@@ -7,22 +7,19 @@ import (
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline/flattened"
 	"github.com/andreychh/tgen/model/primitive"
-	"github.com/andreychh/tgen/model/prose"
 	"github.com/andreychh/tgen/model/result"
 	"github.com/andreychh/tgen/model/typeform"
 )
 
-// Method is the record of a documentation method whose return is split into
-// what the method signals: its reference, name, description, and result.
+// Method is what a method has of its own, with its return split into what the
+// method signals: a confirmation of success, or the value it carries.
 type Method struct {
-	Ref         model.Reference
-	Name        model.Name
-	Description prose.Passage
-	Result      result.Result
+	Ref    model.Reference
+	Result result.Result
 }
 
 // MethodMapping maps a flattened method into a separated one by deciding
-// whether its return type carries data or only reports success.
+// whether its return carries data or only reports success.
 type MethodMapping struct{}
 
 // NewMethodMapping constructs a MethodMapping.
@@ -33,10 +30,8 @@ func NewMethodMapping() MethodMapping {
 // Apply implements [pipeline.Mapping]. It never fails.
 func (m MethodMapping) Apply(method flattened.Method) (Method, error) {
 	return Method{
-		Ref:         method.Ref,
-		Name:        method.Name,
-		Description: method.Description,
-		Result:      m.classify(method.Type),
+		Ref:    method.Ref,
+		Result: m.classify(method.Type),
 	}, nil
 }
 

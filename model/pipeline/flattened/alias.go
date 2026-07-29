@@ -8,17 +8,13 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline/corrected"
-	"github.com/andreychh/tgen/model/prose"
 	"github.com/andreychh/tgen/model/typeform"
 )
 
-// Alias is a name tgen introduces for a type the documentation leaves unnamed.
-// Its type is reduced to a flat one.
+// Alias is the type a name tgen introduces stands for, reduced to a flat one.
 type Alias struct {
-	Ref         model.Reference
-	Name        model.Name
-	Type        typeform.Type
-	Description prose.Passage
+	Ref  model.Reference
+	Type typeform.Type
 }
 
 // AliasMapping maps a corrected alias into a flattened one by reducing its type
@@ -38,9 +34,7 @@ func (m AliasMapping) Apply(alias corrected.Alias) (Alias, error) {
 		return Alias{}, fmt.Errorf("narrowing alias type: %w", err)
 	}
 	return Alias{
-		Ref:         alias.Ref,
-		Name:        alias.Name,
-		Type:        typ,
-		Description: alias.Description,
+		Ref:  alias.Ref,
+		Type: typ,
 	}, nil
 }

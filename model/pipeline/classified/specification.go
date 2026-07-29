@@ -13,7 +13,9 @@ import (
 
 // Fields is the table of classified fields, keyed by owner reference and
 // field key: every field whose description decodes a fixed discriminator
-// value is excluded.
+// value is excluded. Positions carry over from [parsed.Fields] unchanged, so
+// an owner that lost a field has no field at position zero and its remaining
+// fields are gapless only among themselves.
 type Fields = pipeline.Table[model.FieldKey, Field]
 
 // Discriminators is the table of fixed discriminator values decoded out of
@@ -22,16 +24,13 @@ type Discriminators = pipeline.Table[model.Reference, Discriminator]
 
 // Specification is the database after every field's description is decoded
 // for the fixed discriminator value it may carry: a field that decodes one
-// moves from Fields into Discriminators. The object, method, parameter, union,
-// and variant tables and the release ride through from the parsed stage
-// unchanged.
+// moves from Fields into Discriminators. The definition, parameter, and
+// variant tables and the release ride through from the parsed stage unchanged.
 type Specification struct {
-	Objects        parsed.Objects
-	Methods        parsed.Methods
+	Definitions    parsed.Definitions
 	Fields         Fields
 	Params         parsed.Params
 	Discriminators Discriminators
-	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Release        parsed.Release
 }
@@ -55,12 +54,10 @@ func (p Pass) Specification() Specification {
 	discriminators := NewDiscriminatorTable(p.spec.Fields).Apply()
 	fields := pipeline.NewFilteredTable(p.spec.Fields, NewFieldFilter(discriminators)).Apply()
 	return Specification{
-		Objects:        p.spec.Objects,
-		Methods:        p.spec.Methods,
+		Definitions:    p.spec.Definitions,
 		Fields:         fields,
 		Params:         p.spec.Params,
 		Discriminators: discriminators,
-		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,
 		Release:        p.spec.Release,
 	}
