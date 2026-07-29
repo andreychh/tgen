@@ -29,20 +29,15 @@ type MaybeMessage struct{}
 // Apply implements [Rule]. It fails when maybemessage or true already names
 // something else in spec.
 func (r MaybeMessage) Apply(spec Specification) (Specification, error) {
-	for _, ref := range []model.Reference{maybeMessageRef, trueRef} {
-		if alreadyExists(spec, ref) {
-			return Specification{}, fmt.Errorf("%s already names something else in spec", ref)
-		}
+	definitions, err := r.definitions(spec.Definitions)
+	if err != nil {
+		return Specification{}, fmt.Errorf("introducing maybe message definitions: %w", err)
 	}
 	aliases, err := pipeline.NewMergedTable(spec.Aliases, r.aliases()).Apply()
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing maybe message aliases: %w", err)
 	}
-	unions, err := pipeline.NewMergedTable(spec.Unions, r.union()).Apply()
-	if err != nil {
-		return Specification{}, fmt.Errorf("introducing maybe message union: %w", err)
-	}
-	variants, err := pipeline.NewMergedTable(spec.Variants, r.variants()).Apply()
+	variants, err := r.variants(spec.Variants)
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing maybe message variants: %w", err)
 	}
@@ -51,67 +46,74 @@ func (r MaybeMessage) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting maybe message methods: %w", err)
 	}
 	return Specification{
-		Objects:        spec.Objects,
+		Definitions:    definitions,
 		Methods:        methods,
 		Fields:         spec.Fields,
 		Discriminators: spec.Discriminators,
-		Unions:         unions,
 		Variants:       variants,
 		Aliases:        aliases,
 		Release:        spec.Release,
 	}, nil
 }
 
-// aliases returns the table of primitive aliases MaybeMessage's variants
-// need: True, which the documentation writes as a bare keyword, not a named
-// type.
-func (r MaybeMessage) aliases() Aliases {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, Alias](1)
-	out.Insert(trueRef, Alias{
-		Ref:  trueRef,
-		Name: "True",
-		Type: typeexpr.NewPrimitive(primitive.True),
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
-			"True represents the boolean true value in Telegram API responses.",
-			prose.StylePlain,
-		))),
-	})
-	return out
-}
-
-// union returns the table holding the single MaybeMessage union definition.
-func (r MaybeMessage) union() parsed.Unions {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, parsed.Union](1)
-	out.Insert(maybeMessageRef, parsed.Union{
-		Ref:  maybeMessageRef,
-		Name: "MaybeMessage",
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
+// definitions returns base holding what MaybeMessage names too: the union
+// itself and the True alias its variant stands for, which the documentation
+// writes as a bare keyword rather than a named type. It fails when either
+// reference is taken.
+func (r MaybeMessage) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+	out := NewDefinitionTable(base)
+	err := out.Insert(
+		maybeMessageRef,
+		"MaybeMessage",
+		model.DefinitionKindUnion,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"MaybeMessage represents a method return value that is either an "+
 				"edited Message or True for inline messages.",
 			prose.StylePlain,
 		))),
-	})
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the maybe message union: %w", err)
+	}
+	err = out.Insert(
+		trueRef,
+		"True",
+		model.DefinitionKindAlias,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
+			"True represents the boolean true value in Telegram API responses.",
+			prose.StylePlain,
+		))),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the true alias: %w", err)
+	}
+	return out, nil
+}
+
+// aliases returns the type the True alias stands for.
+func (r MaybeMessage) aliases() Aliases {
+	out := pipeline.NewMapTableWithCapacity[model.Reference, Alias](1)
+	out.Insert(trueRef, Alias{Ref: trueRef, Type: typeexpr.NewPrimitive(primitive.True)})
 	return out
 }
 
-// variants returns the table of MaybeMessage's two variants, message and
-// true.
-func (r MaybeMessage) variants() parsed.Variants {
-	out := pipeline.NewMapTableWithCapacity[model.VariantKey, parsed.Variant](2)
-	out.Insert(
-		model.VariantKey{Owner: maybeMessageRef, Ref: messageRef},
-		parsed.Variant{Ref: messageRef},
+// variants returns base listing MaybeMessage's two variants, message and true.
+// It fails when the union already lists either.
+func (r MaybeMessage) variants(base parsed.Variants) (parsed.Variants, error) {
+	out := NewVariantTable(base, maybeMessageRef)
+	err := out.Insert(
+		messageRef,
+		trueRef,
 	)
-	out.Insert(
-		model.VariantKey{Owner: maybeMessageRef, Ref: trueRef},
-		parsed.Variant{Ref: trueRef},
-	)
-	return out
+	if err != nil {
+		return nil, fmt.Errorf("listing maybe message variants: %w", err)
+	}
+	return out, nil
 }
 
-// maybeMessageMapping is a [pipeline.Mapping] that redirects a method
-// returning the Message-or-True union to MaybeMessage; every other method
-// rides through unchanged.
+// maybeMessageMapping is a [pipeline.Mapping] that redirects a method returning
+// the Message-or-True union to MaybeMessage; every other method rides through
+// unchanged.
 type maybeMessageMapping struct{}
 
 // Apply implements [pipeline.Mapping]. It never fails.
@@ -123,9 +125,7 @@ func (maybeMessageMapping) Apply(method resolved.Method) (resolved.Method, error
 		return method, nil
 	}
 	return resolved.Method{
-		Ref:         method.Ref,
-		Name:        method.Name,
-		Description: method.Description,
-		Type:        typeexpr.NewNamed(maybeMessageRef),
+		Ref:  method.Ref,
+		Type: typeexpr.NewNamed(maybeMessageRef),
 	}, nil
 }

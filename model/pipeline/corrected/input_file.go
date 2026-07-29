@@ -26,24 +26,19 @@ const (
 // InputFile object, and redirects every field that could carry one to it.
 type InputFile struct{}
 
-// Apply implements [Rule]. It fails when fileid or upload already names
-// something else in spec.
+// Apply implements [Rule]. It fails when fileid already names something else
+// in spec.
 func (r InputFile) Apply(spec Specification) (Specification, error) {
-	for _, ref := range []model.Reference{fileIDRef, uploadRef} {
-		if alreadyExists(spec, ref) {
-			return Specification{}, fmt.Errorf("%s already names something else in spec", ref)
-		}
+	documented := pipeline.NewFilteredTable(spec.Definitions, inputFileFilter{}).Apply()
+	definitions, err := r.definitions(documented)
+	if err != nil {
+		return Specification{}, fmt.Errorf("introducing input file definitions: %w", err)
 	}
-	objects := pipeline.NewFilteredTable(spec.Objects, inputFileFilter{}).Apply()
 	aliases, err := pipeline.NewMergedTable(spec.Aliases, r.aliases()).Apply()
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing input file aliases: %w", err)
 	}
-	unions, err := pipeline.NewMergedTable(spec.Unions, r.union()).Apply()
-	if err != nil {
-		return Specification{}, fmt.Errorf("introducing input file union: %w", err)
-	}
-	variants, err := pipeline.NewMergedTable(spec.Variants, r.variants()).Apply()
+	variants, err := r.variants(spec.Variants)
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing input file variants: %w", err)
 	}
@@ -52,68 +47,78 @@ func (r InputFile) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting input file fields: %w", err)
 	}
 	return Specification{
-		Objects:        objects,
+		Definitions:    definitions,
 		Methods:        spec.Methods,
 		Fields:         fields,
 		Discriminators: spec.Discriminators,
-		Unions:         unions,
 		Variants:       variants,
 		Aliases:        aliases,
 		Release:        spec.Release,
 	}, nil
 }
 
-// aliases returns the table of primitive aliases InputFile's variants need:
-// a file id, which the documentation writes as a plain String field, not a
-// named type.
-func (r InputFile) aliases() Aliases {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, Alias](1)
-	out.Insert(fileIDRef, Alias{
-		Ref:  fileIDRef,
-		Name: "FileId",
-		Type: typeexpr.NewPrimitive(primitive.String),
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
-			"FileID represents a Telegram file identifier.",
-			prose.StylePlain,
-		))),
-	})
-	return out
-}
-
-// union returns the table holding the single InputFile union definition.
-func (r InputFile) union() parsed.Unions {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, parsed.Union](1)
-	out.Insert(inputFileRef, parsed.Union{
-		Ref:  inputFileRef,
-		Name: "InputFile",
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
+// definitions returns base holding what InputFile names too: the union itself,
+// taking the place of the documented object base no longer holds, and the file
+// id alias its variant stands for. It fails when either reference is taken.
+func (r InputFile) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+	out := NewDefinitionTable(base)
+	err := out.Insert(
+		inputFileRef,
+		"InputFile",
+		model.DefinitionKindUnion,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"InputFile represents a file to send, either by file ID or by uploading.",
 			prose.StylePlain,
 		))),
-	})
-	return out
-}
-
-// variants returns the table of InputFile's variants. It carries only
-// FileId: the upload variant holds a Go io.Reader with no shape shared
-// across targets, so it still needs its own design before it can join this
-// table.
-func (r InputFile) variants() parsed.Variants {
-	out := pipeline.NewMapTableWithCapacity[model.VariantKey, parsed.Variant](1)
-	out.Insert(
-		model.VariantKey{Owner: inputFileRef, Ref: fileIDRef},
-		parsed.Variant{Ref: fileIDRef},
 	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the input file union: %w", err)
+	}
+	err = out.Insert(
+		fileIDRef,
+		"FileId",
+		model.DefinitionKindAlias,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
+			"FileID represents a Telegram file identifier.",
+			prose.StylePlain,
+		))),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the file id alias: %w", err)
+	}
+	return out, nil
+}
+
+// aliases returns the type the file id alias stands for: the documentation
+// writes it as a plain String field, not a named type.
+func (r InputFile) aliases() Aliases {
+	out := pipeline.NewMapTableWithCapacity[model.Reference, Alias](1)
+	out.Insert(fileIDRef, Alias{Ref: fileIDRef, Type: typeexpr.NewPrimitive(primitive.String)})
 	return out
 }
 
-// inputFileFilter is a [pipeline.Filter] that excludes the documented InputFile
-// object from Objects.
+// variants returns base listing InputFile's variants, which is FileId alone:
+// the upload variant holds a Go io.Reader with no shape shared across targets,
+// so it still needs its own design before it can join the union. It fails when
+// the union already lists FileId.
+func (r InputFile) variants(base parsed.Variants) (parsed.Variants, error) {
+	out := NewVariantTable(base, inputFileRef)
+	err := out.Insert(
+		fileIDRef,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listing input file variants: %w", err)
+	}
+	return out, nil
+}
+
+// inputFileFilter is a [pipeline.Filter] that excludes the documented
+// InputFile object, whose place the InputFile union takes.
 type inputFileFilter struct{}
 
-// Apply implements [pipeline.Filter]. It reports whether object belongs in the
-// filtered result: false when ref is inputfile.
-func (inputFileFilter) Apply(ref model.Reference, object parsed.Object) bool {
+// Apply implements [pipeline.Filter]. It reports whether definition belongs in
+// the filtered result: false when ref is inputfile.
+func (inputFileFilter) Apply(ref model.Reference, definition parsed.Definition) bool {
 	return ref != inputFileRef
 }
 

@@ -19,14 +19,12 @@ import (
 type Fields = pipeline.Table[model.FieldKey, Field]
 
 // Specification is the database after every field's type prose is resolved into
-// a type expression. The object, method, discriminator, union, and variant
-// tables and the release ride through from the unified stage unchanged.
+// a type expression. The definition, discriminator, and variant tables and the
+// release ride through from the unified stage unchanged.
 type Specification struct {
-	Objects        parsed.Objects
-	Methods        parsed.Methods
+	Definitions    parsed.Definitions
 	Fields         Fields
 	Discriminators classified.Discriminators
-	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Release        parsed.Release
 }
@@ -51,11 +49,9 @@ func (p Pass) Specification() (Specification, error) {
 		return Specification{}, fmt.Errorf("typing fields: %w", err)
 	}
 	return Specification{
-		Objects:        p.spec.Objects,
-		Methods:        p.spec.Methods,
+		Definitions:    p.spec.Definitions,
 		Fields:         fields,
 		Discriminators: p.spec.Discriminators,
-		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,
 		Release:        p.spec.Release,
 	}, nil

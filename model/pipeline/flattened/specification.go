@@ -20,21 +20,20 @@ import (
 // key.
 type Fields = pipeline.Table[model.FieldKey, Field]
 
-// Methods is the table of flattened methods, keyed by reference.
+// Methods is the table of what each method has of its own, keyed by reference.
 type Methods = pipeline.Table[model.Reference, Method]
 
-// Aliases is the table of flattened aliases, keyed by reference.
+// Aliases is the table of what each alias has of its own, keyed by reference.
 type Aliases = pipeline.Table[model.Reference, Alias]
 
 // Specification is the database after every type is reduced to a flat one. The
-// object, discriminator, union, and variant tables and the release ride through
+// definition, discriminator, and variant tables and the release ride through
 // from the corrected stage unchanged.
 type Specification struct {
-	Objects        parsed.Objects
+	Definitions    parsed.Definitions
 	Methods        Methods
 	Fields         Fields
 	Discriminators classified.Discriminators
-	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Aliases        Aliases
 	Release        parsed.Release
@@ -67,11 +66,10 @@ func (p Pass) Specification() (Specification, error) {
 		return Specification{}, fmt.Errorf("flattening aliases: %w", err)
 	}
 	return Specification{
-		Objects:        p.spec.Objects,
+		Definitions:    p.spec.Definitions,
 		Methods:        methods,
 		Fields:         fields,
 		Discriminators: p.spec.Discriminators,
-		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,
 		Aliases:        aliases,
 		Release:        p.spec.Release,

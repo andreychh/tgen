@@ -11,12 +11,28 @@ type Name string
 
 type Reference string
 
+// DefinitionKind classifies what a reference names, telling a target which
+// shape to render it as. It is not the kind of a documentation heading: a
+// heading may announce nothing recognizable, which no definition is, and no
+// heading announces an alias, which tgen introduces on its own.
+type DefinitionKind string
+
+const (
+	DefinitionKindObject DefinitionKind = "object"
+	DefinitionKindMethod DefinitionKind = "method"
+	DefinitionKindUnion  DefinitionKind = "union"
+	DefinitionKindAlias  DefinitionKind = "alias"
+)
+
 type Optionality bool
 
 type Key string
 
-// Position identifies a field's place among the other fields owned by the
-// same reference: zero-based, unique and gapless within that owner's fields.
+// Position is where a record's source put it: a field among the rows of its
+// owner's table, a definition among the headings of the page. It is assigned
+// once, when the record is read, and never recomputed, so a table that drops
+// records keeps the gaps their positions leave behind. Which positions a
+// given table admits is stated by that table.
 type Position int
 
 type DiscriminatorValue string

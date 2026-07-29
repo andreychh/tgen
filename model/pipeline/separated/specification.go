@@ -15,18 +15,17 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 )
 
-// Methods is the table of separated methods, keyed by reference.
+// Methods is the table of what each method has of its own, keyed by reference.
 type Methods = pipeline.Table[model.Reference, Method]
 
 // Specification is the database after every method's return is split into what
-// the method signals. The object, field, discriminator, union, variant, and
-// alias tables and the release ride through from the flattened stage unchanged.
+// the method signals. The definition, field, discriminator, variant, and alias
+// tables and the release ride through from the flattened stage unchanged.
 type Specification struct {
-	Objects        parsed.Objects
+	Definitions    parsed.Definitions
 	Methods        Methods
 	Fields         flattened.Fields
 	Discriminators classified.Discriminators
-	Unions         parsed.Unions
 	Variants       parsed.Variants
 	Aliases        flattened.Aliases
 	Release        parsed.Release
@@ -53,11 +52,10 @@ func (p Pass) Specification() (Specification, error) {
 		return Specification{}, fmt.Errorf("separating methods: %w", err)
 	}
 	return Specification{
-		Objects:        p.spec.Objects,
+		Definitions:    p.spec.Definitions,
 		Methods:        methods,
 		Fields:         p.spec.Fields,
 		Discriminators: p.spec.Discriminators,
-		Unions:         p.spec.Unions,
 		Variants:       p.spec.Variants,
 		Aliases:        p.spec.Aliases,
 		Release:        p.spec.Release,

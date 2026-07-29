@@ -31,17 +31,11 @@ type InputRichMedia struct{}
 // Apply implements [Rule]. It fails when inputrichmedia already names
 // something else in spec.
 func (r InputRichMedia) Apply(spec Specification) (Specification, error) {
-	if alreadyExists(spec, inputRichMediaRef) {
-		return Specification{}, fmt.Errorf(
-			"%s already names something else in spec",
-			inputRichMediaRef,
-		)
-	}
-	unions, err := pipeline.NewMergedTable(spec.Unions, r.union()).Apply()
+	definitions, err := r.definitions(spec.Definitions)
 	if err != nil {
-		return Specification{}, fmt.Errorf("introducing input rich media union: %w", err)
+		return Specification{}, fmt.Errorf("introducing input rich media definitions: %w", err)
 	}
-	variants, err := pipeline.NewMergedTable(spec.Variants, r.variants()).Apply()
+	variants, err := r.variants(spec.Variants)
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing input rich media variants: %w", err)
 	}
@@ -50,57 +44,51 @@ func (r InputRichMedia) Apply(spec Specification) (Specification, error) {
 		return Specification{}, fmt.Errorf("redirecting input rich media fields: %w", err)
 	}
 	return Specification{
-		Objects:        spec.Objects,
+		Definitions:    definitions,
 		Methods:        spec.Methods,
 		Fields:         fields,
 		Discriminators: spec.Discriminators,
-		Unions:         unions,
 		Variants:       variants,
 		Aliases:        spec.Aliases,
 		Release:        spec.Release,
 	}, nil
 }
 
-// union returns the table holding the single InputRichMedia union
-// definition.
-func (r InputRichMedia) union() parsed.Unions {
-	out := pipeline.NewMapTableWithCapacity[model.Reference, parsed.Union](1)
-	out.Insert(inputRichMediaRef, parsed.Union{
-		Ref:  inputRichMediaRef,
-		Name: "InputRichMedia",
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
+// definitions returns base holding what InputRichMedia names too: the union
+// itself. Its variants are documented objects and name themselves. It fails
+// when the reference is taken.
+func (r InputRichMedia) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+	out := NewDefinitionTable(base)
+	err := out.Insert(
+		inputRichMediaRef,
+		"InputRichMedia",
+		model.DefinitionKindUnion,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
 			"InputRichMedia represents a media element embedded in a rich message.",
 			prose.StylePlain,
 		))),
-	})
-	return out
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the input rich media union: %w", err)
+	}
+	return out, nil
 }
 
-// variants returns the table of InputRichMedia's five variants, each
-// already a documented object.
-func (r InputRichMedia) variants() parsed.Variants {
-	out := pipeline.NewMapTableWithCapacity[model.VariantKey, parsed.Variant](5)
-	out.Insert(
-		model.VariantKey{Owner: inputRichMediaRef, Ref: inputMediaAnimationRef},
-		parsed.Variant{Ref: inputMediaAnimationRef},
+// variants returns base listing InputRichMedia's five variants, each already
+// a documented object. It fails when the union already lists one of them.
+func (r InputRichMedia) variants(base parsed.Variants) (parsed.Variants, error) {
+	out := NewVariantTable(base, inputRichMediaRef)
+	err := out.Insert(
+		inputMediaAnimationRef,
+		inputMediaAudioRef,
+		inputMediaPhotoRef,
+		inputMediaVideoRef,
+		inputMediaVoiceNoteRef,
 	)
-	out.Insert(
-		model.VariantKey{Owner: inputRichMediaRef, Ref: inputMediaAudioRef},
-		parsed.Variant{Ref: inputMediaAudioRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: inputRichMediaRef, Ref: inputMediaPhotoRef},
-		parsed.Variant{Ref: inputMediaPhotoRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: inputRichMediaRef, Ref: inputMediaVideoRef},
-		parsed.Variant{Ref: inputMediaVideoRef},
-	)
-	out.Insert(
-		model.VariantKey{Owner: inputRichMediaRef, Ref: inputMediaVoiceNoteRef},
-		parsed.Variant{Ref: inputMediaVoiceNoteRef},
-	)
-	return out
+	if err != nil {
+		return nil, fmt.Errorf("listing input rich media variants: %w", err)
+	}
+	return out, nil
 }
 
 // inputRichMediaMapping is a [pipeline.Mapping] that redirects a field

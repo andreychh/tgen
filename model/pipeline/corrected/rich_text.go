@@ -29,67 +29,87 @@ type RichText struct{}
 // Apply implements [Rule]. It fails when richtextplain or richtextsequence
 // already names something else in spec.
 func (r RichText) Apply(spec Specification) (Specification, error) {
-	for _, ref := range []model.Reference{richTextPlainRef, richTextSequenceRef} {
-		if alreadyExists(spec, ref) {
-			return Specification{}, fmt.Errorf("%s already names something else in spec", ref)
-		}
+	definitions, err := r.definitions(spec.Definitions)
+	if err != nil {
+		return Specification{}, fmt.Errorf("introducing rich text definitions: %w", err)
 	}
 	aliases, err := pipeline.NewMergedTable(spec.Aliases, r.aliases()).Apply()
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing rich text aliases: %w", err)
 	}
-	variants, err := pipeline.NewMergedTable(spec.Variants, r.variants()).Apply()
+	variants, err := r.variants(spec.Variants)
 	if err != nil {
 		return Specification{}, fmt.Errorf("introducing rich text variants: %w", err)
 	}
 	return Specification{
-		Objects:        spec.Objects,
+		Definitions:    definitions,
 		Methods:        spec.Methods,
 		Fields:         spec.Fields,
 		Discriminators: spec.Discriminators,
-		Unions:         spec.Unions,
 		Variants:       variants,
 		Aliases:        aliases,
 		Release:        spec.Release,
 	}, nil
 }
 
-// aliases returns the table of RichText's two prose-only variants: a plain
-// string, and an array of RichText itself.
+// definitions returns base holding what RichText names too: the two variants
+// the documentation writes as prose rather than as list items. It fails when
+// either reference is taken.
+func (r RichText) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+	out := NewDefinitionTable(base)
+	err := out.Insert(
+		richTextPlainRef,
+		"RichTextPlain",
+		model.DefinitionKindAlias,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
+			"RichTextPlain represents the plain-text variant of a RichText value.",
+			prose.StylePlain,
+		))),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the rich text plain alias: %w", err)
+	}
+	err = out.Insert(
+		richTextSequenceRef,
+		"RichTextSequence",
+		model.DefinitionKindAlias,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
+			"RichTextSequence represents the nested-array variant of a RichText value.",
+			prose.StylePlain,
+		))),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the rich text sequence alias: %w", err)
+	}
+	return out, nil
+}
+
+// aliases returns the type each RichText variant stands for: a plain string,
+// and an array of RichText itself.
 func (r RichText) aliases() Aliases {
 	out := pipeline.NewMapTableWithCapacity[model.Reference, Alias](2)
 	out.Insert(richTextPlainRef, Alias{
 		Ref:  richTextPlainRef,
-		Name: "RichTextPlain",
 		Type: typeexpr.NewPrimitive(primitive.String),
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
-			"RichTextPlain represents the plain-text variant of a RichText value.",
-			prose.StylePlain,
-		))),
 	})
 	out.Insert(richTextSequenceRef, Alias{
 		Ref:  richTextSequenceRef,
-		Name: "RichTextSequence",
 		Type: typeexpr.NewArray(typeexpr.NewNamed(richTextRef)),
-		Description: prose.NewPassage(prose.NewParagraph(prose.NewText(
-			"RichTextSequence represents the nested-array variant of a RichText value.",
-			prose.StylePlain,
-		))),
 	})
 	return out
 }
 
-// variants returns the table of RichTextPlain and RichTextSequence as
-// variants of the documented RichText union.
-func (r RichText) variants() parsed.Variants {
-	out := pipeline.NewMapTableWithCapacity[model.VariantKey, parsed.Variant](2)
-	out.Insert(
-		model.VariantKey{Owner: richTextRef, Ref: richTextPlainRef},
-		parsed.Variant{Ref: richTextPlainRef},
+// variants returns base listing RichTextPlain and RichTextSequence as variants
+// of the documented RichText union too, after the ones it already lists. It
+// fails when the union already lists either.
+func (r RichText) variants(base parsed.Variants) (parsed.Variants, error) {
+	out := NewVariantTable(base, richTextRef)
+	err := out.Insert(
+		richTextPlainRef,
+		richTextSequenceRef,
 	)
-	out.Insert(
-		model.VariantKey{Owner: richTextRef, Ref: richTextSequenceRef},
-		parsed.Variant{Ref: richTextSequenceRef},
-	)
-	return out
+	if err != nil {
+		return nil, fmt.Errorf("listing rich text variants: %w", err)
+	}
+	return out, nil
 }

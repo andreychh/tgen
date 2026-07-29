@@ -15,23 +15,29 @@ import (
 )
 
 // Variant is the decoded record of one union member: the reference of the type
-// it points to. Its owning union is the key.
+// it points to, and its position among the other members of the same union.
+// Its owning union is the key.
 type Variant struct {
-	Ref model.Reference
+	Ref      model.Reference
+	Position model.Position
 }
 
-// VariantItem is one variant's <li> item of a union's list.
+// VariantItem is one variant's <li> item of a union's list, at its position
+// among sibling items.
 type VariantItem struct {
+	at int
 	li *goquery.Selection
 }
 
-// NewVariantItem constructs a VariantItem over a variant's <li> item.
-func NewVariantItem(li *goquery.Selection) VariantItem {
-	return VariantItem{li: li}
+// NewVariantItem constructs a VariantItem over a variant's <li> item at
+// position at.
+func NewVariantItem(at int, li *goquery.Selection) VariantItem {
+	return VariantItem{at: at, li: li}
 }
 
-// Record returns the variant decoded from the item: the reference it points to.
-// It fails when the item has no link or the reference is malformed.
+// Record returns the variant decoded from the item: the reference it points to
+// and its position. It fails when the item has no link or the reference is
+// malformed.
 func (i VariantItem) Record() (Variant, error) {
 	href, found := i.li.Find("a").Attr("href")
 	if !found {
@@ -41,7 +47,7 @@ func (i VariantItem) Record() (Variant, error) {
 	if !refPattern.MatchString(ref) {
 		return Variant{}, fmt.Errorf("variant reference %q is malformed", ref)
 	}
-	return Variant{Ref: model.Reference(ref)}, nil
+	return Variant{Ref: model.Reference(ref), Position: model.Position(i.at)}, nil
 }
 
 // UnionVariants are the variant items declared under one union's heading.
@@ -63,8 +69,8 @@ func (v UnionVariants) Records() (model.Reference, []Variant, error) {
 	}
 	var variants []Variant
 	items := v.h4.NextUntil("h3, h4, hr").Filter("ul").First().Find("li")
-	for _, li := range items.EachIter() {
-		variant, err := NewVariantItem(li).Record()
+	for at, li := range items.EachIter() {
+		variant, err := NewVariantItem(at, li).Record()
 		if err != nil {
 			return "", nil, fmt.Errorf("parsing variant: %w", err)
 		}
