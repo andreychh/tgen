@@ -143,24 +143,32 @@ tasks:
     desc: Generate code for all stands
     deps:
       - stands:generate:go
+      - stands:generate:gov2
       - stands:generate:python
 
   stands:test:
     desc: Generate and verify all stands
     deps:
       - stands:test:go
+      - stands:test:gov2
       - stands:test:python
 
   stands:ci:
     desc: Full CI scenario for all stands (generate, diff, check)
     deps:
       - stands:ci:go
+      - stands:ci:gov2
       - stands:ci:python
 
   stands:generate:go:
     desc: Generate Go client code into stands/go/api
     cmds:
       - go run . go -o stands/go/api
+
+  stands:generate:gov2:
+    desc: Generate Go client code into stands/gov2/api from the nanopass pipeline
+    cmds:
+      - go run . gov2 -o stands/gov2/api
 
   stands:generate:python:
     desc: Generate Python client code into stands/python/api
@@ -172,6 +180,12 @@ tasks:
     cmds:
       - task: stands:generate:go
       - task: stands:check:go
+
+  stands:test:gov2:
+    desc: Generate and verify nanopass Go stand
+    cmds:
+      - task: stands:generate:gov2
+      - task: stands:check:gov2
 
   stands:test:python:
     desc: Generate and verify Python stand
@@ -186,6 +200,13 @@ tasks:
       - task: stands:diff:go
       - task: stands:check:go
 
+  stands:ci:gov2:
+    desc: Full CI scenario for nanopass Go stand (generate, diff, check)
+    cmds:
+      - task: stands:generate:gov2
+      - task: stands:diff:gov2
+      - task: stands:check:gov2
+
   stands:ci:python:
     desc: Full CI scenario for Python stand (generate, diff, check)
     cmds:
@@ -199,6 +220,15 @@ tasks:
       - |
         if ! git diff --exit-code stands/go/api/; then
           echo "stands/go/api/ is out of sync — run 'task stands:generate:go' and commit the result"
+          exit 1
+        fi
+
+  stands:diff:gov2:
+    internal: true
+    cmds:
+      - |
+        if ! git diff --exit-code stands/gov2/api/; then
+          echo "stands/gov2/api/ is out of sync — run 'task stands:generate:gov2' and commit the result"
           exit 1
         fi
 
@@ -218,6 +248,13 @@ tasks:
       - mise trust --quiet
       - mise run check
       - mise run test
+
+  stands:check:gov2:
+    desc: Verify the generated nanopass Go code compiles
+    dir: stands/gov2
+    cmds:
+      - mise trust --quiet
+      - mise run check
 
   stands:check:python:
     desc: Verify the generated Python code passes type checking
