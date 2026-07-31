@@ -17,12 +17,12 @@ var templates embed.FS
 // Pass is the Go generation stage: it renders the records of the pipeline's
 // exit into the files of a Go package.
 type Pass struct {
-	spec Specification
+	gen Generation
 }
 
-// NewPass creates a Pass rendering the given specification.
-func NewPass(spec Specification) Pass {
-	return Pass{spec: spec}
+// NewPass creates a Pass rendering the given generation.
+func NewPass(gen Generation) Pass {
+	return Pass{gen: gen}
 }
 
 // Artifacts returns the files the target writes, each bound to the template
@@ -33,7 +33,7 @@ func (p Pass) Artifacts() (output.Artifacts, error) {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
 	return output.Artifacts{
-		"api.go":    output.NewTemplateView(tmpl, "api", p.spec),
-		"client.go": output.NewTemplateView(tmpl, "client", p.spec),
+		"api.go":    output.NewTemplateView(tmpl, "api", p.gen),
+		"client.go": output.NewTemplateView(tmpl, "client", p.gen),
 	}, nil
 }

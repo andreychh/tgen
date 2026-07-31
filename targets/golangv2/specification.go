@@ -14,21 +14,22 @@ import (
 )
 
 // Specification represents the Go view of the specification: the declarations
-// each generated file is rendered from.
+// each generated file is rendered from, and the release those declarations were
+// read from. What a run decides rather than the documentation belongs to
+// [Generation].
 type Specification struct {
 	inner ir.Specification
-	pkg   string
 }
 
 // NewSpecification creates a Specification over the records of the pipeline's
-// exit, rendered into the package named pkg.
-func NewSpecification(inner ir.Specification, pkg string) Specification {
-	return Specification{inner: inner, pkg: pkg}
+// exit.
+func NewSpecification(inner ir.Specification) Specification {
+	return Specification{inner: inner}
 }
 
-// Package returns the name of the package the generated files declare.
-func (s Specification) Package() string {
-	return s.pkg
+// Release returns the Bot API release the specification was read from.
+func (s Specification) Release() Release {
+	return NewRelease(s.inner.Release())
 }
 
 // Definitions returns the declarations the generated package holds, ordered by
