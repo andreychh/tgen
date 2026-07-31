@@ -19,8 +19,7 @@ import (
 )
 
 // Pipeline represents the nanopass chain read end to end: every pass from the
-// documentation page to the tables a target renders, each one reading what the
-// pass before it produced.
+// documentation page to the tables a target renders.
 type Pipeline struct {
 	doc *goquery.Document
 }
@@ -30,14 +29,18 @@ func NewPipeline(doc *goquery.Document) Pipeline {
 	return Pipeline{doc: doc}
 }
 
-// Specification returns the tables of the last pass. It fails when any pass
-// rejects what the pass before it produced.
+// Specification returns the tables a target renders, as the last pass of the
+// chain leaves them. It fails when any pass rejects what the pass before it
+// produced.
 func (p Pipeline) Specification() (separated.Specification, error) {
 	page, err := parsed.NewPage(p.doc).Specification()
 	if err != nil {
 		return separated.Specification{}, fmt.Errorf("parsing the page: %w", err)
 	}
-	discriminators := classified.NewPass(page).Specification()
+	discriminators, err := classified.NewPass(page).Specification()
+	if err != nil {
+		return separated.Specification{}, fmt.Errorf("classifying discriminators: %w", err)
+	}
 	fields, err := unified.NewPass(discriminators).Specification()
 	if err != nil {
 		return separated.Specification{}, fmt.Errorf("unifying fields and parameters: %w", err)

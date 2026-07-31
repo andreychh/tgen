@@ -17,9 +17,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewGoV2Command returns the "gov2" subcommand, the Go target driven by the
-// nanopass pipeline. It stands beside "go" until the pipeline renders
-// everything the legacy chain does, at which point "go" takes it over.
+// NewGoV2Command returns the "gov2" subcommand, which generates Go code from
+// the nanopass pipeline rather than from the legacy chain "go" runs.
 //
 // TODO #248: Fold this command into "go" and delete the legacy chain.
 func NewGoV2Command(m meta.Meta) *cobra.Command {
