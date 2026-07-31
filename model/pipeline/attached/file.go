@@ -8,22 +8,11 @@ import (
 	"github.com/andreychh/tgen/model/pipeline"
 )
 
-// Kind tells apart the two ways a definition has to do with a file: KindFile
-// marks the type a file is sent as, which is one definition and no other;
-// KindCarrier marks a definition holding one somewhere inside, however deep.
-// A caller reads the kind to know whether a value hands over its file itself
-// or asks what it holds to hand over theirs.
-type Kind string
-
-const (
-	KindFile    Kind = "file"
-	KindCarrier Kind = "carrier"
-)
-
-// File is what one definition has to do with a file.
+// File is what one definition has to do with a file, classified by
+// [model.FileKind].
 type File struct {
 	Ref  model.Reference
-	Kind Kind
+	Kind model.FileKind
 }
 
 // FileTable is the spreading operator: it starts from the type a file is sent
@@ -43,7 +32,7 @@ func NewFileTable(seed model.Reference, rules ...Rule) FileTable {
 // own kind — a rich block nesting rich blocks — settles instead of circling.
 func (t FileTable) Table() Files {
 	out := pipeline.NewMapTable[model.Reference, File]()
-	out.Insert(t.seed, File{Ref: t.seed, Kind: KindFile})
+	out.Insert(t.seed, File{Ref: t.seed, Kind: model.FileKindFile})
 	for t.spread(out) {
 	}
 	return out
@@ -58,7 +47,7 @@ func (t FileTable) spread(out pipeline.MapTable[model.Reference, File]) bool {
 			if _, marked := out.Lookup(ref); marked {
 				continue
 			}
-			out.Insert(ref, File{Ref: ref, Kind: KindCarrier})
+			out.Insert(ref, File{Ref: ref, Kind: model.FileKindCarrier})
 			grew = true
 		}
 	}

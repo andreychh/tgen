@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // Package model defines the foundational value types shared across all layers
-// of the tgen pipeline: Name, Type, Description, Key, and their companions.
+// of the tgen pipeline: Name, Reference, Key, Position, and their companions.
 package model
 
 import "time"
@@ -22,6 +22,21 @@ const (
 	DefinitionKindMethod DefinitionKind = "method"
 	DefinitionKindUnion  DefinitionKind = "union"
 	DefinitionKindAlias  DefinitionKind = "alias"
+)
+
+// FileKind classifies what a reference has to do with a file, telling a target
+// whether the value hands its file over itself or asks what it holds to hand
+// over theirs. A reference classified by nothing reaches no file at all, which
+// is most of them, so the kind is carried only where it applies.
+type FileKind string
+
+const (
+	// FileKindFile marks the type a file is sent as, which is one definition and
+	// no other.
+	FileKindFile FileKind = "file"
+	// FileKindCarrier marks a definition holding a file somewhere inside, however
+	// deep.
+	FileKindCarrier FileKind = "carrier"
 )
 
 type Optionality bool
