@@ -15,9 +15,7 @@ func NewTelegramURL(r model.Reference) TelegramURL {
 	return TelegramURL{inner: r}
 }
 
-// AsString returns the full URL (e.g.,
-// "https://core.telegram.org/bots/api#march-1-2026").
-// AsString returns the full URL (e.g.,
+// Value returns the full URL (e.g.,
 // "https://core.telegram.org/bots/api#march-1-2026").
 func (u TelegramURL) Value() string {
 	return "https://core.telegram.org/bots/api#" + string(u.inner)
