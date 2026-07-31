@@ -49,8 +49,10 @@ func NewPass(spec parsed.Specification) Pass {
 
 // Specification returns the classified specification, moving each field whose
 // description decodes a fixed discriminator value out of Fields and into
-// Discriminators.
-func (p Pass) Specification() Specification {
+// Discriminators. The error is always nil: nothing this pass does can fail,
+// and it returns one only so that every pass in the chain is called the same
+// way.
+func (p Pass) Specification() (Specification, error) {
 	discriminators := NewDiscriminatorTable(p.spec.Fields).Apply()
 	fields := pipeline.NewFilteredTable(p.spec.Fields, NewFieldFilter(discriminators)).Apply()
 	return Specification{
@@ -60,5 +62,5 @@ func (p Pass) Specification() Specification {
 		Discriminators: discriminators,
 		Variants:       p.spec.Variants,
 		Release:        p.spec.Release,
-	}
+	}, nil
 }

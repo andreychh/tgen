@@ -15,6 +15,7 @@ jobs:
       matrix:
         target:
           - go
+          - gov2
           - python
     timeout-minutes: 15
     runs-on: ubuntu-24.04

@@ -1,0 +1,389 @@
+package api
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+)
+
+// Method is the name an endpoint is called by.
+type Method string
+
+// Payload is the body of one request, which knows how to become that request.
+type Payload interface {
+	Request(ctx context.Context, method, url string) (*http.Request, error)
+}
+
+var (
+	_ Payload = emptyPayload{}
+	_ Payload = jsonPayload{}
+	_ Payload = formPayload{}
+)
+
+// Connection is where a method sends its payload and where the decoded result
+// comes back from.
+type Connection interface {
+	Do(ctx context.Context, method Method, payload Payload, response any) error
+}
+
+// HTTPConnection is the production Connection: it builds the request from the
+// payload, posts it to the Telegram endpoint, and splits the JSON envelope into
+// either a decoded result or an Error.
+type HTTPConnection struct {
+	client      *http.Client
+	destination Destination
+}
+
+// NewHTTPConnection creates an HTTPConnection to the public Telegram Bot API
+// using a bot token.
+func NewHTTPConnection(client *http.Client, token string) HTTPConnection {
+	return NewHTTPConnectionTo(client, NewDestination("https://api.telegram.org", token))
+}
+
+// NewHTTPConnectionTo creates an HTTPConnection to an explicit Destination, for
+// pointing at a self-hosted server or the test environment.
+func NewHTTPConnectionTo(client *http.Client, destination Destination) HTTPConnection {
+	return HTTPConnection{client: client, destination: destination}
+}
+
+// Do posts the payload to the method endpoint and decodes the result into
+// response. It returns an *Error when the API reports a failure, or a wrapped
+// error when the request, transport, or decoding fails.
+func (c HTTPConnection) Do(
+	ctx context.Context,
+	method Method,
+	payload Payload,
+	response any,
+) error {
+	req, err := payload.Request(ctx, http.MethodPost, c.destination.url(method))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var env envelope
+	err = json.NewDecoder(resp.Body).Decode(&env)
+	if err != nil {
+		return fmt.Errorf("decoding envelope: %w", err)
+	}
+	raw, err := env.result()
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(raw, response)
+	if err != nil {
+		return fmt.Errorf("decoding result: %w", err)
+	}
+	return nil
+}
+
+// Destination is where a bot's requests go: a base host, the bot token that
+// parameterizes the path, and whether to target Telegram's test environment. It
+// turns a method name into that method's request URL.
+type Destination struct {
+	base  string
+	token string
+	test  bool
+}
+
+// NewDestination creates a Destination targeting the production environment.
+func NewDestination(base, token string) Destination {
+	return Destination{base: base, token: token, test: false}
+}
+
+// NewTestDestination creates a Destination targeting the test environment, whose
+// path carries an extra "test" segment after the token.
+func NewTestDestination(base, token string) Destination {
+	return Destination{base: base, token: token, test: true}
+}
+
+// url returns the request URL for method.
+func (d Destination) url(method Method) string {
+	if d.test {
+		return fmt.Sprintf("%s/bot%s/test/%s", d.base, d.token, method)
+	}
+	return fmt.Sprintf("%s/bot%s/%s", d.base, d.token, method)
+}
+
+// envelope is the Telegram Bot API JSON response wrapper: exactly one side is
+// meaningful — Result when Ok, the error fields otherwise.
+type envelope struct {
+	Ok          bool                `json:"ok"`
+	Result      json.RawMessage     `json:"result,omitempty"`
+	ErrorCode   *int64              `json:"error_code,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Parameters  *ResponseParameters `json:"parameters,omitempty"`
+}
+
+// result returns the raw API result, or an *Error when the envelope reports a
+// failure.
+func (e envelope) result() (json.RawMessage, error) {
+	if e.Ok {
+		return e.Result, nil
+	}
+	code := int64(0)
+	if e.ErrorCode != nil {
+		code = *e.ErrorCode
+	}
+	description := "<no description>"
+	if e.Description != nil {
+		description = *e.Description
+	}
+	return nil, &Error{Code: code, Description: description, Parameters: e.Parameters}
+}
+
+// Error is a failure reported by the Telegram Bot API.
+type Error struct {
+	Code        int64
+	Description string
+	Parameters  *ResponseParameters
+}
+
+// Error returns the code and description as a single message.
+func (e *Error) Error() string {
+	return fmt.Sprintf("telegram %d: %s", e.Code, e.Description)
+}
+
+// emptyPayload is the body of a method with no parameter: no body, no header.
+type emptyPayload struct{}
+
+// Request implements [Payload].
+func (emptyPayload) Request(ctx context.Context, method, url string) (*http.Request, error) {
+	return http.NewRequestWithContext(ctx, method, url, http.NoBody)
+}
+
+// jsonPayload is the body of a method reaching no file: the method marshals
+// itself whole.
+type jsonPayload struct {
+	value any
+}
+
+func newJSONPayload(value any) jsonPayload {
+	return jsonPayload{value: value}
+}
+
+// Request implements [Payload].
+func (p jsonPayload) Request(ctx context.Context, method, url string) (*http.Request, error) {
+	data, err := json.Marshal(p.value)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling payload: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
+// filePart is one binary part of a multipart request: what it is called and
+// where its bytes come from.
+type filePart struct {
+	name   string
+	reader io.Reader
+}
+
+// fileSink accumulates binary parts as the parameters reaching a file hand
+// themselves over. Its mutation is its nature: place and attach write their
+// files into it. It takes a file either under a key its caller owns, or under a
+// key it generates and gives back.
+type fileSink struct {
+	files   map[string]filePart
+	counter int
+}
+
+func newFileSink() *fileSink {
+	return &fileSink{files: map[string]filePart{}, counter: 0}
+}
+
+// file stores reader under key.
+func (s *fileSink) file(key, name string, reader io.Reader) {
+	s.files[key] = filePart{name: name, reader: reader}
+}
+
+// reserve stores reader under a freshly generated key and returns that key, for
+// use in an "attach://" reference.
+func (s *fileSink) reserve(name string, reader io.Reader) string {
+	key := fmt.Sprintf("attachment_%d", s.counter)
+	s.counter++
+	s.file(key, name, reader)
+	return key
+}
+
+// formPayload is the body of a method reaching a file: the body every parameter
+// that is not a file rides in, plus the parts the files were handed over as.
+type formPayload struct {
+	value any
+	files map[string]filePart
+}
+
+func newFormPayload(value any, files map[string]filePart) formPayload {
+	return formPayload{value: value, files: files}
+}
+
+// Request implements [Payload]. A method that could have carried a file but
+// carried none sends plain JSON, since a multipart body buys nothing then.
+func (p formPayload) Request(ctx context.Context, method, url string) (*http.Request, error) {
+	if len(p.files) == 0 {
+		return newJSONPayload(p.value).Request(ctx, method, url)
+	}
+	data, err := json.Marshal(p.value)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling payload: %w", err)
+	}
+	var fields map[string]json.RawMessage
+	err = json.Unmarshal(data, &fields)
+	if err != nil {
+		return nil, fmt.Errorf("splitting body: %w", err)
+	}
+	buf := &bytes.Buffer{}
+	writer := multipart.NewWriter(buf)
+	for key, raw := range fields {
+		value, err := formField(raw).value()
+		if err != nil {
+			return nil, err
+		}
+		err = writer.WriteField(key, value)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for key, part := range p.files {
+		into, err := writer.CreateFormFile(key, part.name)
+		if err != nil {
+			return nil, err
+		}
+		_, err = io.Copy(into, part.reader)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	return req, nil
+}
+
+// formField is one top-level JSON value of a body rendered into a form field.
+type formField json.RawMessage
+
+// value unquotes a JSON string and keeps anything else — a number, a boolean, a
+// nested object or array — verbatim. It fails when a quoted value is not valid
+// JSON.
+func (f formField) value() (string, error) {
+	if len(f) > 0 && f[0] == '"' {
+		var unquoted string
+		err := json.Unmarshal(f, &unquoted)
+		if err != nil {
+			return "", fmt.Errorf("unquoting form field: %w", err)
+		}
+		return unquoted, nil
+	}
+	return string(f), nil
+}
+
+// Response is the canned outcome of a FakeConnection call: a value or an error.
+type Response interface{ sealedResponse() }
+
+type (
+	okResponse  struct{ value any }
+	errResponse struct{ err error }
+)
+
+func (okResponse) sealedResponse()  {}
+func (errResponse) sealedResponse() {}
+
+var (
+	_ Response = okResponse{}
+	_ Response = errResponse{}
+)
+
+// Ok creates a Response that decodes value into the call's result.
+func Ok(value any) Response { return okResponse{value: value} }
+
+// Err creates a Response that returns err as the call's error.
+func Err(err error) Response { return errResponse{err: err} }
+
+// Call pairs a Method with its canned Response.
+type Call struct {
+	method   Method
+	response Response
+}
+
+// NewCall creates a Call from a method and its canned response.
+func NewCall(method Method, response Response) Call {
+	return Call{method: method, response: response}
+}
+
+// callQueue is the mutable cursor over a fixed sequence of Calls: advancing is
+// its nature. FakeConnection delegates sequencing to it, so the connection
+// itself stays an immutable value.
+type callQueue struct {
+	calls []Call
+	index int
+}
+
+func newCallQueue(calls []Call) *callQueue {
+	return &callQueue{calls: calls, index: 0}
+}
+
+// next returns the next Call, or false once the queue is exhausted.
+func (q *callQueue) next() (Call, bool) {
+	if q.index >= len(q.calls) {
+		return Call{method: "", response: nil}, false
+	}
+	call := q.calls[q.index]
+	q.index++
+	return call, true
+}
+
+// FakeConnection replays a fixed sequence of Calls, verifying the method of
+// each. Misuse — exhaustion or a method mismatch — panics rather than errors, so
+// a wrong test fails loudly instead of silently passing.
+type FakeConnection struct {
+	queue *callQueue
+}
+
+// NewFakeConnection creates a FakeConnection over a fixed sequence of calls.
+func NewFakeConnection(calls ...Call) FakeConnection {
+	return FakeConnection{queue: newCallQueue(calls)}
+}
+
+// Do replays the next Call: it panics when the queue is exhausted or the method
+// does not match, returns the canned error, or decodes the canned value into
+// response. It mirrors HTTPConnection's decode path — marshal the canned value,
+// unmarshal into response — so a method dispatching a union behaves identically.
+func (c FakeConnection) Do(_ context.Context, method Method, _ Payload, response any) error {
+	call, ok := c.queue.next()
+	if !ok {
+		panic(fmt.Sprintf("FakeConnection: unexpected call to %q", method))
+	}
+	if call.method != method {
+		panic(fmt.Sprintf("FakeConnection: expected %q, got %q", call.method, method))
+	}
+	switch r := call.response.(type) {
+	case errResponse:
+		return r.err
+	case okResponse:
+		data, err := json.Marshal(r.value)
+		if err != nil {
+			panic(fmt.Sprintf("FakeConnection: marshaling %q response: %v", method, err))
+		}
+		return json.Unmarshal(data, response)
+	default:
+		panic(fmt.Sprintf("FakeConnection: unknown response %T", call.response))
+	}
+}
