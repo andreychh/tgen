@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 // Package typeform models a field type as an atom repeated over a number of
-// dimensions. It is the narrower of tgen's two type languages: the typeexpr
+// dimensions. It is the middle of tgen's three type languages: the typeexpr
 // tree can write every type the documentation composes, including a union,
-// while a typeform type cannot spell a union at all.
+// while a typeform type cannot spell a union at all; the typebound type it
+// narrows to holds what its atom names instead of a reference to it.
 package typeform
 
 // Dimensionality is the number of array wrappers enclosing an atom: zero for a
