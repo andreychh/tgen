@@ -16,8 +16,10 @@ import (
 
 // Field is the decoded record of one object field: its key, its position
 // among the object's other fields, and the verbatim prose of its type and
-// description. Resolving the type and lifting optionality are left for later
-// passes.
+// description. The description is never empty: the documentation describes
+// every field it lists, and a row that broke that would leave a name in the
+// generated code with nothing said about it. Resolving the type and lifting
+// optionality are left for later passes.
 type Field struct {
 	Key         model.Key
 	Position    model.Position
@@ -39,7 +41,8 @@ func NewFieldRow(at int, tr *goquery.Selection) FieldRow {
 
 // Record returns the field decoded from the row: its key, its position, and
 // the prose of its type and description. It fails when the key, type, or
-// description is malformed.
+// description is malformed, and when the row describes the field with
+// nothing.
 func (r FieldRow) Record() (Field, error) {
 	key, err := NewKey(r.cell(0)).Value()
 	if err != nil {
@@ -52,6 +55,9 @@ func (r FieldRow) Record() (Field, error) {
 	description, err := prose.NewPhrase(r.cell(2).Contents()).Value()
 	if err != nil {
 		return Field{}, fmt.Errorf("parsing field description: %w", err)
+	}
+	if len(description.Inlines()) == 0 {
+		return Field{}, fmt.Errorf("field %q is described by nothing", key)
 	}
 	return Field{
 		Key:         key,
