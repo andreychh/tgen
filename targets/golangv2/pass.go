@@ -1,0 +1,39 @@
+// SPDX-FileCopyrightText: 2026 Andrey Chernykh
+// SPDX-License-Identifier: MIT
+
+package golangv2
+
+import (
+	"embed"
+	"fmt"
+	"text/template"
+
+	"github.com/andreychh/tgen/output"
+)
+
+//go:embed templates/*.tmpl
+var templates embed.FS
+
+// Pass is the Go generation stage: it renders the records of the pipeline's
+// exit into the files of a Go package.
+type Pass struct {
+	spec Specification
+}
+
+// NewPass creates a Pass rendering the given specification.
+func NewPass(spec Specification) Pass {
+	return Pass{spec: spec}
+}
+
+// Artifacts returns the files the target writes, each bound to the template
+// rendering it. It fails when a template is malformed.
+func (p Pass) Artifacts() (output.Artifacts, error) {
+	tmpl, err := output.NewMold(templates, template.FuncMap{}).Template()
+	if err != nil {
+		return nil, fmt.Errorf("preparing template: %w", err)
+	}
+	return output.Artifacts{
+		"api.go":    output.NewTemplateView(tmpl, "api", p.spec),
+		"client.go": output.NewTemplateView(tmpl, "client", p.spec),
+	}, nil
+}

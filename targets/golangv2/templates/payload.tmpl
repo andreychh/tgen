@@ -1,0 +1,37 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "payload_empty"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+	return emptyPayload{}, nil
+{{- end}}
+
+{{- define "payload_json"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+	return newJSONPayload(m), nil
+{{- end}}
+
+{{- /*
+	payload_form writes the body of a method reaching a file. Every such
+	parameter hands its file to the sink and leaves behind a value pointing at
+	it; the body then shadows the parameter with that value, and rides the alias
+	for everything else. The alias is a defined type and holds no method, so the
+	shadow is what encoding/json writes.
+*/}}
+{{- define "payload_form"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+	sink := newFileSink()
+{{- range .Payload.Files}}
+{{- render .Template .}}
+{{- end}}
+	type alias {{.Name}}
+	body := struct {
+{{- range .Payload.Files}}
+		{{.Name}} {{.Shadow}} {{.Tag}}
+{{- end}}
+		alias
+	}{
+{{- range .Payload.Files}}
+		{{.Name}}: {{.Local}},
+{{- end}}
+		alias: alias(m),
+	}
+	return newFormPayload(body, sink.files), nil
+{{- end}}

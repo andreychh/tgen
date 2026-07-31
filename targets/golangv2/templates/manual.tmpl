@@ -1,0 +1,230 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	The blocks below are the declarations Go spells in a way the documentation
+	does not describe. Each claims one definition by the reference it is
+	addressed by, and is rendered in that definition's place, so nothing here
+	escapes the order of the page or the pass that walks it.
+
+	A block writes by hand only what has to be written by hand: it renders the
+	shape its kind shares for everything the documentation does say, and adds
+	its own beside it. Spelling a declaration out in full here would freeze
+	what the specification still owns, and the next release would drift past it
+	unnoticed.
+*/}}
+
+{{- /*
+	manual_fileid adds to the file id alias the two ways a file travels, which
+	is what makes it an InputFile: a file already held by Telegram is named,
+	never uploaded, so it stays in the body wherever it sits.
+*/}}
+{{- define "manual_fileid"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Alias*/}}
+{{- template "alias" .}}
+
+func (f {{.Name}}) place(_ *fileSink, _ string) *string {
+	ref := string(f)
+	return &ref
+}
+
+func (f {{.Name}}) attach(_ *fileSink) string {
+	return string(f)
+}
+{{- end}}
+
+{{- /*
+	manual_upload spells the upload object out, declaration and all: what it
+	holds is a stream of bytes, which the specification never names and no two
+	targets spell alike. Its two ways of travelling are the ones the union
+	exists for — a file uploaded with the request leaves the body for a part of
+	its own, so place hands it over and keeps nothing behind, while attach
+	leaves the reference the part is reached by.
+*/}}
+{{- define "manual_upload"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Object*/}}
+{{.Doc}}
+type {{.Name}} struct {
+	Name   string
+	Reader io.Reader
+}
+
+func (u {{.Name}}) place(sink *fileSink, key string) *string {
+	sink.file(key, u.name(), u.Reader)
+	return nil
+}
+
+func (u {{.Name}}) attach(sink *fileSink) string {
+	return "attach://" + sink.reserve(u.name(), u.Reader)
+}
+
+func (u {{.Name}}) name() string {
+	if u.Name == "" {
+		return "file"
+	}
+	return u.Name
+}
+{{- end}}
+
+{{- /*
+	manual_inputfile writes the union a file travels as. Its interface is the one
+	thing about a union no shape can write: the two ways of travelling are tgen's
+	invention, and every generated method reaching a file leans on them. Inbound,
+	only a file id can ever come back — an upload is a stream of bytes going one
+	way — so the decoder reads the reference and nothing else.
+*/}}
+{{- define "manual_inputfile"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- $union := .Name}}
+{{.Doc}}
+//sumtype:decl
+type {{$union}} interface {
+	place(sink *fileSink, key string) *string
+	attach(sink *fileSink) string
+	sealed{{$union}}()
+}
+{{range .Variants}}
+func ({{.Name}}) sealed{{$union}}() {}
+{{- end}}
+
+func unmarshal{{$union}}(data []byte) ({{$union}}, error) {
+	var id FileID
+	if err := json.Unmarshal(data, &id); err != nil {
+		return nil, fmt.Errorf("cannot unmarshal %s into {{$union}}: %w", data, err)
+	}
+	return id, nil
+}
+{{- end}}
+
+{{- /*
+	manual_chatid writes the decoder of the union a chat is addressed by. The two
+	variants are told apart by what JSON they are: a number is an id, a string is
+	a username, and neither decodes as the other.
+*/}}
+{{- define "manual_chatid"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- template "union" .}}
+
+func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
+	var id ID
+	if json.Unmarshal(data, &id) == nil {
+		return id, nil
+	}
+	var username Username
+	if json.Unmarshal(data, &username) == nil {
+		return username, nil
+	}
+	return nil, fmt.Errorf("cannot unmarshal %s into {{.Name}}", data)
+}
+{{- end}}
+
+{{- /*
+	manual_maybemessage writes the decoder of the union an edit returns: the
+	edited message when the bot may read it, the True marker when the message is
+	inline and beyond reach. An object never decodes as a boolean and a boolean
+	never as an object, so trying them in turn tells them apart.
+*/}}
+{{- define "manual_maybemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- template "union" .}}
+
+func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
+	var message Message
+	if json.Unmarshal(data, &message) == nil {
+		return message, nil
+	}
+	var marker True
+	if json.Unmarshal(data, &marker) == nil {
+		return marker, nil
+	}
+	return nil, fmt.Errorf("cannot unmarshal %s into {{.Name}}", data)
+}
+{{- end}}
+
+{{- /*
+	manual_maybeinaccessiblemessage writes the decoder of the union a message
+	arrives as. Both variants are objects, so trying them in turn would let the
+	first swallow the second. The documentation tells them apart by a value
+	instead: an inaccessible message always dates from zero.
+*/}}
+{{- define "manual_maybeinaccessiblemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- template "union" .}}
+
+func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
+	var mark struct {
+		Date int64 `json:"date"`
+	}
+	if err := json.Unmarshal(data, &mark); err != nil {
+		return nil, err
+	}
+	if mark.Date == 0 {
+		var inaccessible InaccessibleMessage
+		if err := json.Unmarshal(data, &inaccessible); err != nil {
+			return nil, err
+		}
+		return inaccessible, nil
+	}
+	var message Message
+	if err := json.Unmarshal(data, &message); err != nil {
+		return nil, err
+	}
+	return message, nil
+}
+{{- end}}
+
+{{- /*
+	manual_inputmessagecontent writes the decoder of a union that is only ever
+	sent. Nothing tells its six variants apart: no key marks them, and every one
+	of them is an object, so trying them in turn would let the first swallow the
+	rest. Nothing has to tell them apart either — an inline result travels one way,
+	and the decoder exists only because an object holding one is declared with a
+	decoder of its own. It says so instead of guessing.
+*/}}
+{{- define "manual_inputmessagecontent"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- template "union" .}}
+
+func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
+	return nil, fmt.Errorf("{{.Name}} is only ever sent, so %s cannot be read back", data)
+}
+{{- end}}
+
+{{- /*
+	manual_richtext writes the decoder of the one union the documentation writes
+	partly as prose: two of its variants are not objects at all, so the shape of
+	the JSON tells them apart before anything else can. A string is a plain run of
+	text, an array is a sequence of runs, and everything else is one of the
+	variants a key tells apart.
+
+	That last switch is missing, and it is the one thing here that should not be
+	written by hand: twenty-five cases that drift the moment Telegram names a
+	twenty-sixth. Which is what a Union record cannot express yet — it drops the
+	marks of the variants that do carry them.
+*/}}
+{{- define "manual_richtext"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- template "union" .}}
+
+func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 {
+		return nil, fmt.Errorf("cannot unmarshal an empty value into {{.Name}}")
+	}
+	switch trimmed[0] {
+	case '"':
+		var plain RichTextPlain
+		if err := json.Unmarshal(data, &plain); err != nil {
+			return nil, err
+		}
+		return plain, nil
+	case '[':
+		var raws []json.RawMessage
+		if err := json.Unmarshal(data, &raws); err != nil {
+			return nil, err
+		}
+		sequence := make(RichTextSequence, len(raws))
+		for i, raw := range raws {
+			element, err := unmarshal{{.Name}}(raw)
+			if err != nil {
+				return nil, err
+			}
+			sequence[i] = element
+		}
+		return sequence, nil
+	}
+	return nil, fmt.Errorf("cannot unmarshal %s into {{.Name}}: the marked variants are not dispatched yet", data)
+}
+{{- end}}
