@@ -28,6 +28,14 @@ func NewSpecification(db separated.Specification) Specification {
 	return Specification{db: db}
 }
 
+// Release returns the Bot API release the specification was read from.
+func (s Specification) Release() Release {
+	return Release{
+		Ref:     s.db.Release.Ref,
+		Version: s.db.Release.Version,
+	}
+}
+
 // Definitions returns every definition the specification names, each joined
 // with what it owns, ordered by the position its source gave it. It fails when
 // a definition cannot be read as the record of its kind.
