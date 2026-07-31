@@ -11,7 +11,9 @@
 	The names api.go leans on from here are the two payload constructors, the
 	sink a file is handed to, and Connection itself.
 */}}
-{{- define "client"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Specification*/ -}}
+{{- define "client"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Generation*/ -}}
+{{template "header" .}}
+
 package {{.Package}}
 
 import (

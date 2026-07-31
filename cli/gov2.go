@@ -13,6 +13,7 @@ import (
 	ir "github.com/andreychh/tgen/model/ir/v2"
 	"github.com/andreychh/tgen/output"
 	"github.com/andreychh/tgen/source"
+	"github.com/andreychh/tgen/targets"
 	"github.com/andreychh/tgen/targets/golangv2"
 	"github.com/spf13/cobra"
 )
@@ -63,7 +64,11 @@ func goV2Action(cmd *cobra.Command, _ []string, m meta.Meta) error {
 		return fmt.Errorf("running the pipeline over %q: %w", location, err)
 	}
 	artifacts, err := golangv2.NewPass(
-		golangv2.NewSpecification(ir.NewSpecification(spec), "api"),
+		golangv2.NewGeneration(
+			golangv2.NewSpecification(ir.NewSpecification(spec)),
+			"api",
+			targets.NewSnapshot(snapshot),
+		),
 	).Artifacts()
 	if err != nil {
 		return err
