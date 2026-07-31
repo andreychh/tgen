@@ -1,0 +1,50 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	unmarshal_object writes the decoder of an object holding a union. The shadow
+	names every union field twice — once as raw JSON at the surface, once inside
+	the embedded alias — and encoding/json fills the shallower one, so the alias
+	carries everything else and the raw JSON is dispatched afterwards. The alias
+	is a defined type and holds no method, which is what keeps the decoder from
+	calling itself.
+
+	It is a shape, not an entity: any view offering Name and Unions renders
+	through it, and no kinship between those views is implied.
+*/}}
+{{- define "unmarshal_object"}}
+func (o *{{.Name}}) UnmarshalJSON(data []byte) error {
+	type alias {{.Name}}
+	var aux struct {
+{{- range .Unions}}
+		{{.Name}} {{.Shadow}} {{.Tag}}
+{{- end}}
+		alias
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*o = {{.Name}}(aux.alias)
+{{- range .Unions}}
+	if aux.{{.Name}} != nil {
+{{- if .Array}}
+		result := make([]{{.Element}}, len(aux.{{.Name}}))
+		for i, raw := range aux.{{.Name}} {
+			v, err := unmarshal{{.Element}}(raw)
+			if err != nil {
+				return err
+			}
+			result[i] = v
+		}
+{{- else}}
+		result, err := unmarshal{{.Element}}(aux.{{.Name}})
+		if err != nil {
+			return err
+		}
+{{- end}}
+		o.{{.Name}} = result
+	}
+{{- end}}
+	return nil
+}
+{{- end}}

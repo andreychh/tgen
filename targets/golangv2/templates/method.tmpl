@@ -1,0 +1,24 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	method writes one API method: the struct holding its parameters, the Call
+	joining the two slots, and the payload method holding the request slot on
+	its own. The struct comes from the shape every declaration with fields
+	shares, so the parameters are spelled the way an object's fields are.
+*/}}
+{{- define "method"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+{{- template "struct" .}}
+
+func (m {{.Name}}) Call(ctx context.Context, conn Connection) {{.Return.Signature}} {
+	payload, err := m.payload()
+	if err != nil {
+		{{.Return.Fail}}
+	}
+{{- render .Return.Template .}}
+}
+
+func (m {{.Name}}) payload() ({{.Payload.Type}}, error) {
+{{- render .Payload.Template .}}
+}
+{{- end}}

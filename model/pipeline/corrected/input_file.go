@@ -63,8 +63,11 @@ func (r InputFile) Apply(spec Specification) (Specification, error) {
 }
 
 // definitions returns base holding what InputFile names too: the union itself,
-// taking the place of the documented object base no longer holds, and the file
-// id alias its variant stands for. It fails when either reference is taken.
+// taking the place of the documented object base no longer holds, the file id
+// alias one variant stands for, and the upload object the other is. The upload
+// object owns no field — what it holds, the bytes to send and the name to send
+// them under, has no shape shared across targets, so each target spells it
+// itself. It fails when any of the three references is taken.
 func (r InputFile) definitions(base parsed.Definitions) (parsed.Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
@@ -91,6 +94,19 @@ func (r InputFile) definitions(base parsed.Definitions) (parsed.Definitions, err
 	if err != nil {
 		return nil, fmt.Errorf("naming the file id alias: %w", err)
 	}
+	err = out.Insert(
+		uploadRef,
+		"Upload",
+		model.DefinitionKindObject,
+		prose.NewPassage(prose.NewParagraph(prose.NewText(
+			"Upload represents a file sent with the request, carrying the bytes to send "+
+				"and the name to send them under.",
+			prose.StylePlain,
+		))),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("naming the upload object: %w", err)
+	}
 	return out, nil
 }
 
@@ -102,14 +118,14 @@ func (r InputFile) aliases() Aliases {
 	return out
 }
 
-// variants returns base listing InputFile's variants, which is FileId alone:
-// the upload variant holds a Go io.Reader with no shape shared across targets,
-// so it still needs its own design before it can join the union. It fails when
-// the union already lists FileId.
+// variants returns base listing InputFile's variants: a file Telegram already
+// holds, named by its id, and one uploaded with the request. It fails when the
+// union already lists either.
 func (r InputFile) variants(base parsed.Variants) (parsed.Variants, error) {
 	out := NewVariantTable(base, InputFileRef)
 	err := out.Insert(
 		fileIDRef,
+		uploadRef,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("listing input file variants: %w", err)

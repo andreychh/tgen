@@ -16,8 +16,9 @@ import (
 
 // Param is the decoded record of one method parameter: its key, its position
 // among the method's other parameters, and the verbatim prose of its type,
-// requiredness, and description. Lifting optionality is left for a later
-// pass, as with object fields.
+// requiredness, and description. The description is never empty, as with an
+// object field. Lifting optionality is left for a later pass, as with object
+// fields.
 type Param struct {
 	Key         model.Key
 	Position    model.Position
@@ -40,7 +41,8 @@ func NewParamRow(at int, tr *goquery.Selection) ParamRow {
 
 // Record returns the parameter decoded from the row: its key, its position,
 // and the prose of its type, requiredness, and description. It fails when the
-// key, type, requiredness, or description is malformed.
+// key, type, requiredness, or description is malformed, and when the row
+// describes the parameter with nothing.
 func (r ParamRow) Record() (Param, error) {
 	key, err := NewKey(r.cell(0)).Value()
 	if err != nil {
@@ -57,6 +59,9 @@ func (r ParamRow) Record() (Param, error) {
 	description, err := prose.NewPhrase(r.cell(3).Contents()).Value()
 	if err != nil {
 		return Param{}, fmt.Errorf("parsing parameter description: %w", err)
+	}
+	if len(description.Inlines()) == 0 {
+		return Param{}, fmt.Errorf("parameter %q is described by nothing", key)
 	}
 	return Param{
 		Key:         key,
