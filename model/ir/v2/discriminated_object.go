@@ -13,7 +13,9 @@ import (
 // apart by. It stands beside [Object], not on top of it: the two partition the
 // objects the documentation names, and no object is both. Files narrows Fields
 // to those reaching a file, and is empty for an object holding none. Rewrites
-// reports the same as it does for [Object].
+// reports the same as it does for [Object]. Introduced reports that tgen
+// introduced the object rather than reading it from the documentation page,
+// which leaves it no section a target can address.
 type DiscriminatedObject struct {
 	Ref           model.Reference
 	Name          model.Name
@@ -21,6 +23,7 @@ type DiscriminatedObject struct {
 	Fields        []Field
 	Files         []FileField
 	Rewrites      bool
+	Introduced    bool
 	Discriminator Discriminator
 }
 

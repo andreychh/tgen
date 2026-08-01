@@ -9,7 +9,6 @@ import (
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/pipeline"
-	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/prose"
 )
 
@@ -18,22 +17,22 @@ import (
 // states what it introduces and in which order, never a position. Its zero
 // value is not usable; construct one with [NewDefinitionTable].
 type DefinitionTable struct {
-	base  parsed.Definitions
-	added pipeline.MapTable[model.Reference, parsed.Definition]
+	base  Definitions
+	added pipeline.MapTable[model.Reference, Definition]
 }
 
 // NewDefinitionTable constructs a DefinitionTable over the definitions base
 // already holds.
-func NewDefinitionTable(base parsed.Definitions) DefinitionTable {
+func NewDefinitionTable(base Definitions) DefinitionTable {
 	return DefinitionTable{
 		base:  base,
-		added: pipeline.NewMapTable[model.Reference, parsed.Definition](),
+		added: pipeline.NewMapTable[model.Reference, Definition](),
 	}
 }
 
-// Insert admits a definition tgen introduces, at the place after every
-// definition the table already holds. It fails when ref already names a
-// definition, since a reference names at most one whatever its kind.
+// Insert admits a definition tgen introduces, marked as such, at the place
+// after every definition the table already holds. It fails when ref already
+// names a definition, since a reference names at most one whatever its kind.
 func (t DefinitionTable) Insert(
 	ref model.Reference,
 	name model.Name,
@@ -43,17 +42,18 @@ func (t DefinitionTable) Insert(
 	if _, exists := t.Lookup(ref); exists {
 		return fmt.Errorf("%s already names a definition", ref)
 	}
-	t.added.Insert(ref, parsed.Definition{
+	t.added.Insert(ref, Definition{
 		Ref:         ref,
 		Name:        name,
 		Kind:        kind,
 		Position:    t.place(),
 		Description: description,
+		Introduced:  true,
 	})
 	return nil
 }
 
-func (t DefinitionTable) Lookup(ref model.Reference) (parsed.Definition, bool) {
+func (t DefinitionTable) Lookup(ref model.Reference) (Definition, bool) {
 	if definition, exists := t.added.Lookup(ref); exists {
 		return definition, true
 	}
@@ -64,8 +64,8 @@ func (t DefinitionTable) Count() int {
 	return t.base.Count() + t.added.Count()
 }
 
-func (t DefinitionTable) All() iter.Seq2[model.Reference, parsed.Definition] {
-	return func(yield func(model.Reference, parsed.Definition) bool) {
+func (t DefinitionTable) All() iter.Seq2[model.Reference, Definition] {
+	return func(yield func(model.Reference, Definition) bool) {
 		for ref, definition := range t.base.All() {
 			if !yield(ref, definition) {
 				return

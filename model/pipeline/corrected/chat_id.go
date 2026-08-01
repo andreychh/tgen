@@ -59,7 +59,7 @@ func (r ChatID) Apply(spec Specification) (Specification, error) {
 // definitions returns base holding what ChatID names too: the union itself and
 // the two primitive aliases its variants stand for, neither of which the
 // documentation names. It fails when any of the three references is taken.
-func (r ChatID) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r ChatID) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		chatIDRef,

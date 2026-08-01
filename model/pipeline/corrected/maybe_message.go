@@ -60,7 +60,7 @@ func (r MaybeMessage) Apply(spec Specification) (Specification, error) {
 // itself and the True alias its variant stands for, which the documentation
 // writes as a bare keyword rather than a named type. It fails when either
 // reference is taken.
-func (r MaybeMessage) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r MaybeMessage) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		maybeMessageRef,

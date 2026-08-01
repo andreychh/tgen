@@ -68,7 +68,7 @@ func (r InputFile) Apply(spec Specification) (Specification, error) {
 // object owns no field — what it holds, the bytes to send and the name to send
 // them under, has no shape shared across targets, so each target spells it
 // itself. It fails when any of the three references is taken.
-func (r InputFile) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r InputFile) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		InputFileRef,
@@ -139,7 +139,7 @@ type inputFileFilter struct{}
 
 // Apply implements [pipeline.Filter]. It reports whether definition belongs in
 // the filtered result: false when ref is inputfile.
-func (inputFileFilter) Apply(ref model.Reference, definition parsed.Definition) bool {
+func (inputFileFilter) Apply(ref model.Reference, definition Definition) bool {
 	return ref != InputFileRef
 }
 

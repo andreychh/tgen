@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/pipeline/parsed"
+	"github.com/andreychh/tgen/model/pipeline/corrected"
 	"github.com/andreychh/tgen/model/pipeline/separated"
 )
 
@@ -16,12 +16,12 @@ import (
 // kind the definition is of.
 type Reading struct {
 	db         separated.Specification
-	definition parsed.Definition
+	definition corrected.Definition
 }
 
 // NewReading constructs a Reading of one definition against the database
 // holding what that definition owns.
-func NewReading(db separated.Specification, definition parsed.Definition) Reading {
+func NewReading(db separated.Specification, definition corrected.Definition) Reading {
 	return Reading{db: db, definition: definition}
 }
 
@@ -68,6 +68,7 @@ func (r Reading) object() (Object, error) {
 		Fields:      fields,
 		Files:       files,
 		Rewrites:    r.rewrites(),
+		Introduced:  r.definition.Introduced,
 	}, nil
 }
 
@@ -119,6 +120,7 @@ func (r Reading) discriminatedObject() (DiscriminatedObject, error) {
 		Fields:      fields,
 		Files:       files,
 		Rewrites:    r.rewrites(),
+		Introduced:  r.definition.Introduced,
 		Discriminator: Discriminator{
 			Key:   discriminator.Key,
 			Value: discriminator.Value,
@@ -145,6 +147,7 @@ func (r Reading) union() (Definition, error) {
 			Key:         key,
 			Variants:    discriminated,
 			Carrier:     carrier,
+			Introduced:  r.definition.Introduced,
 		}, nil
 	}
 	variants, err := NewVariants(r.db, r.definition.Ref).Value()
@@ -157,6 +160,7 @@ func (r Reading) union() (Definition, error) {
 		Description: r.definition.Description,
 		Variants:    variants,
 		Carrier:     carrier,
+		Introduced:  r.definition.Introduced,
 	}, nil
 }
 
@@ -186,6 +190,7 @@ func (r Reading) method() (Method, error) {
 		Params:      params,
 		Files:       files,
 		Result:      res,
+		Introduced:  r.definition.Introduced,
 	}, nil
 }
 

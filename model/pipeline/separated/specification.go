@@ -12,6 +12,7 @@ import (
 	"github.com/andreychh/tgen/model/pipeline"
 	"github.com/andreychh/tgen/model/pipeline/attached"
 	"github.com/andreychh/tgen/model/pipeline/classified"
+	"github.com/andreychh/tgen/model/pipeline/corrected"
 	"github.com/andreychh/tgen/model/pipeline/flattened"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 )
@@ -23,7 +24,7 @@ type Methods = pipeline.Table[model.Reference, Method]
 // the method signals. The definition, field, discriminator, variant, alias, and
 // file tables and the release ride through from the attached stage unchanged.
 type Specification struct {
-	Definitions    parsed.Definitions
+	Definitions    corrected.Definitions
 	Methods        Methods
 	Fields         flattened.Fields
 	Files          attached.Files

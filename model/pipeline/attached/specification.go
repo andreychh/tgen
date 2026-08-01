@@ -26,7 +26,7 @@ type Files = pipeline.Table[model.Reference, File]
 // is marked. The definition, method, field, discriminator, variant, and alias
 // tables and the release ride through from the flattened stage unchanged.
 type Specification struct {
-	Definitions    parsed.Definitions
+	Definitions    corrected.Definitions
 	Methods        flattened.Methods
 	Fields         flattened.Fields
 	Files          Files

@@ -57,7 +57,7 @@ func (r InputRichMedia) Apply(spec Specification) (Specification, error) {
 // definitions returns base holding what InputRichMedia names too: the union
 // itself. Its variants are documented objects and name themselves. It fails
 // when the reference is taken.
-func (r InputRichMedia) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r InputRichMedia) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		inputRichMediaRef,
