@@ -33,7 +33,7 @@ func (f UnionField) Name() string {
 // Tag returns the struct tag of the shadow. It never omits the field: a shadow
 // is read and never written, so there is no encoding for omitempty to affect.
 func (f UnionField) Tag() string {
-	return NewTag(f.inner.Key, false).Value()
+	return NewRequiredTag(f.inner.Key).Value()
 }
 
 // Shadow returns the Go type holding the raw JSON of the field, enclosed in one

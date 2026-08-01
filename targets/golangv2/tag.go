@@ -21,6 +21,17 @@ func NewTag(key model.Key, opt model.Optionality) Tag {
 	return Tag{key: key, opt: opt}
 }
 
+// NewRequiredTag creates a Tag for a field the encoded object always carries.
+func NewRequiredTag(key model.Key) Tag {
+	return NewTag(key, false)
+}
+
+// NewOptionalTag creates a Tag for a field the encoded object carries only
+// when it holds something.
+func NewOptionalTag(key model.Key) Tag {
+	return NewTag(key, true)
+}
+
 // Value returns the tag, omitting an optional field from the encoded object
 // when it carries nothing.
 func (t Tag) Value() string {

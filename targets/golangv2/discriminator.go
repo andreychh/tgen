@@ -36,7 +36,7 @@ func (d Discriminator) Type() string {
 // Tag returns the struct tag of the field. The field is always written, so it
 // is never omitted.
 func (d Discriminator) Tag() string {
-	return NewTag(d.inner.Key, false).Value()
+	return NewRequiredTag(d.inner.Key).Value()
 }
 
 // Value returns the constant the field holds, quoted as a Go string literal.
