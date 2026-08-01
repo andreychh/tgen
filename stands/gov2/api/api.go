@@ -21034,8 +21034,6 @@ type GameHighScore struct {
 }
 
 // ChatId represents a chat identifier, either a numeric ID or a username.
-//
-// See https://core.telegram.org/bots/api#chatid
 //sumtype:decl
 type ChatID interface{ sealedChatID() }
 
@@ -21061,8 +21059,6 @@ type ID int64
 type Username string
 
 // ReplyMarkup represents a reply markup attached to a message.
-//
-// See https://core.telegram.org/bots/api#replymarkup
 //sumtype:decl
 type ReplyMarkup interface{ sealedReplyMarkup() }
 
@@ -21072,8 +21068,6 @@ func (ReplyKeyboardRemove) sealedReplyMarkup() {}
 func (ForceReply) sealedReplyMarkup() {}
 
 // InputMediaGroup represents a media element in a media group.
-//
-// See https://core.telegram.org/bots/api#inputmediagroup
 //sumtype:decl
 type InputMediaGroup interface {
 	resolve(sink *fileSink) (json.RawMessage, error)
@@ -21130,8 +21124,6 @@ func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
 }
 
 // InputRichMedia represents a media element embedded in a rich message.
-//
-// See https://core.telegram.org/bots/api#inputrichmedia
 //sumtype:decl
 type InputRichMedia interface {
 	resolve(sink *fileSink) (json.RawMessage, error)
@@ -21188,8 +21180,6 @@ func unmarshalInputRichMedia(data []byte) (InputRichMedia, error) {
 }
 
 // InputFile represents a file to send, either by file ID or by uploading.
-//
-// See https://core.telegram.org/bots/api#inputfile
 //sumtype:decl
 type InputFile interface {
 	place(sink *fileSink, key string) *string
@@ -21222,8 +21212,6 @@ func (f FileID) attach(_ *fileSink) string {
 
 // Upload represents a file sent with the request, carrying the bytes to send
 // and the name to send them under.
-//
-// See https://core.telegram.org/bots/api#upload
 type Upload struct {
 	Name   string
 	Reader io.Reader
@@ -21247,8 +21235,6 @@ func (u Upload) name() string {
 
 // MaybeMessage represents a method return value that is either an edited
 // Message or True for inline messages.
-//
-// See https://core.telegram.org/bots/api#maybemessage
 //sumtype:decl
 type MaybeMessage interface{ sealedMaybeMessage() }
 

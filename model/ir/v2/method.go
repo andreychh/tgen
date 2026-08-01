@@ -16,6 +16,8 @@ import (
 // takes and the result it returns. Name is the name the endpoint is called by,
 // which is also the name a target derives its identifier from. Files narrows
 // Params to those reaching a file, and is empty for a method sending none.
+// Introduced reports that tgen introduced the method rather than reading it
+// from the documentation page, which leaves it no section a target can address.
 type Method struct {
 	Ref         model.Reference
 	Name        model.Name
@@ -23,6 +25,7 @@ type Method struct {
 	Params      []Field
 	Files       []FileField
 	Result      Result
+	Introduced  bool
 }
 
 func (Method) isDefinition() {}

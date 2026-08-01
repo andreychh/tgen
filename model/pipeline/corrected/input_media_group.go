@@ -54,7 +54,7 @@ func (r InputMediaGroup) Apply(spec Specification) (Specification, error) {
 // definitions returns base holding what InputMediaGroup names too: the union
 // itself. Its variants are documented objects and name themselves. It fails
 // when the reference is taken.
-func (r InputMediaGroup) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r InputMediaGroup) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		inputMediaGroupRef,

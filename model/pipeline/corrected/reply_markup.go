@@ -56,7 +56,7 @@ func (r ReplyMarkup) Apply(spec Specification) (Specification, error) {
 // definitions returns base holding what ReplyMarkup names too: the union
 // itself. Its variants are documented objects and name themselves. It fails
 // when the reference is taken.
-func (r ReplyMarkup) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r ReplyMarkup) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		replyMarkupRef,

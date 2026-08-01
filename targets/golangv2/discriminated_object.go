@@ -25,7 +25,7 @@ func NewDiscriminatedObject(o ir.DiscriminatedObject) DiscriminatedObject {
 // Doc returns the doc comment of the declaration, closing with a link back to
 // the section the object was read from.
 func (o DiscriminatedObject) Doc() string {
-	return NewDefinitionDoc(o.inner.Ref, o.inner.Description).Value()
+	return NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced).Value()
 }
 
 // Ref implements [Declaration].

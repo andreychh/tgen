@@ -14,6 +14,8 @@ import (
 // names, and no union is both. Carrier reports that a file is reached through
 // the union, which every variant answers for by rewriting itself into JSON —
 // something a target has to say where it declares what the union accepts.
+// Introduced reports that tgen introduced the union rather than reading it from
+// the documentation page, which leaves it no section a target can address.
 type DiscriminatedUnion struct {
 	Ref         model.Reference
 	Name        model.Name
@@ -21,6 +23,7 @@ type DiscriminatedUnion struct {
 	Key         model.Key
 	Variants    []DiscriminatedVariant
 	Carrier     bool
+	Introduced  bool
 }
 
 func (DiscriminatedUnion) isDefinition() {}
@@ -36,7 +39,9 @@ type DiscriminatedVariant struct {
 
 // Union is the record of a union no key tells the variants of apart, joined with
 // the variants it stands for. Carrier reports the same as it does for
-// [DiscriminatedUnion]. The tables say which types the union accepts and nothing
+// [DiscriminatedUnion]. Introduced reports that tgen introduced the union rather
+// than reading it from the documentation page, which leaves it no section a
+// target can address. The tables say which types the union accepts and nothing
 // about how to tell them apart, because nothing in the documentation does: one
 // union is told apart by the shape of the JSON, another by trying its variants
 // in turn, a third is only ever sent and never read. A target writes that by
@@ -47,6 +52,7 @@ type Union struct {
 	Description prose.Passage
 	Variants    []Variant
 	Carrier     bool
+	Introduced  bool
 }
 
 func (Union) isDefinition() {}

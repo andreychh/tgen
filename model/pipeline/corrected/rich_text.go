@@ -55,7 +55,7 @@ func (r RichText) Apply(spec Specification) (Specification, error) {
 // definitions returns base holding what RichText names too: the two variants
 // the documentation writes as prose rather than as list items. It fails when
 // either reference is taken.
-func (r RichText) definitions(base parsed.Definitions) (parsed.Definitions, error) {
+func (r RichText) definitions(base Definitions) (Definitions, error) {
 	out := NewDefinitionTable(base)
 	err := out.Insert(
 		richTextPlainRef,

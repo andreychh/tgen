@@ -28,7 +28,7 @@ func NewUnion(u ir.Union) Union {
 // Doc returns the doc comment of the declaration, closing with a link back to
 // the section the union was read from.
 func (u Union) Doc() string {
-	return NewDefinitionDoc(u.inner.Ref, u.inner.Description).Value()
+	return NewDefinitionDoc(u.inner.Ref, u.inner.Description, u.inner.Introduced).Value()
 }
 
 // Ref implements [Declaration].
@@ -90,7 +90,7 @@ func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 // Doc returns the doc comment of the declaration, closing with a link back to
 // the section the union was read from.
 func (u DiscriminatedUnion) Doc() string {
-	return NewDefinitionDoc(u.inner.Ref, u.inner.Description).Value()
+	return NewDefinitionDoc(u.inner.Ref, u.inner.Description, u.inner.Introduced).Value()
 }
 
 // Ref implements [Declaration].

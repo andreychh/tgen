@@ -21,7 +21,7 @@ func NewObject(o ir.Object) Object {
 // Doc returns the doc comment of the declaration, closing with a link back to
 // the section the object was read from.
 func (o Object) Doc() string {
-	return NewDefinitionDoc(o.inner.Ref, o.inner.Description).Value()
+	return NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced).Value()
 }
 
 // Ref implements [Declaration].

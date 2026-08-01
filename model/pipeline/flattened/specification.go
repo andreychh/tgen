@@ -30,7 +30,7 @@ type Aliases = pipeline.Table[model.Reference, Alias]
 // definition, discriminator, and variant tables and the release ride through
 // from the corrected stage unchanged.
 type Specification struct {
-	Definitions    parsed.Definitions
+	Definitions    corrected.Definitions
 	Methods        Methods
 	Fields         Fields
 	Discriminators classified.Discriminators
