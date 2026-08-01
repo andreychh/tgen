@@ -7800,7 +7800,7 @@ func (m SendPhotoMethod) payload() (formPayload, error) {
 	photo := m.Photo.place(sink, "photo")
 	type alias SendPhotoMethod
 	body := struct {
-		Photo *string `json:"photo"`
+		Photo *string `json:"photo,omitempty"`
 		alias
 	}{
 		Photo: photo,
@@ -7899,8 +7899,8 @@ func (m SendLivePhotoMethod) payload() (formPayload, error) {
 	photo := m.Photo.place(sink, "photo")
 	type alias SendLivePhotoMethod
 	body := struct {
-		LivePhoto *string `json:"live_photo"`
-		Photo *string `json:"photo"`
+		LivePhoto *string `json:"live_photo,omitempty"`
+		Photo *string `json:"photo,omitempty"`
 		alias
 	}{
 		LivePhoto: livePhoto,
@@ -8011,7 +8011,7 @@ func (m SendAudioMethod) payload() (formPayload, error) {
 	}
 	type alias SendAudioMethod
 	body := struct {
-		Audio *string `json:"audio"`
+		Audio *string `json:"audio,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
 	}{
@@ -8118,7 +8118,7 @@ func (m SendDocumentMethod) payload() (formPayload, error) {
 	}
 	type alias SendDocumentMethod
 	body := struct {
-		Document *string `json:"document"`
+		Document *string `json:"document,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
 	}{
@@ -8247,7 +8247,7 @@ func (m SendVideoMethod) payload() (formPayload, error) {
 	}
 	type alias SendVideoMethod
 	body := struct {
-		Video *string `json:"video"`
+		Video *string `json:"video,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		Cover *string `json:"cover,omitempty"`
 		alias
@@ -8364,7 +8364,7 @@ func (m SendAnimationMethod) payload() (formPayload, error) {
 	}
 	type alias SendAnimationMethod
 	body := struct {
-		Animation *string `json:"animation"`
+		Animation *string `json:"animation,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
 	}{
@@ -8459,7 +8459,7 @@ func (m SendVoiceMethod) payload() (formPayload, error) {
 	voice := m.Voice.place(sink, "voice")
 	type alias SendVoiceMethod
 	body := struct {
-		Voice *string `json:"voice"`
+		Voice *string `json:"voice,omitempty"`
 		alias
 	}{
 		Voice: voice,
@@ -8556,7 +8556,7 @@ func (m SendVideoNoteMethod) payload() (formPayload, error) {
 	}
 	type alias SendVideoNoteMethod
 	body := struct {
-		VideoNote *string `json:"video_note"`
+		VideoNote *string `json:"video_note,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
 	}{
@@ -10117,7 +10117,7 @@ func (m SetChatPhotoMethod) payload() (formPayload, error) {
 	photo := m.Photo.place(sink, "photo")
 	type alias SetChatPhotoMethod
 	body := struct {
-		Photo *string `json:"photo"`
+		Photo *string `json:"photo,omitempty"`
 		alias
 	}{
 		Photo: photo,
@@ -13445,7 +13445,7 @@ func (m SendStickerMethod) payload() (formPayload, error) {
 	sticker := m.Sticker.place(sink, "sticker")
 	type alias SendStickerMethod
 	body := struct {
-		Sticker *string `json:"sticker"`
+		Sticker *string `json:"sticker,omitempty"`
 		alias
 	}{
 		Sticker: sticker,
@@ -13538,7 +13538,7 @@ func (m UploadStickerFileMethod) payload() (formPayload, error) {
 	sticker := m.Sticker.place(sink, "sticker")
 	type alias UploadStickerFileMethod
 	body := struct {
-		Sticker *string `json:"sticker"`
+		Sticker *string `json:"sticker,omitempty"`
 		alias
 	}{
 		Sticker: sticker,

@@ -106,6 +106,19 @@ func (p Placed) Shadow() string {
 	return p.carried()
 }
 
+// Tag returns the struct tag of the shadow. A placed file carries nothing in
+// the body when the caller uploads it, since the bytes travel in a part named
+// by the same key — so the shadow is omitted whenever it is empty, however
+// required the parameter is. Writing it out would put a second value under
+// that key, which the receiver reads as the file identifier the upload was
+// sent instead of.
+func (p Placed) Tag() string {
+	if p.file() {
+		return NewOptionalTag(p.inner.Key).Value()
+	}
+	return p.filed.Tag()
+}
+
 // Template returns the name of the template handing the file over.
 func (p Placed) Template() string {
 	if p.file() {
