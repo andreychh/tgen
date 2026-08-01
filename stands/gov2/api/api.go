@@ -405,6 +405,14 @@ type ChatFullInfo struct {
 	ID int64 `json:"id"`
 	// Type of the chat, can be either “private”, “group”, “supergroup” or “channel”
 	Type string `json:"type"`
+	// Identifier of the accent color for the chat name and backgrounds of the chat
+	// photo, reply header, and link preview. See accent colors for more details.
+	AccentColorID int64 `json:"accent_color_id"`
+	// The maximum number of reactions that can be set on a message in the chat
+	MaxReactionCount int64 `json:"max_reaction_count"`
+	// Information about types of gifts that are accepted by the chat or by the
+	// corresponding user for private chats
+	AcceptedGiftTypes AcceptedGiftTypes `json:"accepted_gift_types"`
 	// Title, for supergroups, channels and group chats
 	Title *string `json:"title,omitempty"`
 	// Username, for private chats, supergroups and channels if available
@@ -417,11 +425,6 @@ type ChatFullInfo struct {
 	IsForum *bool `json:"is_forum,omitempty"`
 	// True, if the chat is the direct messages chat of a channel
 	IsDirectMessages *bool `json:"is_direct_messages,omitempty"`
-	// Identifier of the accent color for the chat name and backgrounds of the chat
-	// photo, reply header, and link preview. See accent colors for more details.
-	AccentColorID int64 `json:"accent_color_id"`
-	// The maximum number of reactions that can be set on a message in the chat
-	MaxReactionCount int64 `json:"max_reaction_count"`
 	// Chat photo
 	Photo *ChatPhoto `json:"photo,omitempty"`
 	// If non-empty, the list of all active chat usernames; for private chats,
@@ -479,9 +482,6 @@ type ChatFullInfo struct {
 	PinnedMessage *Message `json:"pinned_message,omitempty"`
 	// Default chat member permissions, for groups and supergroups
 	Permissions *ChatPermissions `json:"permissions,omitempty"`
-	// Information about types of gifts that are accepted by the chat or by the
-	// corresponding user for private chats
-	AcceptedGiftTypes AcceptedGiftTypes `json:"accepted_gift_types"`
 	// True, if paid media messages can be sent or forwarded to the channel chat.
 	// The field is available only for channel chats.
 	CanSendPaidMedia *bool `json:"can_send_paid_media,omitempty"`
@@ -572,6 +572,11 @@ type Message struct {
 	// immediately. In such cases, this field will be 0 and the relevant message
 	// will be unusable until it is actually sent.
 	MessageID int64 `json:"message_id"`
+	// Date the message was sent in Unix time. It is always a positive number,
+	// representing a valid date.
+	Date int64 `json:"date"`
+	// Chat the message belongs to
+	Chat Chat `json:"chat"`
 	// Unique identifier of a message thread or forum topic to which the message
 	// belongs; for supergroups and private chats only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -603,9 +608,6 @@ type Message struct {
 	// The identifier may be reused for another ephemeral message after the message
 	// is deleted or expires.
 	EphemeralMessageID *int64 `json:"ephemeral_message_id,omitempty"`
-	// Date the message was sent in Unix time. It is always a positive number,
-	// representing a valid date.
-	Date int64 `json:"date"`
 	// The unique identifier for the guest query. Use this identifier with the
 	// method answerGuestQuery to send a response message. If non-empty, the message
 	// belongs to the chat where the guest bot was summoned, which may not coincide
@@ -616,8 +618,6 @@ type Message struct {
 	// business account that is independent from any potential bot chat which might
 	// share the same identifier.
 	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
-	// Chat the message belongs to
-	Chat Chat `json:"chat"`
 	// Information about the original message for forwarded messages
 	ForwardOrigin MessageOrigin `json:"forward_origin,omitempty"`
 	// True, if the message is sent to a topic in a forum supergroup or a private
@@ -1006,13 +1006,13 @@ type MessageEntity struct {
 type TextQuote struct {
 	// Text of the quoted part of a message that is replied to by the given message
 	Text string `json:"text"`
+	// Approximate quote position in the original message in UTF-16 code units as
+	// specified by the sender
+	Position int64 `json:"position"`
 	// Special entities that appear in the quote. Currently, only bold, italic,
 	// underline, strikethrough, spoiler, custom_emoji, and date_time entities are
 	// kept in quotes.
 	Entities []MessageEntity `json:"entities,omitempty"`
-	// Approximate quote position in the original message in UTF-16 code units as
-	// specified by the sender
-	Position int64 `json:"position"`
 	// True, if the quote was chosen manually by the message sender. Otherwise, the
 	// quote was added automatically by the server.
 	IsManual *bool `json:"is_manual,omitempty"`
@@ -1405,8 +1405,6 @@ type Document struct {
 //
 // See https://core.telegram.org/bots/api#livephoto
 type LivePhoto struct {
-	// Available sizes of the corresponding static photo
-	Photo []PhotoSize `json:"photo,omitempty"`
 	// Identifier for the video file which can be used to download or reuse the file
 	FileID string `json:"file_id"`
 	// Unique identifier for the video file which is supposed to be the same over
@@ -1418,6 +1416,8 @@ type LivePhoto struct {
 	Height int64 `json:"height"`
 	// Duration of the video in seconds as defined by the sender
 	Duration int64 `json:"duration"`
+	// Available sizes of the corresponding static photo
+	Photo []PhotoSize `json:"photo,omitempty"`
 	// MIME type of the file as defined by the sender
 	MimeType *string `json:"mime_type,omitempty"`
 	// File size in bytes. It can be bigger than 2^31 and some programming languages
@@ -1933,13 +1933,13 @@ type PollOption struct {
 	PersistentID string `json:"persistent_id"`
 	// Option text, 1-100 characters
 	Text string `json:"text"`
+	// Number of users who voted for this option; may be 0 if unknown
+	VoterCount int64 `json:"voter_count"`
 	// Special entities that appear in the option text. Currently, only custom emoji
 	// entities are allowed in poll option texts
 	TextEntities []MessageEntity `json:"text_entities,omitempty"`
 	// Media added to the poll option
 	Media *PollMedia `json:"media,omitempty"`
-	// Number of users who voted for this option; may be 0 if unknown
-	VoterCount int64 `json:"voter_count"`
 	// User who added the option; omitted if the option wasn't added by a user after
 	// poll creation
 	AddedByUser *User `json:"added_by_user,omitempty"`
@@ -2013,16 +2013,16 @@ func (o InputPollOption) resolve(sink *fileSink) (json.RawMessage, error) {
 type PollAnswer struct {
 	// Unique poll identifier
 	PollID string `json:"poll_id"`
-	// The chat that changed the answer to the poll, if the voter is anonymous
-	VoterChat *Chat `json:"voter_chat,omitempty"`
-	// The user that changed the answer to the poll, if the voter isn't anonymous
-	User *User `json:"user,omitempty"`
 	// 0-based identifiers of chosen answer options. May be empty if the vote was
 	// retracted.
 	OptionIDs []int64 `json:"option_ids"`
 	// Persistent identifiers of the chosen answer options. May be empty if the vote
 	// was retracted.
 	OptionPersistentIDs []string `json:"option_persistent_ids"`
+	// The chat that changed the answer to the poll, if the voter is anonymous
+	VoterChat *Chat `json:"voter_chat,omitempty"`
+	// The user that changed the answer to the poll, if the voter isn't anonymous
+	User *User `json:"user,omitempty"`
 }
 
 // This object contains information about a poll.
@@ -2033,9 +2033,6 @@ type Poll struct {
 	ID string `json:"id"`
 	// Poll question, 1-300 characters
 	Question string `json:"question"`
-	// Special entities that appear in the question. Currently, only custom emoji
-	// entities are allowed in poll questions
-	QuestionEntities []MessageEntity `json:"question_entities,omitempty"`
 	// List of poll options
 	Options []PollOption `json:"options"`
 	// Total number of users that voted in the poll
@@ -2053,6 +2050,9 @@ type Poll struct {
 	// True if voting is limited to users who have been members of the chat where
 	// the poll was originally sent for more than 24 hours
 	MembersOnly bool `json:"members_only"`
+	// Special entities that appear in the question. Currently, only custom emoji
+	// entities are allowed in poll questions
+	QuestionEntities []MessageEntity `json:"question_entities,omitempty"`
 	// A list of two-letter ISO 3166-1 alpha-2 country codes indicating the
 	// countries from which users can vote in the poll. The country code “FT” is
 	// used for users with anonymous numbers. If omitted, then users from any
@@ -2108,10 +2108,10 @@ type ChecklistTask struct {
 type Checklist struct {
 	// Title of the checklist
 	Title string `json:"title"`
-	// Special entities that appear in the checklist title
-	TitleEntities []MessageEntity `json:"title_entities,omitempty"`
 	// List of tasks in the checklist
 	Tasks []ChecklistTask `json:"tasks"`
+	// Special entities that appear in the checklist title
+	TitleEntities []MessageEntity `json:"title_entities,omitempty"`
 	// True, if users other than the creator of the list can add tasks to the list
 	OthersCanAddTasks *bool `json:"others_can_add_tasks,omitempty"`
 	// True, if users other than the creator of the list can mark tasks as done or
@@ -2143,6 +2143,8 @@ type InputChecklistTask struct {
 type InputChecklist struct {
 	// Title of the checklist; 1-255 characters after entities parsing
 	Title string `json:"title"`
+	// List of 1-30 tasks in the checklist
+	Tasks []InputChecklistTask `json:"tasks"`
 	// Mode for parsing entities in the title. See formatting options for more
 	// details.
 	ParseMode *string `json:"parse_mode,omitempty"`
@@ -2150,8 +2152,6 @@ type InputChecklist struct {
 	// instead of parse_mode. Currently, only bold, italic, underline,
 	// strikethrough, spoiler, custom_emoji, and date_time entities are allowed.
 	TitleEntities []MessageEntity `json:"title_entities,omitempty"`
-	// List of 1-30 tasks in the checklist
-	Tasks []InputChecklistTask `json:"tasks"`
 	// Pass True if other users can add tasks to the checklist
 	OthersCanAddTasks *bool `json:"others_can_add_tasks,omitempty"`
 	// Pass True if other users can mark tasks as done or not done in the checklist
@@ -2275,14 +2275,14 @@ type BotSubscriptionUpdated struct {
 //
 // See https://core.telegram.org/bots/api#polloptionadded
 type PollOptionAdded struct {
-	// Message containing the poll to which the option was added, if known. Note
-	// that the Message object in this field will not contain the reply_to_message
-	// field even if it itself is a reply.
-	PollMessage MaybeInaccessibleMessage `json:"poll_message,omitempty"`
 	// Unique identifier of the added option
 	OptionPersistentID string `json:"option_persistent_id"`
 	// Option text
 	OptionText string `json:"option_text"`
+	// Message containing the poll to which the option was added, if known. Note
+	// that the Message object in this field will not contain the reply_to_message
+	// field even if it itself is a reply.
+	PollMessage MaybeInaccessibleMessage `json:"poll_message,omitempty"`
 	// Special entities that appear in the option_text
 	OptionTextEntities []MessageEntity `json:"option_text_entities,omitempty"`
 }
@@ -2311,14 +2311,14 @@ func (o *PollOptionAdded) UnmarshalJSON(data []byte) error {
 //
 // See https://core.telegram.org/bots/api#polloptiondeleted
 type PollOptionDeleted struct {
-	// Message containing the poll from which the option was deleted, if known. Note
-	// that the Message object in this field will not contain the reply_to_message
-	// field even if it itself is a reply.
-	PollMessage MaybeInaccessibleMessage `json:"poll_message,omitempty"`
 	// Unique identifier of the deleted option
 	OptionPersistentID string `json:"option_persistent_id"`
 	// Option text
 	OptionText string `json:"option_text"`
+	// Message containing the poll from which the option was deleted, if known. Note
+	// that the Message object in this field will not contain the reply_to_message
+	// field even if it itself is a reply.
+	PollMessage MaybeInaccessibleMessage `json:"poll_message,omitempty"`
 	// Special entities that appear in the option_text
 	OptionTextEntities []MessageEntity `json:"option_text_entities,omitempty"`
 }
@@ -2686,12 +2686,12 @@ type ChecklistTasksDone struct {
 //
 // See https://core.telegram.org/bots/api#checklisttasksadded
 type ChecklistTasksAdded struct {
+	// List of tasks added to the checklist
+	Tasks []ChecklistTask `json:"tasks"`
 	// Message containing the checklist to which the tasks were added. Note that the
 	// Message object in this field will not contain the reply_to_message field even
 	// if it itself is a reply.
 	ChecklistMessage *Message `json:"checklist_message,omitempty"`
-	// List of tasks added to the checklist
-	Tasks []ChecklistTask `json:"tasks"`
 }
 
 // Describes a service message about a chat being added to a community.
@@ -2899,14 +2899,14 @@ type DirectMessagePriceChanged struct {
 //
 // See https://core.telegram.org/bots/api#suggestedpostapproved
 type SuggestedPostApproved struct {
+	// Date when the post will be published
+	SendDate int64 `json:"send_date"`
 	// Message containing the suggested post. Note that the Message object in this
 	// field will not contain the reply_to_message field even if it itself is a
 	// reply.
 	SuggestedPostMessage *Message `json:"suggested_post_message,omitempty"`
 	// Amount paid for the post
 	Price *SuggestedPostPrice `json:"price,omitempty"`
-	// Date when the post will be published
-	SendDate int64 `json:"send_date"`
 }
 
 // Describes a service message about the failed approval of a suggested post.
@@ -2914,12 +2914,12 @@ type SuggestedPostApproved struct {
 //
 // See https://core.telegram.org/bots/api#suggestedpostapprovalfailed
 type SuggestedPostApprovalFailed struct {
+	// Expected price of the post
+	Price SuggestedPostPrice `json:"price"`
 	// Message containing the suggested post whose approval has failed. Note that
 	// the Message object in this field will not contain the reply_to_message field
 	// even if it itself is a reply.
 	SuggestedPostMessage *Message `json:"suggested_post_message,omitempty"`
-	// Expected price of the post
-	Price SuggestedPostPrice `json:"price"`
 }
 
 // Describes a service message about the rejection of a suggested post.
@@ -2938,13 +2938,13 @@ type SuggestedPostDeclined struct {
 //
 // See https://core.telegram.org/bots/api#suggestedpostpaid
 type SuggestedPostPaid struct {
+	// Currency in which the payment was made. Currently, one of “XTR” for Telegram
+	// Stars or “TON” for TON grams.
+	Currency string `json:"currency"`
 	// Message containing the suggested post. Note that the Message object in this
 	// field will not contain the reply_to_message field even if it itself is a
 	// reply.
 	SuggestedPostMessage *Message `json:"suggested_post_message,omitempty"`
-	// Currency in which the payment was made. Currently, one of “XTR” for Telegram
-	// Stars or “TON” for TON grams.
-	Currency string `json:"currency"`
 	// The amount of the currency that was received by the channel in nanograms; for
 	// payments in TON grams only
 	Amount *int64 `json:"amount,omitempty"`
@@ -2957,15 +2957,15 @@ type SuggestedPostPaid struct {
 //
 // See https://core.telegram.org/bots/api#suggestedpostrefunded
 type SuggestedPostRefunded struct {
-	// Message containing the suggested post. Note that the Message object in this
-	// field will not contain the reply_to_message field even if it itself is a
-	// reply.
-	SuggestedPostMessage *Message `json:"suggested_post_message,omitempty"`
 	// Reason for the refund. Currently, one of “post_deleted” if the post was
 	// deleted within 24 hours of being posted or removed from scheduled messages
 	// without being posted, or “payment_refunded” if the payer refunded their
 	// payment.
 	Reason string `json:"reason"`
+	// Message containing the suggested post. Note that the Message object in this
+	// field will not contain the reply_to_message field even if it itself is a
+	// reply.
+	SuggestedPostMessage *Message `json:"suggested_post_message,omitempty"`
 }
 
 // This object represents a service message about the creation of a scheduled
@@ -3545,14 +3545,14 @@ type CallbackQuery struct {
 	ID string `json:"id"`
 	// Sender
 	From User `json:"from"`
+	// Global identifier, uniquely corresponding to the chat to which the message
+	// with the callback button was sent. Useful for high scores in games.
+	ChatInstance string `json:"chat_instance"`
 	// Message sent by the bot with the callback button that originated the query
 	Message MaybeInaccessibleMessage `json:"message,omitempty"`
 	// Identifier of the message sent via the bot in inline mode, that originated
 	// the query
 	InlineMessageID *string `json:"inline_message_id,omitempty"`
-	// Global identifier, uniquely corresponding to the chat to which the message
-	// with the callback button was sent. Useful for high scores in games.
-	ChatInstance string `json:"chat_instance"`
 	// Data associated with the callback button. Be aware that the message
 	// originated the query can contain no callback buttons with this data.
 	Data *string `json:"data,omitempty"`
@@ -3954,10 +3954,10 @@ func (o ChatMemberAdministrator) MarshalJSON() ([]byte, error) {
 //
 // See https://core.telegram.org/bots/api#chatmembermember
 type ChatMemberMember struct {
-	// Tag of the member
-	Tag *string `json:"tag,omitempty"`
 	// Information about the user
 	User User `json:"user"`
+	// Tag of the member
+	Tag *string `json:"tag,omitempty"`
 	// Date when the user's subscription will expire; Unix time
 	UntilDate *int64 `json:"until_date,omitempty"`
 }
@@ -3978,8 +3978,6 @@ func (o ChatMemberMember) MarshalJSON() ([]byte, error) {
 //
 // See https://core.telegram.org/bots/api#chatmemberrestricted
 type ChatMemberRestricted struct {
-	// Tag of the member
-	Tag *string `json:"tag,omitempty"`
 	// Information about the user
 	User User `json:"user"`
 	// True, if the user is a member of the chat at the moment of the request
@@ -4022,6 +4020,8 @@ type ChatMemberRestricted struct {
 	// Date when restrictions will be lifted for this user; Unix time. If 0, then
 	// the user is restricted forever.
 	UntilDate int64 `json:"until_date"`
+	// Tag of the member
+	Tag *string `json:"tag,omitempty"`
 }
 
 func (o ChatMemberRestricted) MarshalJSON() ([]byte, error) {
@@ -4628,17 +4628,17 @@ type MessageReactionUpdated struct {
 	Chat Chat `json:"chat"`
 	// Unique identifier of the message inside the chat
 	MessageID int64 `json:"message_id"`
-	// The user that changed the reaction, if the user isn't anonymous
-	User *User `json:"user,omitempty"`
-	// The chat on behalf of which the reaction was changed, if the user is
-	// anonymous
-	ActorChat *Chat `json:"actor_chat,omitempty"`
 	// Date of the change in Unix time
 	Date int64 `json:"date"`
 	// Previous list of reaction types that were set by the user
 	OldReaction []ReactionType `json:"old_reaction"`
 	// New list of reaction types that have been set by the user
 	NewReaction []ReactionType `json:"new_reaction"`
+	// The user that changed the reaction, if the user isn't anonymous
+	User *User `json:"user,omitempty"`
+	// The chat on behalf of which the reaction was changed, if the user is
+	// anonymous
+	ActorChat *Chat `json:"actor_chat,omitempty"`
 }
 
 func (o *MessageReactionUpdated) UnmarshalJSON(data []byte) error {
@@ -4982,13 +4982,13 @@ func unmarshalOwnedGift(data []byte) (OwnedGift, error) {
 type OwnedGiftRegular struct {
 	// Information about the regular gift
 	Gift Gift `json:"gift"`
+	// Date the gift was sent in Unix time
+	SendDate int64 `json:"send_date"`
 	// Unique identifier of the gift for the bot; for gifts received on behalf of
 	// business accounts only
 	OwnedGiftID *string `json:"owned_gift_id,omitempty"`
 	// Sender of the gift if it is a known user
 	SenderUser *User `json:"sender_user,omitempty"`
-	// Date the gift was sent in Unix time
-	SendDate int64 `json:"send_date"`
 	// Text of the message that was added to the gift
 	Text *string `json:"text,omitempty"`
 	// Special entities that appear in the text
@@ -5035,13 +5035,13 @@ func (o OwnedGiftRegular) MarshalJSON() ([]byte, error) {
 type OwnedGiftUnique struct {
 	// Information about the unique gift
 	Gift UniqueGift `json:"gift"`
+	// Date the gift was sent in Unix time
+	SendDate int64 `json:"send_date"`
 	// Unique identifier of the received gift for the bot; for gifts received on
 	// behalf of business accounts only
 	OwnedGiftID *string `json:"owned_gift_id,omitempty"`
 	// Sender of the gift if it is a known user
 	SenderUser *User `json:"sender_user,omitempty"`
-	// Date the gift was sent in Unix time
-	SendDate int64 `json:"send_date"`
 	// True, if the gift is displayed on the account's profile page; for gifts
 	// received on behalf of business accounts only
 	IsSaved *bool `json:"is_saved,omitempty"`
@@ -5829,10 +5829,10 @@ type BusinessConnection struct {
 	UserChatID int64 `json:"user_chat_id"`
 	// Date the connection was established in Unix time
 	Date int64 `json:"date"`
-	// Rights of the business bot
-	Rights *BusinessBotRights `json:"rights,omitempty"`
 	// True, if the connection is active
 	IsEnabled bool `json:"is_enabled"`
+	// Rights of the business bot
+	Rights *BusinessBotRights `json:"rights,omitempty"`
 }
 
 // This object is received when messages are deleted from a connected business
@@ -7424,12 +7424,14 @@ func (m CloseMethod) payload() (emptyPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendmessage
 type SendMessageMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Text of the message to be sent, 1-4096 characters after entities parsing
+	Text string `json:"text"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -7444,8 +7446,6 @@ type SendMessageMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Text of the message to be sent, 1-4096 characters after entities parsing
-	Text string `json:"text"`
 	// Mode for parsing entities in the message text. See formatting options for
 	// more details.
 	ParseMode *string `json:"parse_mode,omitempty"`
@@ -7502,15 +7502,17 @@ type ForwardMessageMethod struct {
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Unique identifier for the chat where the original message was sent (or
+	// username of the target bot, supergroup or channel in the format @username)
+	FromChatID ChatID `json:"from_chat_id"`
+	// Message identifier in the chat specified in from_chat_id
+	MessageID int64 `json:"message_id"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Identifier of the direct messages topic to which the message will be
 	// forwarded; required if the message is forwarded to a direct messages chat
 	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
-	// Unique identifier for the chat where the original message was sent (or
-	// username of the target bot, supergroup or channel in the format @username)
-	FromChatID ChatID `json:"from_chat_id"`
 	// New start timestamp for the forwarded video in the message
 	VideoStartTimestamp *int64 `json:"video_start_timestamp,omitempty"`
 	// Sends the message silently. Users will receive a notification with no sound.
@@ -7523,8 +7525,6 @@ type ForwardMessageMethod struct {
 	// A JSON-serialized object containing the parameters of the suggested post to
 	// send; for direct messages chats only
 	SuggestedPostParameters *SuggestedPostParameters `json:"suggested_post_parameters,omitempty"`
-	// Message identifier in the chat specified in from_chat_id
-	MessageID int64 `json:"message_id"`
 }
 
 func (m ForwardMessageMethod) Call(ctx context.Context, conn Connection) (Message, error) {
@@ -7554,12 +7554,6 @@ type ForwardMessagesMethod struct {
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
-	// Unique identifier for the target message thread (topic) of a forum; for forum
-	// supergroups and private chats of bots with forum topic mode enabled only
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
-	// Identifier of the direct messages topic to which the messages will be
-	// forwarded; required if the messages are forwarded to a direct messages chat
-	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
 	// Unique identifier for the chat where the original messages were sent (or
 	// username of the target bot, supergroup or channel in the format @username)
 	FromChatID ChatID `json:"from_chat_id"`
@@ -7567,6 +7561,12 @@ type ForwardMessagesMethod struct {
 	// from_chat_id to forward. The identifiers must be specified in a strictly
 	// increasing order.
 	MessageIDs []int64 `json:"message_ids"`
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
+	// Identifier of the direct messages topic to which the messages will be
+	// forwarded; required if the messages are forwarded to a direct messages chat
+	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
 	// Sends the messages silently. Users will receive a notification with no sound.
 	DisableNotification *bool `json:"disable_notification,omitempty"`
 	// Protects the contents of the forwarded messages from forwarding and saving
@@ -7601,17 +7601,17 @@ type CopyMessageMethod struct {
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Unique identifier for the chat where the original message was sent (or
+	// username of the target bot, supergroup or channel in the format @username)
+	FromChatID ChatID `json:"from_chat_id"`
+	// Message identifier in the chat specified in from_chat_id
+	MessageID int64 `json:"message_id"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Identifier of the direct messages topic to which the message will be sent;
 	// required if the message is sent to a direct messages chat
 	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
-	// Unique identifier for the chat where the original message was sent (or
-	// username of the target bot, supergroup or channel in the format @username)
-	FromChatID ChatID `json:"from_chat_id"`
-	// Message identifier in the chat specified in from_chat_id
-	MessageID int64 `json:"message_id"`
 	// New start timestamp for the copied video in the message
 	VideoStartTimestamp *int64 `json:"video_start_timestamp,omitempty"`
 	// New caption for media, 0-1024 characters after entities parsing. If not
@@ -7679,12 +7679,6 @@ type CopyMessagesMethod struct {
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
-	// Unique identifier for the target message thread (topic) of a forum; for forum
-	// supergroups and private chats of bots with forum topic mode enabled only
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
-	// Identifier of the direct messages topic to which the messages will be sent;
-	// required if the messages are sent to a direct messages chat
-	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
 	// Unique identifier for the chat where the original messages were sent (or
 	// username of the target bot, supergroup or channel in the format @username)
 	FromChatID ChatID `json:"from_chat_id"`
@@ -7692,6 +7686,12 @@ type CopyMessagesMethod struct {
 	// from_chat_id to copy. The identifiers must be specified in a strictly
 	// increasing order.
 	MessageIDs []int64 `json:"message_ids"`
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
+	// Identifier of the direct messages topic to which the messages will be sent;
+	// required if the messages are sent to a direct messages chat
+	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
 	// Sends the messages silently. Users will receive a notification with no sound.
 	DisableNotification *bool `json:"disable_notification,omitempty"`
 	// Protects the contents of the sent messages from forwarding and saving
@@ -7720,12 +7720,19 @@ func (m CopyMessagesMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendphoto
 type SendPhotoMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Photo to send. Pass a file_id as String to send a photo that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a photo from the Internet, or upload a new photo using
+	// multipart/form-data. The photo must be at most 10 MB in size. The photo's
+	// width and height must not exceed 10000 in total. Width and height ratio must
+	// be at most 20. More information on Sending Files »
+	Photo InputFile `json:"photo"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -7740,13 +7747,6 @@ type SendPhotoMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Photo to send. Pass a file_id as String to send a photo that exists on the
-	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-	// get a photo from the Internet, or upload a new photo using
-	// multipart/form-data. The photo must be at most 10 MB in size. The photo's
-	// width and height must not exceed 10000 in total. Width and height ratio must
-	// be at most 20. More information on Sending Files »
-	Photo InputFile `json:"photo"`
 	// Photo caption (may also be used when resending photos by file_id), 0-1024
 	// characters after entities parsing
 	Caption *string `json:"caption,omitempty"`
@@ -7814,12 +7814,23 @@ func (m SendPhotoMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendlivephoto
 type SendLivePhotoMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target channel (in
 	// the format @channelusername)
 	ChatID ChatID `json:"chat_id"`
+	// Live photo video to send. The video must be no longer than 10 seconds and
+	// must not exceed 10 MB in size. Pass a file_id as String to send a video that
+	// exists on the Telegram servers (recommended) or upload a new video using
+	// multipart/form-data. More information on Sending Files ». Sending live photos
+	// by a URL is currently unsupported.
+	LivePhoto InputFile `json:"live_photo"`
+	// The static photo to send. Pass a file_id as String to send a photo that
+	// exists on the Telegram servers (recommended) or upload a new video using
+	// multipart/form-data. More information on Sending Files ». Sending live photos
+	// by a URL is currently unsupported.
+	Photo InputFile `json:"photo"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -7834,17 +7845,6 @@ type SendLivePhotoMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Live photo video to send. The video must be no longer than 10 seconds and
-	// must not exceed 10 MB in size. Pass a file_id as String to send a video that
-	// exists on the Telegram servers (recommended) or upload a new video using
-	// multipart/form-data. More information on Sending Files ». Sending live photos
-	// by a URL is currently unsupported.
-	LivePhoto InputFile `json:"live_photo"`
-	// The static photo to send. Pass a file_id as String to send a photo that
-	// exists on the Telegram servers (recommended) or upload a new video using
-	// multipart/form-data. More information on Sending Files ». Sending live photos
-	// by a URL is currently unsupported.
-	Photo InputFile `json:"photo"`
 	// Video caption (may also be used when resending videos by file_id), 0-1024
 	// characters after entities parsing
 	Caption *string `json:"caption,omitempty"`
@@ -7919,12 +7919,17 @@ func (m SendLivePhotoMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendaudio
 type SendAudioMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Audio file to send. Pass a file_id as String to send an audio file that
+	// exists on the Telegram servers (recommended), pass an HTTP URL as a String
+	// for Telegram to get an audio file from the Internet, or upload a new one
+	// using multipart/form-data. More information on Sending Files »
+	Audio InputFile `json:"audio"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -7939,11 +7944,6 @@ type SendAudioMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Audio file to send. Pass a file_id as String to send an audio file that
-	// exists on the Telegram servers (recommended), pass an HTTP URL as a String
-	// for Telegram to get an audio file from the Internet, or upload a new one
-	// using multipart/form-data. More information on Sending Files »
-	Audio InputFile `json:"audio"`
 	// Audio caption, 0-1024 characters after entities parsing
 	Caption *string `json:"caption,omitempty"`
 	// Mode for parsing entities in the audio caption. See formatting options for
@@ -8028,12 +8028,17 @@ func (m SendAudioMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#senddocument
 type SendDocumentMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// File to send. Pass a file_id as String to send a file that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a file from the Internet, or upload a new one using multipart/form-data.
+	// More information on Sending Files »
+	Document InputFile `json:"document"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8048,11 +8053,6 @@ type SendDocumentMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// File to send. Pass a file_id as String to send a file that exists on the
-	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-	// get a file from the Internet, or upload a new one using multipart/form-data.
-	// More information on Sending Files »
-	Document InputFile `json:"document"`
 	// Thumbnail of the file sent; can be ignored if thumbnail generation for the
 	// file is supported server-side. The thumbnail should be in JPEG format and
 	// less than 200 kB in size. A thumbnail's width and height should not exceed
@@ -8136,12 +8136,17 @@ func (m SendDocumentMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendvideo
 type SendVideoMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Video to send. Pass a file_id as String to send a video that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a video from the Internet, or upload a new video using
+	// multipart/form-data. More information on Sending Files »
+	Video InputFile `json:"video"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8156,11 +8161,6 @@ type SendVideoMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Video to send. Pass a file_id as String to send a video that exists on the
-	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-	// get a video from the Internet, or upload a new video using
-	// multipart/form-data. More information on Sending Files »
-	Video InputFile `json:"video"`
 	// Duration of sent video in seconds
 	Duration *int64 `json:"duration,omitempty"`
 	// Video width
@@ -8267,12 +8267,17 @@ func (m SendVideoMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendanimation
 type SendAnimationMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Animation to send. Pass a file_id as String to send an animation that exists
+	// on the Telegram servers (recommended), pass an HTTP URL as a String for
+	// Telegram to get an animation from the Internet, or upload a new animation
+	// using multipart/form-data. More information on Sending Files »
+	Animation InputFile `json:"animation"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8287,11 +8292,6 @@ type SendAnimationMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Animation to send. Pass a file_id as String to send an animation that exists
-	// on the Telegram servers (recommended), pass an HTTP URL as a String for
-	// Telegram to get an animation from the Internet, or upload a new animation
-	// using multipart/form-data. More information on Sending Files »
-	Animation InputFile `json:"animation"`
 	// Duration of sent animation in seconds
 	Duration *int64 `json:"duration,omitempty"`
 	// Animation width
@@ -8384,12 +8384,17 @@ func (m SendAnimationMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendvoice
 type SendVoiceMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Audio file to send. Pass a file_id as String to send a file that exists on
+	// the Telegram servers (recommended), pass an HTTP URL as a String for Telegram
+	// to get a file from the Internet, or upload a new one using
+	// multipart/form-data. More information on Sending Files »
+	Voice InputFile `json:"voice"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8404,11 +8409,6 @@ type SendVoiceMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Audio file to send. Pass a file_id as String to send a file that exists on
-	// the Telegram servers (recommended), pass an HTTP URL as a String for Telegram
-	// to get a file from the Internet, or upload a new one using
-	// multipart/form-data. More information on Sending Files »
-	Voice InputFile `json:"voice"`
 	// Voice message caption, 0-1024 characters after entities parsing
 	Caption *string `json:"caption,omitempty"`
 	// Mode for parsing entities in the voice message caption. See formatting
@@ -8474,12 +8474,17 @@ func (m SendVoiceMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendvideonote
 type SendVideoNoteMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Video note to send. Pass a file_id as String to send a video note that exists
+	// on the Telegram servers (recommended) or upload a new video using
+	// multipart/form-data. More information on Sending Files ». Sending video notes
+	// by a URL is currently unsupported.
+	VideoNote InputFile `json:"video_note"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8494,11 +8499,6 @@ type SendVideoNoteMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Video note to send. Pass a file_id as String to send a video note that exists
-	// on the Telegram servers (recommended) or upload a new video using
-	// multipart/form-data. More information on Sending Files ». Sending video notes
-	// by a URL is currently unsupported.
-	VideoNote InputFile `json:"video_note"`
 	// Duration of sent video in seconds
 	Duration *int64 `json:"duration,omitempty"`
 	// Video width and height, i.e. diameter of the video message
@@ -8571,25 +8571,25 @@ func (m SendVideoNoteMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendpaidmedia
 type SendPaidMediaMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username. If the chat is a channel, all
 	// Telegram Star proceeds from this media will be credited to the chat's
 	// balance. Otherwise, they will be credited to the bot's balance.
 	ChatID ChatID `json:"chat_id"`
+	// The number of Telegram Stars that must be paid to buy access to the media;
+	// 1-25000
+	StarCount int64 `json:"star_count"`
+	// A JSON-serialized Array describing the media to be sent; up to 10 items
+	Media []InputPaidMedia `json:"media"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Identifier of the direct messages topic to which the message will be sent;
 	// required if the message is sent to a direct messages chat
 	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
-	// The number of Telegram Stars that must be paid to buy access to the media;
-	// 1-25000
-	StarCount int64 `json:"star_count"`
-	// A JSON-serialized Array describing the media to be sent; up to 10 items
-	Media []InputPaidMedia `json:"media"`
 	// Bot-defined paid media payload, 0-128 bytes. This will not be displayed to
 	// the user, use it for your internal processes.
 	Payload *string `json:"payload,omitempty"`
@@ -8663,21 +8663,21 @@ func (m SendPaidMediaMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendmediagroup
 type SendMediaGroupMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// A JSON-serialized Array describing messages to be sent, must include 2-10
+	// items
+	Media []InputMediaGroup `json:"media"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Identifier of the direct messages topic to which the messages will be sent;
 	// required if the messages are sent to a direct messages chat
 	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
-	// A JSON-serialized Array describing messages to be sent, must include 2-10
-	// items
-	Media []InputMediaGroup `json:"media"`
 	// Sends messages silently. Users will receive a notification with no sound.
 	DisableNotification *bool `json:"disable_notification,omitempty"`
 	// Protects the contents of the sent messages from forwarding and saving
@@ -8731,12 +8731,16 @@ func (m SendMediaGroupMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendlocation
 type SendLocationMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Latitude of the location
+	Latitude float64 `json:"latitude"`
+	// Longitude of the location
+	Longitude float64 `json:"longitude"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8751,10 +8755,6 @@ type SendLocationMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Latitude of the location
-	Latitude float64 `json:"latitude"`
-	// Longitude of the location
-	Longitude float64 `json:"longitude"`
 	// The radius of uncertainty for the location, measured in meters; 0-1500
 	HorizontalAccuracy *float64 `json:"horizontal_accuracy,omitempty"`
 	// Period in seconds during which the location will be updated (see Live
@@ -8811,12 +8811,20 @@ func (m SendLocationMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendvenue
 type SendVenueMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Latitude of the venue
+	Latitude float64 `json:"latitude"`
+	// Longitude of the venue
+	Longitude float64 `json:"longitude"`
+	// Name of the venue
+	Title string `json:"title"`
+	// Address of the venue
+	Address string `json:"address"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8831,14 +8839,6 @@ type SendVenueMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Latitude of the venue
-	Latitude float64 `json:"latitude"`
-	// Longitude of the venue
-	Longitude float64 `json:"longitude"`
-	// Name of the venue
-	Title string `json:"title"`
-	// Address of the venue
-	Address string `json:"address"`
 	// Foursquare identifier of the venue
 	FoursquareID *string `json:"foursquare_id,omitempty"`
 	// Foursquare type of the venue, if known. (For example,
@@ -8893,12 +8893,16 @@ func (m SendVenueMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendcontact
 type SendContactMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Contact's phone number
+	PhoneNumber string `json:"phone_number"`
+	// Contact's first name
+	FirstName string `json:"first_name"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -8913,10 +8917,6 @@ type SendContactMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Contact's phone number
-	PhoneNumber string `json:"phone_number"`
-	// Contact's first name
-	FirstName string `json:"first_name"`
 	// Contact's last name
 	LastName *string `json:"last_name,omitempty"`
 	// Additional data about the contact in the form of a vCard, 0-2048 bytes
@@ -8965,26 +8965,26 @@ func (m SendContactMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendpoll
 type SendPollMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username. Polls can't be sent to channel
 	// direct messages chats.
 	ChatID ChatID `json:"chat_id"`
+	// Poll question, 1-300 characters
+	Question string `json:"question"`
+	// A JSON-serialized list of 1-12 answer options
+	Options []InputPollOption `json:"options"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
-	// Poll question, 1-300 characters
-	Question string `json:"question"`
 	// Mode for parsing entities in the question. See formatting options for more
 	// details. Currently, only custom emoji entities are allowed.
 	QuestionParseMode *string `json:"question_parse_mode,omitempty"`
 	// A JSON-serialized list of special entities that appear in the poll question.
 	// It can be specified instead of question_parse_mode.
 	QuestionEntities []MessageEntity `json:"question_entities,omitempty"`
-	// A JSON-serialized list of 1-12 answer options
-	Options []InputPollOption `json:"options"`
 	// True, if the poll needs to be anonymous, defaults to True
 	IsAnonymous *bool `json:"is_anonymous,omitempty"`
 	// Poll type, “quiz” or “regular”, defaults to “regular”
@@ -9163,12 +9163,12 @@ func (m SendChecklistMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#senddice
 type SendDiceMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -9228,11 +9228,11 @@ func (m SendDiceMethod) payload() (jsonPayload, error) {
 type SendMessageDraftMethod struct {
 	// Unique identifier for the target private chat
 	ChatID int64 `json:"chat_id"`
-	// Unique identifier for the target message thread
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Unique identifier of the message draft; must be non-zero. Changes to drafts
 	// with the same identifier are animated.
 	DraftID int64 `json:"draft_id"`
+	// Unique identifier for the target message thread
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Text of the message to be sent, 0-4096 characters after entities parsing.
 	// Pass an empty text to show a “Thinking…” placeholder.
 	Text *string `json:"text,omitempty"`
@@ -9271,22 +9271,22 @@ func (m SendMessageDraftMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendchataction
 type SendChatActionMethod struct {
-	// Unique identifier of the business connection on behalf of which the action
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot or
 	// supergroup in the format @username. Channel chats and channel direct messages
 	// chats aren't supported.
 	ChatID ChatID `json:"chat_id"`
-	// Unique identifier for the target message thread or topic of a forum; for
-	// supergroups and private chats of bots with forum topic mode enabled only
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Type of action to broadcast. Choose one, depending on what the user is about
 	// to receive: typing for text messages, upload_photo for photos, record_video
 	// or upload_video for videos, record_voice or upload_voice for voice notes,
 	// upload_document for general files, choose_sticker for stickers, find_location
 	// for location data, record_video_note or upload_video_note for video notes.
 	Action string `json:"action"`
+	// Unique identifier of the business connection on behalf of which the action
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
+	// Unique identifier for the target message thread or topic of a forum; for
+	// supergroups and private chats of bots with forum topic mode enabled only
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 }
 
 func (m SendChatActionMethod) Call(ctx context.Context, conn Connection) error {
@@ -9901,14 +9901,14 @@ type CreateChatSubscriptionInviteLinkMethod struct {
 	// Unique identifier for the target channel chat or username of the target
 	// channel in the format @username
 	ChatID ChatID `json:"chat_id"`
-	// Invite link name; 0-32 characters
-	Name *string `json:"name,omitempty"`
 	// The number of seconds the subscription will be active for before the next
 	// payment. Currently, it must always be 2592000 (30 days).
 	SubscriptionPeriod int64 `json:"subscription_period"`
 	// The amount of Telegram Stars a user must pay initially and after each
 	// subsequent subscription period to be a member of the chat; 1-10000
 	SubscriptionPrice int64 `json:"subscription_price"`
+	// Invite link name; 0-32 characters
+	Name *string `json:"name,omitempty"`
 }
 
 func (m CreateChatSubscriptionInviteLinkMethod) Call(ctx context.Context, conn Connection) (ChatInviteLink, error) {
@@ -10207,14 +10207,14 @@ func (m SetChatDescriptionMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#pinchatmessage
 type PinChatMessageMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be pinned
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target channel in
 	// the format @username
 	ChatID ChatID `json:"chat_id"`
 	// Identifier of a message to pin
 	MessageID int64 `json:"message_id"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be pinned
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Pass True if it is not necessary to send a notification to all chat members
 	// about the new pinned message. Notifications are always disabled in channels
 	// and private chats.
@@ -10241,12 +10241,12 @@ func (m PinChatMessageMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#unpinchatmessage
 type UnpinChatMessageMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be unpinned
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target channel in
 	// the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be unpinned
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Identifier of the message to unpin. Required if business_connection_id is
 	// specified. If not specified, the most recent pinned message (by sending date)
 	// will be unpinned.
@@ -11520,14 +11520,14 @@ func (m GetAvailableGiftsMethod) payload() (emptyPayload, error) {
 //
 // See https://core.telegram.org/bots/api#sendgift
 type SendGiftMethod struct {
+	// Identifier of the gift; limited gifts can't be sent to channel chats
+	GiftID string `json:"gift_id"`
 	// Required if chat_id is not specified. Unique identifier of the target user
 	// who will receive the gift.
 	UserID *int64 `json:"user_id,omitempty"`
 	// Required if user_id is not specified. Unique identifier for the chat or
 	// username of the channel (in the format @username) that will receive the gift.
 	ChatID ChatID `json:"chat_id,omitempty"`
-	// Identifier of the gift; limited gifts can't be sent to channel chats
-	GiftID string `json:"gift_id"`
 	// Pass True to pay for the gift upgrade from the bot's balance, thereby making
 	// the upgrade free for the receiver
 	PayForUpgrade *bool `json:"pay_for_upgrade,omitempty"`
@@ -12625,6 +12625,8 @@ func (m EditMessageCaptionMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#editmessagemedia
 type EditMessageMediaMethod struct {
+	// A JSON-serialized object for the new media content of the message
+	Media InputMedia `json:"media"`
 	// Unique identifier of the business connection on behalf of which the message
 	// to be edited was sent
 	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
@@ -12638,8 +12640,6 @@ type EditMessageMediaMethod struct {
 	// Required if chat_id and message_id are not specified. Identifier of the
 	// inline message.
 	InlineMessageID *string `json:"inline_message_id,omitempty"`
-	// A JSON-serialized object for the new media content of the message
-	Media InputMedia `json:"media"`
 	// A JSON-serialized object for a new inline keyboard
 	ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
@@ -12680,6 +12680,10 @@ func (m EditMessageMediaMethod) payload() (formPayload, error) {
 //
 // See https://core.telegram.org/bots/api#editmessagelivelocation
 type EditMessageLiveLocationMethod struct {
+	// Latitude of new location
+	Latitude float64 `json:"latitude"`
+	// Longitude of new location
+	Longitude float64 `json:"longitude"`
 	// Unique identifier of the business connection on behalf of which the message
 	// to be edited was sent
 	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
@@ -12693,10 +12697,6 @@ type EditMessageLiveLocationMethod struct {
 	// Required if chat_id and message_id are not specified. Identifier of the
 	// inline message.
 	InlineMessageID *string `json:"inline_message_id,omitempty"`
-	// Latitude of new location
-	Latitude float64 `json:"latitude"`
-	// Longitude of new location
-	Longitude float64 `json:"longitude"`
 	// New period in seconds during which the location can be updated, starting from
 	// the message send date. If 0x7FFFFFFF is specified, then the location can be
 	// updated forever. Otherwise, the new value must not exceed the current
@@ -12852,14 +12852,14 @@ func (m EditMessageReplyMarkupMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#stoppoll
 type StopPollMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// to be edited was sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
 	// Identifier of the original message with the poll
 	MessageID int64 `json:"message_id"`
+	// Unique identifier of the business connection on behalf of which the message
+	// to be edited was sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// A JSON-serialized object for a new message inline keyboard
 	ReplyMarkup *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
@@ -13377,12 +13377,18 @@ func (o InputSticker) resolve(sink *fileSink) (json.RawMessage, error) {
 //
 // See https://core.telegram.org/bots/api#sendsticker
 type SendStickerMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
+	// Sticker to send. Pass a file_id as String to send a file that exists on the
+	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
+	// get a .WEBP sticker from the Internet, or upload a new .WEBP, .TGS, or .WEBM
+	// sticker using multipart/form-data. More information on Sending Files ». Video
+	// and animated stickers can't be sent via an HTTP URL.
+	Sticker InputFile `json:"sticker"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
@@ -13397,12 +13403,6 @@ type SendStickerMethod struct {
 	// For outgoing ephemeral messages, identifier of the callback query which
 	// triggered the message if any
 	CallbackQueryID *string `json:"callback_query_id,omitempty"`
-	// Sticker to send. Pass a file_id as String to send a file that exists on the
-	// Telegram servers (recommended), pass an HTTP URL as a String for Telegram to
-	// get a .WEBP sticker from the Internet, or upload a new .WEBP, .TGS, or .WEBM
-	// sticker using multipart/form-data. More information on Sending Files ». Video
-	// and animated stickers can't be sent via an HTTP URL.
-	Sticker InputFile `json:"sticker"`
 	// Emoji associated with the sticker; only for just uploaded stickers
 	Emoji *string `json:"emoji,omitempty"`
 	// Sends the message silently. Users will receive a notification with no sound.
@@ -13838,6 +13838,9 @@ type SetStickerSetThumbnailMethod struct {
 	Name string `json:"name"`
 	// User identifier of the sticker set owner
 	UserID int64 `json:"user_id"`
+	// Format of the thumbnail, must be one of “static” for a .WEBP or .PNG image,
+	// “animated” for a .TGS animation, or “video” for a .WEBM video
+	Format string `json:"format"`
 	// A .WEBP or .PNG image with the thumbnail, must be up to 128 kilobytes in size
 	// and have a width and height of exactly 100px, or a .TGS animation with a
 	// thumbnail up to 32 kilobytes in size (see
@@ -13851,9 +13854,6 @@ type SetStickerSetThumbnailMethod struct {
 	// video sticker set thumbnails can't be uploaded via HTTP URL. If omitted, then
 	// the thumbnail is dropped and the first sticker is used as the thumbnail.
 	Thumbnail InputFile `json:"thumbnail,omitempty"`
-	// Format of the thumbnail, must be one of “static” for a .WEBP or .PNG image,
-	// “animated” for a .TGS animation, or “video” for a .WEBM video
-	Format string `json:"format"`
 }
 
 func (m SetStickerSetThumbnailMethod) Call(ctx context.Context, conn Connection) error {
@@ -14093,21 +14093,21 @@ func (o InputRichMessageMedia) resolve(sink *fileSink) (json.RawMessage, error) 
 //
 // See https://core.telegram.org/bots/api#sendrichmessage
 type SendRichMessageMethod struct {
+	// Unique identifier for the target chat or username of the target bot,
+	// supergroup or channel in the format @username
+	ChatID ChatID `json:"chat_id"`
+	// The message to be sent
+	RichMessage InputRichMessage `json:"rich_message"`
 	// Unique identifier of the business connection on behalf of which the message
 	// will be sent. Bot can send rich messages on behalf of a business account only
 	// if the corresponding user can send rich messages.
 	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
-	// Unique identifier for the target chat or username of the target bot,
-	// supergroup or channel in the format @username
-	ChatID ChatID `json:"chat_id"`
 	// Unique identifier for the target message thread (topic) of a forum; for forum
 	// supergroups and private chats of bots with forum topic mode enabled only
 	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Identifier of the direct messages topic to which the message will be sent;
 	// required if the message is sent to a direct messages chat
 	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
-	// The message to be sent
-	RichMessage InputRichMessage `json:"rich_message"`
 	// Sends the message silently. Users will receive a notification with no sound.
 	DisableNotification *bool `json:"disable_notification,omitempty"`
 	// Protects the contents of the sent message from forwarding and saving
@@ -14170,14 +14170,14 @@ func (m SendRichMessageMethod) payload() (formPayload, error) {
 type SendRichMessageDraftMethod struct {
 	// Unique identifier for the target private chat
 	ChatID int64 `json:"chat_id"`
-	// Unique identifier for the target message thread
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Unique identifier of the message draft; must be non-zero. Changes to drafts
 	// with the same identifier are animated.
 	DraftID int64 `json:"draft_id"`
 	// The partial message to be streamed. Direct upload of new files isn't
 	// supported.
 	RichMessage InputRichMessage `json:"rich_message"`
+	// Unique identifier for the target message thread
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 }
 
 func (m SendRichMessageDraftMethod) Call(ctx context.Context, conn Connection) error {
@@ -15260,6 +15260,12 @@ func (o *RichBlockCaption) UnmarshalJSON(data []byte) error {
 //
 // See https://core.telegram.org/bots/api#richblocktablecell
 type RichBlockTableCell struct {
+	// Horizontal cell content alignment. Currently, must be one of “left”,
+	// “center”, or “right”.
+	Align string `json:"align"`
+	// Vertical cell content alignment. Currently, must be one of “top”, “middle”,
+	// or “bottom”.
+	Valign string `json:"valign"`
 	// Text in the cell. If omitted, then the cell is invisible.
 	Text RichText `json:"text,omitempty"`
 	// True, if the cell is a header cell
@@ -15268,12 +15274,6 @@ type RichBlockTableCell struct {
 	Colspan *int64 `json:"colspan,omitempty"`
 	// The number of rows the cell spans if it is bigger than 1
 	Rowspan *int64 `json:"rowspan,omitempty"`
-	// Horizontal cell content alignment. Currently, must be one of “left”,
-	// “center”, or “right”.
-	Align string `json:"align"`
-	// Vertical cell content alignment. Currently, must be one of “top”, “middle”,
-	// or “bottom”.
-	Valign string `json:"valign"`
 }
 
 func (o *RichBlockTableCell) UnmarshalJSON(data []byte) error {
@@ -17708,14 +17708,14 @@ type InlineQueryResultGif struct {
 	ID string `json:"id"`
 	// A valid URL for the GIF file
 	GifURL string `json:"gif_url"`
+	// URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for the result
+	ThumbnailURL string `json:"thumbnail_url"`
 	// Width of the GIF
 	GifWidth *int64 `json:"gif_width,omitempty"`
 	// Height of the GIF
 	GifHeight *int64 `json:"gif_height,omitempty"`
 	// Duration of the GIF in seconds
 	GifDuration *int64 `json:"gif_duration,omitempty"`
-	// URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for the result
-	ThumbnailURL string `json:"thumbnail_url"`
 	// MIME type of the thumbnail, must be one of “image/jpeg”, “image/gif”, or
 	// “video/mp4”. Defaults to “image/jpeg”.
 	ThumbnailMimeType *string `json:"thumbnail_mime_type,omitempty"`
@@ -17800,14 +17800,14 @@ type InlineQueryResultMpeg4Gif struct {
 	ID string `json:"id"`
 	// A valid URL for the MPEG4 file
 	Mpeg4URL string `json:"mpeg4_url"`
+	// URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for the result
+	ThumbnailURL string `json:"thumbnail_url"`
 	// Video width
 	Mpeg4Width *int64 `json:"mpeg4_width,omitempty"`
 	// Video height
 	Mpeg4Height *int64 `json:"mpeg4_height,omitempty"`
 	// Video duration in seconds
 	Mpeg4Duration *int64 `json:"mpeg4_duration,omitempty"`
-	// URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for the result
-	ThumbnailURL string `json:"thumbnail_url"`
 	// MIME type of the thumbnail, must be one of “image/jpeg”, “image/gif”, or
 	// “video/mp4”. Defaults to “image/jpeg”.
 	ThumbnailMimeType *string `json:"thumbnail_mime_type,omitempty"`
@@ -18154,6 +18154,11 @@ type InlineQueryResultDocument struct {
 	ID string `json:"id"`
 	// Title for the result
 	Title string `json:"title"`
+	// A valid URL for the file
+	DocumentURL string `json:"document_url"`
+	// MIME type of the content of the file, either “application/pdf” or
+	// “application/zip”
+	MimeType string `json:"mime_type"`
 	// Caption of the document to be sent, 0-1024 characters after entities parsing
 	Caption *string `json:"caption,omitempty"`
 	// Mode for parsing entities in the document caption. See formatting options for
@@ -18162,11 +18167,6 @@ type InlineQueryResultDocument struct {
 	// List of special entities that appear in the caption, which can be specified
 	// instead of parse_mode
 	CaptionEntities []MessageEntity `json:"caption_entities,omitempty"`
-	// A valid URL for the file
-	DocumentURL string `json:"document_url"`
-	// MIME type of the content of the file, either “application/pdf” or
-	// “application/zip”
-	MimeType string `json:"mime_type"`
 	// Short description of the result
 	Description *string `json:"description,omitempty"`
 	// Inline keyboard attached to the message
@@ -19309,9 +19309,6 @@ type InputInvoiceMessageContent struct {
 	// Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
 	// user, use it for your internal processes.
 	Payload string `json:"payload"`
-	// Payment provider token, obtained via @BotFather. Pass an empty string for
-	// payments in Telegram Stars.
-	ProviderToken *string `json:"provider_token,omitempty"`
 	// Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
 	// payments in Telegram Stars.
 	Currency string `json:"currency"`
@@ -19319,6 +19316,9 @@ type InputInvoiceMessageContent struct {
 	// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
 	// exactly one item for payments in Telegram Stars.
 	Prices []LabeledPrice `json:"prices"`
+	// Payment provider token, obtained via @BotFather. Pass an empty string for
+	// payments in Telegram Stars.
+	ProviderToken *string `json:"provider_token,omitempty"`
 	// The maximum accepted amount for tips in the smallest units of the currency
 	// (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass
 	// max_tip_amount = 145. See the exp parameter in currencies.json, it shows the
@@ -19382,14 +19382,14 @@ type ChosenInlineResult struct {
 	ResultID string `json:"result_id"`
 	// The user that chose the result
 	From User `json:"from"`
+	// The query that was used to obtain the result
+	Query string `json:"query"`
 	// Sender location, only for bots that require user location
 	Location *Location `json:"location,omitempty"`
 	// Identifier of the sent inline message. Available only if there is an inline
 	// keyboard attached to the message. Will be also received in callback queries
 	// and can be used to edit the message.
 	InlineMessageID *string `json:"inline_message_id,omitempty"`
-	// The query that was used to obtain the result
-	Query string `json:"query"`
 }
 
 // Use this method to send invoices. On success, the sent Message is returned.
@@ -19399,12 +19399,6 @@ type SendInvoiceMethod struct {
 	// Unique identifier for the target chat or username of the target bot,
 	// supergroup or channel in the format @username
 	ChatID ChatID `json:"chat_id"`
-	// Unique identifier for the target message thread (topic) of a forum; for forum
-	// supergroups and private chats of bots with forum topic mode enabled only
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
-	// Identifier of the direct messages topic to which the message will be sent;
-	// required if the message is sent to a direct messages chat
-	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
 	// Product name, 1-32 characters
 	Title string `json:"title"`
 	// Product description, 1-255 characters
@@ -19412,9 +19406,6 @@ type SendInvoiceMethod struct {
 	// Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
 	// user, use it for your internal processes.
 	Payload string `json:"payload"`
-	// Payment provider token, obtained via @BotFather. Pass an empty string for
-	// payments in Telegram Stars.
-	ProviderToken *string `json:"provider_token,omitempty"`
 	// Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
 	// payments in Telegram Stars.
 	Currency string `json:"currency"`
@@ -19422,6 +19413,15 @@ type SendInvoiceMethod struct {
 	// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
 	// exactly one item for payments in Telegram Stars.
 	Prices []LabeledPrice `json:"prices"`
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
+	// Identifier of the direct messages topic to which the message will be sent;
+	// required if the message is sent to a direct messages chat
+	DirectMessagesTopicID *int64 `json:"direct_messages_topic_id,omitempty"`
+	// Payment provider token, obtained via @BotFather. Pass an empty string for
+	// payments in Telegram Stars.
+	ProviderToken *string `json:"provider_token,omitempty"`
 	// The maximum accepted amount for tips in the smallest units of the currency
 	// (integer, not float/double). For example, for a maximum tip of US$ 1.45 pass
 	// max_tip_amount = 145. See the exp parameter in currencies.json, it shows the
@@ -19518,9 +19518,6 @@ func (m SendInvoiceMethod) payload() (jsonPayload, error) {
 //
 // See https://core.telegram.org/bots/api#createinvoicelink
 type CreateInvoiceLinkMethod struct {
-	// Unique identifier of the business connection on behalf of which the link will
-	// be created. For payments in Telegram Stars only.
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Product name, 1-32 characters
 	Title string `json:"title"`
 	// Product description, 1-255 characters
@@ -19528,9 +19525,6 @@ type CreateInvoiceLinkMethod struct {
 	// Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the
 	// user, use it for your internal processes.
 	Payload string `json:"payload"`
-	// Payment provider token, obtained via @BotFather. Pass an empty string for
-	// payments in Telegram Stars.
-	ProviderToken *string `json:"provider_token,omitempty"`
 	// Three-letter ISO 4217 currency code, see more on currencies. Pass “XTR” for
 	// payments in Telegram Stars.
 	Currency string `json:"currency"`
@@ -19538,6 +19532,12 @@ type CreateInvoiceLinkMethod struct {
 	// tax, discount, delivery cost, delivery tax, bonus, etc.). Must contain
 	// exactly one item for payments in Telegram Stars.
 	Prices []LabeledPrice `json:"prices"`
+	// Unique identifier of the business connection on behalf of which the link will
+	// be created. For payments in Telegram Stars only.
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
+	// Payment provider token, obtained via @BotFather. Pass an empty string for
+	// payments in Telegram Stars.
+	ProviderToken *string `json:"provider_token,omitempty"`
 	// The number of seconds the subscription will be active for before the next
 	// payment. The currency must be set to “XTR” (Telegram Stars) if the parameter
 	// is used. Currently, it must always be 2592000 (30 days) if specified. Any
@@ -19869,6 +19869,10 @@ type SuccessfulPayment struct {
 	TotalAmount int64 `json:"total_amount"`
 	// Bot-specified invoice payload
 	InvoicePayload string `json:"invoice_payload"`
+	// Telegram payment identifier
+	TelegramPaymentChargeID string `json:"telegram_payment_charge_id"`
+	// Provider payment identifier
+	ProviderPaymentChargeID string `json:"provider_payment_charge_id"`
 	// Expiration date of the subscription, in Unix time; for recurring payments
 	// only
 	SubscriptionExpirationDate *int64 `json:"subscription_expiration_date,omitempty"`
@@ -19880,10 +19884,6 @@ type SuccessfulPayment struct {
 	ShippingOptionID *string `json:"shipping_option_id,omitempty"`
 	// Order information provided by the user
 	OrderInfo *OrderInfo `json:"order_info,omitempty"`
-	// Telegram payment identifier
-	TelegramPaymentChargeID string `json:"telegram_payment_charge_id"`
-	// Provider payment identifier
-	ProviderPaymentChargeID string `json:"provider_payment_charge_id"`
 }
 
 // This object contains basic information about a refunded payment.
@@ -20055,17 +20055,17 @@ func (o RevenueWithdrawalStateFailed) MarshalJSON() ([]byte, error) {
 //
 // See https://core.telegram.org/bots/api#affiliateinfo
 type AffiliateInfo struct {
-	// The bot or the user that received an affiliate commission if it was received
-	// by a bot or a user
-	AffiliateUser *User `json:"affiliate_user,omitempty"`
-	// The chat that received an affiliate commission if it was received by a chat
-	AffiliateChat *Chat `json:"affiliate_chat,omitempty"`
 	// The number of Telegram Stars received by the affiliate for each 1000 Telegram
 	// Stars received by the bot from referred users
 	CommissionPerMille int64 `json:"commission_per_mille"`
 	// Integer amount of Telegram Stars received by the affiliate from the
 	// transaction, rounded to 0; can be negative for refunds
 	Amount int64 `json:"amount"`
+	// The bot or the user that received an affiliate commission if it was received
+	// by a bot or a user
+	AffiliateUser *User `json:"affiliate_user,omitempty"`
+	// The chat that received an affiliate commission if it was received by a chat
+	AffiliateChat *Chat `json:"affiliate_chat,omitempty"`
 	// The number of 1/1000000000 shares of Telegram Stars received by the
 	// affiliate; from -999999999 to 999999999; can be negative for refunds
 	NanostarAmount *int64 `json:"nanostar_amount,omitempty"`
@@ -20237,11 +20237,11 @@ func (o TransactionPartnerChat) MarshalJSON() ([]byte, error) {
 //
 // See https://core.telegram.org/bots/api#transactionpartneraffiliateprogram
 type TransactionPartnerAffiliateProgram struct {
-	// Information about the bot that sponsored the affiliate program
-	SponsorUser *User `json:"sponsor_user,omitempty"`
 	// The number of Telegram Stars received by the bot for each 1000 Telegram Stars
 	// received by the affiliate program sponsor from referred users
 	CommissionPerMille int64 `json:"commission_per_mille"`
+	// Information about the bot that sponsored the affiliate program
+	SponsorUser *User `json:"sponsor_user,omitempty"`
 }
 
 func (o TransactionPartnerAffiliateProgram) MarshalJSON() ([]byte, error) {
@@ -20362,11 +20362,11 @@ type StarTransaction struct {
 	ID string `json:"id"`
 	// Integer amount of Telegram Stars transferred by the transaction
 	Amount int64 `json:"amount"`
+	// Date the transaction was created in Unix time
+	Date int64 `json:"date"`
 	// The number of 1/1000000000 shares of Telegram Stars transferred by the
 	// transaction; from 0 to 999999999
 	NanostarAmount *int64 `json:"nanostar_amount,omitempty"`
-	// Date the transaction was created in Unix time
-	Date int64 `json:"date"`
 	// Source of an incoming transaction (e.g., a user purchasing goods or services,
 	// Fragment refunding a failed withdrawal). Only for incoming transactions.
 	Source TransactionPartner `json:"source,omitempty"`
@@ -20449,6 +20449,8 @@ type EncryptedPassportElement struct {
 	// “bank_statement”, “rental_agreement”, “passport_registration”,
 	// “temporary_registration”, “phone_number”, “email”.
 	Type string `json:"type"`
+	// Base64-encoded element hash for using in PassportElementErrorUnspecified
+	Hash string `json:"hash"`
 	// Base64-encoded encrypted Telegram Passport element data provided by the user;
 	// available only for “personal_details”, “passport”, “driver_license”,
 	// “identity_card”, “internal_passport” and “address” types. Can be decrypted
@@ -20484,8 +20486,6 @@ type EncryptedPassportElement struct {
 	// types. Files can be decrypted and verified using the accompanying
 	// EncryptedCredentials.
 	Translation []PassportFile `json:"translation,omitempty"`
-	// Base64-encoded element hash for using in PassportElementErrorUnspecified
-	Hash string `json:"hash"`
 }
 
 // Describes data required for decrypting and authenticating
@@ -20858,19 +20858,19 @@ func (o PassportElementErrorUnspecified) MarshalJSON() ([]byte, error) {
 //
 // See https://core.telegram.org/bots/api#sendgame
 type SendGameMethod struct {
-	// Unique identifier of the business connection on behalf of which the message
-	// will be sent
-	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
 	// Unique identifier for the target chat or username of the target bot in the
 	// format @username. Games can't be sent to channel direct messages chats and
 	// channel chats.
 	ChatID ChatID `json:"chat_id"`
-	// Unique identifier for the target message thread (topic) of a forum; for forum
-	// supergroups and private chats of bots with forum topic mode enabled only
-	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Short name of the game, serves as the unique identifier for the game. Set up
 	// your games via @BotFather.
 	GameShortName string `json:"game_short_name"`
+	// Unique identifier of the business connection on behalf of which the message
+	// will be sent
+	BusinessConnectionID *string `json:"business_connection_id,omitempty"`
+	// Unique identifier for the target message thread (topic) of a forum; for forum
+	// supergroups and private chats of bots with forum topic mode enabled only
+	MessageThreadID *int64 `json:"message_thread_id,omitempty"`
 	// Sends the message silently. Users will receive a notification with no sound.
 	DisableNotification *bool `json:"disable_notification,omitempty"`
 	// Protects the contents of the sent message from forwarding and saving
