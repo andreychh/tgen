@@ -23,7 +23,7 @@ func NewMethod(m ir.Method) Method {
 // Doc returns the doc comment of the declaration, closing with a link back to
 // the section the method was read from.
 func (m Method) Doc() string {
-	return NewDefinitionDoc(m.inner.Ref, m.inner.Description).Value()
+	return NewDefinitionDoc(m.inner.Ref, m.inner.Description, m.inner.Introduced).Value()
 }
 
 // Ref implements [Declaration].

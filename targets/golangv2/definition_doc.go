@@ -11,21 +11,28 @@ import (
 	"github.com/andreychh/tgen/targets"
 )
 
-// DefinitionDoc represents the doc comment of a documented definition: the
-// prose of its section followed by a link back to that section.
+// DefinitionDoc represents the doc comment of a definition: the prose
+// describing it, closed by a link to the section of the documentation page it
+// stands at, where it stands at one.
 type DefinitionDoc struct {
-	ref     model.Reference
-	passage prose.Passage
+	ref        model.Reference
+	passage    prose.Passage
+	introduced bool
 }
 
 // NewDefinitionDoc creates a DefinitionDoc for the definition at ref from the
-// prose of its section.
-func NewDefinitionDoc(ref model.Reference, passage prose.Passage) DefinitionDoc {
-	return DefinitionDoc{ref: ref, passage: passage}
+// prose describing it and whether tgen introduced it.
+func NewDefinitionDoc(ref model.Reference, passage prose.Passage, introduced bool) DefinitionDoc {
+	return DefinitionDoc{ref: ref, passage: passage, introduced: introduced}
 }
 
-// Value returns the doc comment, closing with the URL of the section.
+// Value returns the doc comment, closing with the URL of the section unless
+// tgen introduced the definition, which the page never named and so gave no
+// section to address.
 func (d DefinitionDoc) Value() string {
+	if d.introduced {
+		return NewTypeGodoc(d.passage).Value()
+	}
 	return NewTypeGodoc(
 		prose.NewPassage(append(
 			slices.Clone(d.passage.Blocks()),
