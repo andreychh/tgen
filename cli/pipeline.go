@@ -10,6 +10,7 @@ import (
 	"github.com/andreychh/tgen/model/pipeline/attached"
 	"github.com/andreychh/tgen/model/pipeline/classified"
 	"github.com/andreychh/tgen/model/pipeline/corrected"
+	"github.com/andreychh/tgen/model/pipeline/directed"
 	"github.com/andreychh/tgen/model/pipeline/flattened"
 	"github.com/andreychh/tgen/model/pipeline/parsed"
 	"github.com/andreychh/tgen/model/pipeline/resolved"
@@ -65,7 +66,11 @@ func (p Pipeline) Specification() (separated.Specification, error) {
 	if err != nil {
 		return separated.Specification{}, fmt.Errorf("attaching files: %w", err)
 	}
-	spec, err := separated.NewPass(files).Specification()
+	directions, err := directed.NewPass(files).Specification()
+	if err != nil {
+		return separated.Specification{}, fmt.Errorf("directing definitions: %w", err)
+	}
+	spec, err := separated.NewPass(directions).Specification()
 	if err != nil {
 		return separated.Specification{}, fmt.Errorf("separating returns: %w", err)
 	}

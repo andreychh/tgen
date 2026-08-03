@@ -39,6 +39,25 @@ const (
 	FileKindCarrier FileKind = "carrier"
 )
 
+// Direction is where a definition travels between a client and the API,
+// telling a target whether the value has to write itself into a request, read
+// itself out of a response, or answer for both. It classifies what is carried
+// and not what carries it: a method is an operation rather than cargo, and what
+// travels is the parameters it takes and the value it hands back.
+type Direction string
+
+const (
+	// DirectionOutbound marks a definition only a request carries, which writes
+	// itself and is never read back.
+	DirectionOutbound Direction = "outbound"
+	// DirectionInbound marks a definition only a response carries, which is read
+	// and never written.
+	DirectionInbound Direction = "inbound"
+	// DirectionBidirectional marks a definition a request and a response both
+	// carry, which does either.
+	DirectionBidirectional Direction = "bidirectional"
+)
+
 type Optionality bool
 
 type Key string
