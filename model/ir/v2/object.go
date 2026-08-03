@@ -14,9 +14,12 @@ import (
 // none. Rewrites reports that a union reaching a file admits the object, which
 // obliges it to rewrite itself into JSON even when it holds no file of its
 // own: a union carries a file as soon as one variant does, and every target
-// reaches the rest of them through the same rewrite. Introduced reports that
-// tgen introduced the object rather than reading it from the documentation
-// page, which leaves it no section a target can address.
+// reaches the rest of them through the same rewrite. Direction is which way the
+// object travels between a client and the API: one no request carries needs
+// nothing written to encode it, and one no response carries needs nothing
+// written to decode it. Introduced reports that tgen introduced the object
+// rather than reading it from the documentation page, which leaves it no
+// section a target can address.
 type Object struct {
 	Ref         model.Reference
 	Name        model.Name
@@ -24,6 +27,7 @@ type Object struct {
 	Fields      []Field
 	Files       []FileField
 	Rewrites    bool
+	Direction   model.Direction
 	Introduced  bool
 }
 
