@@ -43,3 +43,9 @@ func (a Alias) Name() string {
 func (a Alias) Type() string {
 	return NewRequiredType(a.inner.Type).Value()
 }
+
+// Direction returns which way the alias travels. The declaration itself is the
+// same either way; what a block written by hand puts beside it is not.
+func (a Alias) Direction() Direction {
+	return NewDirection(a.inner.Direction)
+}

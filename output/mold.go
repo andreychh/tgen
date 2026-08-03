@@ -5,6 +5,7 @@ package output
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"strings"
 	"text/template"
@@ -24,15 +25,26 @@ func NewMold(fs embed.FS, funcs template.FuncMap) Mold {
 
 // Template parses all templates in the embedded filesystem and returns a
 // configured [template.Template]. Beside the configured function map, the
-// returned template exposes two functions letting a caller dispatch on a name
-// computed from the data: render, which executes the template named by its
-// first argument against its second and yields the rendered text, and
-// override, which names the template rendering one definition: the block
-// written by hand for the reference it takes when the templates hold one, and
-// the shape it takes otherwise.
+// returned template exposes three functions: render, which executes the
+// template named by its first argument against its second and yields the
+// rendered text; override, which names the template rendering one definition —
+// the block written by hand for the reference it takes when the templates hold
+// one, and the shape it takes otherwise; and assert, which stops the rendering
+// when what a block was written for stops holding.
 func (m Mold) Template() (*template.Template, error) {
 	tmpl := template.New("").Option("missingkey=error").Funcs(m.funcs)
 	return tmpl.Funcs(template.FuncMap{
+		// assert states what a block written by hand takes for granted, and fails the
+		// rendering with the given message when the specification stops granting it. A
+		// block cannot be generated, so a requirement it does not already answer cannot
+		// be answered by leaving something out — only by a person reading the block
+		// again, which is what a stopped generation is for.
+		"assert": func(holds bool, message string) (string, error) {
+			if !holds {
+				return "", errors.New(message)
+			}
+			return "", nil
+		},
 		"render": func(name string, data any) (string, error) {
 			var b strings.Builder
 			err := tmpl.ExecuteTemplate(&b, name, data)

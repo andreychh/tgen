@@ -12,6 +12,17 @@
 	its own beside it. Spelling a declaration out in full here would freeze
 	what the specification still owns, and the next release would drift past it
 	unnoticed.
+
+	Every block pins the way its definition travels, whether or not it writes
+	anything for either way of travelling. A block is written knowing which way
+	the thing goes — one only ever sent needs no decoder, one only ever received
+	needs nothing that hands a file over — and that knowledge lives nowhere a
+	release can check it. Pinning it turns a drift into a stopped generation and
+	a person reading the block again.
+
+	The pin says what moved and not what to do about it. What a changed
+	direction costs a block is exactly what nobody can know before reading it,
+	and a message guessing at it would be one more claim no release checks.
 */}}
 
 {{- /*
@@ -20,6 +31,7 @@
 	never uploaded, so it stays in the body wherever it sits.
 */}}
 {{- define "manual_fileid"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Alias*/}}
+{{- assert (and .Direction.Sent (not .Direction.Received)) "FileID no longer travels outbound"}}
 {{- template "alias" .}}
 
 func (f {{.Name}}) place(_ *fileSink, _ string) *string {
@@ -41,6 +53,7 @@ func (f {{.Name}}) attach(_ *fileSink) string {
 	leaves the reference the part is reached by.
 */}}
 {{- define "manual_upload"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Object*/}}
+{{- assert (and .Direction.Sent (not .Direction.Received)) "Upload no longer travels outbound"}}
 {{.Doc}}
 type {{.Name}} struct {
 	Name   string
@@ -67,11 +80,13 @@ func (u {{.Name}}) name() string {
 {{- /*
 	manual_inputfile writes the union a file travels as. Its interface is the one
 	thing about a union no shape can write: the two ways of travelling are tgen's
-	invention, and every generated method reaching a file leans on them. Inbound,
-	only a file id can ever come back — an upload is a stream of bytes going one
-	way — so the decoder reads the reference and nothing else.
+	invention, and every generated method reaching a file leans on them. A file
+	only ever goes out, so nothing here reads one back: an upload is a stream of
+	bytes going one way, and a file id comes back as the string it is, under the
+	name the response gives it and not as this union.
 */}}
 {{- define "manual_inputfile"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- assert (and .Direction.Sent (not .Direction.Received)) "InputFile no longer travels outbound"}}
 {{- $union := .Name}}
 {{.Doc}}
 //sumtype:decl
@@ -83,35 +98,18 @@ type {{$union}} interface {
 {{range .Variants}}
 func ({{.Name}}) sealed{{$union}}() {}
 {{- end}}
-
-func unmarshal{{$union}}(data []byte) ({{$union}}, error) {
-	var id FileID
-	if err := json.Unmarshal(data, &id); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal %s into {{$union}}: %w", data, err)
-	}
-	return id, nil
-}
 {{- end}}
 
 {{- /*
-	manual_chatid writes the decoder of the union a chat is addressed by. The two
-	variants are told apart by what JSON they are: a number is an id, a string is
-	a username, and neither decodes as the other.
+	manual_chatid claims the union a chat is addressed by, and writes nothing
+	beyond the shape. A chat is only ever addressed, never reported as this
+	union, so no payload is read back into it. Were one to be, the two variants
+	would tell themselves apart by what JSON they are — a number is an id, a
+	string is a username, and neither decodes as the other.
 */}}
 {{- define "manual_chatid"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- assert (and .Direction.Sent (not .Direction.Received)) "ChatID no longer travels outbound"}}
 {{- template "union" .}}
-
-func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
-	var id ID
-	if json.Unmarshal(data, &id) == nil {
-		return id, nil
-	}
-	var username Username
-	if json.Unmarshal(data, &username) == nil {
-		return username, nil
-	}
-	return nil, fmt.Errorf("cannot unmarshal %s into {{.Name}}", data)
-}
 {{- end}}
 
 {{- /*
@@ -121,6 +119,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	never as an object, so trying them in turn tells them apart.
 */}}
 {{- define "manual_maybemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- assert (and (not .Direction.Sent) .Direction.Received) "MaybeMessage no longer travels inbound"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
@@ -143,6 +142,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	instead: an inaccessible message always dates from zero.
 */}}
 {{- define "manual_maybeinaccessiblemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- assert (and (not .Direction.Sent) .Direction.Received) "MaybeInaccessibleMessage no longer travels inbound"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
@@ -168,19 +168,17 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 {{- end}}
 
 {{- /*
-	manual_inputmessagecontent writes the decoder of a union that is only ever
-	sent. Nothing tells its six variants apart: no key marks them, and every one
-	of them is an object, so trying them in turn would let the first swallow the
-	rest. Nothing has to tell them apart either — an inline result travels one way,
-	and the decoder exists only because an object holding one is declared with a
-	decoder of its own. It says so instead of guessing.
+	manual_inputmessagecontent claims a union that is only ever sent, and writes
+	nothing beyond the shape. Nothing tells its six variants apart: no key marks
+	them, and every one of them is an object, so trying them in turn would let
+	the first swallow the rest. Nothing has to tell them apart either — an inline
+	result travels one way. This block once wrote a decoder that only ever
+	refused, because an object holding one was declared with a decoder of its
+	own; that object is only ever sent too, and is declared without one now.
 */}}
 {{- define "manual_inputmessagecontent"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- assert (and .Direction.Sent (not .Direction.Received)) "InputMessageContent no longer travels outbound"}}
 {{- template "union" .}}
-
-func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
-	return nil, fmt.Errorf("{{.Name}} is only ever sent, so %s cannot be read back", data)
-}
 {{- end}}
 
 {{- /*
@@ -196,6 +194,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	marks of the variants that do carry them.
 */}}
 {{- define "manual_richtext"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- assert (and .Direction.Sent .Direction.Received) "RichText no longer travels both ways"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {

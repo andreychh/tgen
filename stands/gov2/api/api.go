@@ -16927,10 +16927,6 @@ func (InputVenueMessageContent) sealedInputMessageContent() {}
 func (InputContactMessageContent) sealedInputMessageContent() {}
 func (InputInvoiceMessageContent) sealedInputMessageContent() {}
 
-func unmarshalInputMessageContent(data []byte) (InputMessageContent, error) {
-	return nil, fmt.Errorf("InputMessageContent is only ever sent, so %s cannot be read back", data)
-}
-
 // Represents the content of a text message to be sent as the result of an
 // inline query.
 //
@@ -18617,18 +18613,6 @@ type ChatID interface{ sealedChatID() }
 func (ID) sealedChatID() {}
 func (Username) sealedChatID() {}
 
-func unmarshalChatID(data []byte) (ChatID, error) {
-	var id ID
-	if json.Unmarshal(data, &id) == nil {
-		return id, nil
-	}
-	var username Username
-	if json.Unmarshal(data, &username) == nil {
-		return username, nil
-	}
-	return nil, fmt.Errorf("cannot unmarshal %s into ChatID", data)
-}
-
 // ID represents a numeric Telegram chat or user identifier.
 type ID int64
 
@@ -18680,14 +18664,6 @@ type InputFile interface {
 
 func (FileID) sealedInputFile() {}
 func (Upload) sealedInputFile() {}
-
-func unmarshalInputFile(data []byte) (InputFile, error) {
-	var id FileID
-	if err := json.Unmarshal(data, &id); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal %s into InputFile: %w", data, err)
-	}
-	return id, nil
-}
 
 // FileID represents a Telegram file identifier.
 type FileID string
