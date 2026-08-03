@@ -13,7 +13,10 @@ import (
 // apart by. It stands beside [Object], not on top of it: the two partition the
 // objects the documentation names, and no object is both. Files narrows Fields
 // to those reaching a file, and is empty for an object holding none. Rewrites
-// reports the same as it does for [Object]. Introduced reports that tgen
+// reports the same as it does for [Object]. Direction is which way the object
+// travels between a client and the API: one no request carries is never
+// encoded, so the fixed value telling it apart never has to be written at all,
+// and one no response carries is never decoded. Introduced reports that tgen
 // introduced the object rather than reading it from the documentation page,
 // which leaves it no section a target can address.
 type DiscriminatedObject struct {
@@ -23,6 +26,7 @@ type DiscriminatedObject struct {
 	Fields        []Field
 	Files         []FileField
 	Rewrites      bool
+	Direction     model.Direction
 	Introduced    bool
 	Discriminator Discriminator
 }

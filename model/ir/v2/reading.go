@@ -61,6 +61,10 @@ func (r Reading) object() (Object, error) {
 	if err != nil {
 		return Object{}, fmt.Errorf("joining object %s: %w", r.definition.Ref, err)
 	}
+	direction, err := r.direction()
+	if err != nil {
+		return Object{}, fmt.Errorf("joining object %s: %w", r.definition.Ref, err)
+	}
 	return Object{
 		Ref:         r.definition.Ref,
 		Name:        r.definition.Name,
@@ -68,8 +72,20 @@ func (r Reading) object() (Object, error) {
 		Fields:      fields,
 		Files:       files,
 		Rewrites:    r.rewrites(),
+		Direction:   direction,
 		Introduced:  r.definition.Introduced,
 	}, nil
+}
+
+// direction returns which way the definition travels. It fails when the
+// specification names no direction for it, which only a method is left without,
+// so failing here means a method was read as something it is not.
+func (r Reading) direction() (model.Direction, error) {
+	direction, found := r.db.Directions.Lookup(r.definition.Ref)
+	if !found {
+		return "", fmt.Errorf("%s travels nowhere", r.definition.Ref)
+	}
+	return direction, nil
 }
 
 // rewrites reports whether a union reaching a file admits the definition, which
@@ -113,6 +129,14 @@ func (r Reading) discriminatedObject() (DiscriminatedObject, error) {
 			err,
 		)
 	}
+	direction, err := r.direction()
+	if err != nil {
+		return DiscriminatedObject{}, fmt.Errorf(
+			"joining discriminated object %s: %w",
+			r.definition.Ref,
+			err,
+		)
+	}
 	return DiscriminatedObject{
 		Ref:         r.definition.Ref,
 		Name:        r.definition.Name,
@@ -120,6 +144,7 @@ func (r Reading) discriminatedObject() (DiscriminatedObject, error) {
 		Fields:      fields,
 		Files:       files,
 		Rewrites:    r.rewrites(),
+		Direction:   direction,
 		Introduced:  r.definition.Introduced,
 		Discriminator: Discriminator{
 			Key:   discriminator.Key,
@@ -135,6 +160,10 @@ func (r Reading) discriminatedObject() (DiscriminatedObject, error) {
 func (r Reading) union() (Definition, error) {
 	mark, reaches := r.db.Files.Lookup(r.definition.Ref)
 	carrier := reaches && mark.Kind == model.FileKindCarrier
+	direction, err := r.direction()
+	if err != nil {
+		return nil, fmt.Errorf("joining union %s: %w", r.definition.Ref, err)
+	}
 	key, discriminated, err := NewVariants(r.db, r.definition.Ref).Discriminated()
 	if err != nil {
 		return nil, fmt.Errorf("joining union %s: %w", r.definition.Ref, err)
@@ -147,6 +176,7 @@ func (r Reading) union() (Definition, error) {
 			Key:         key,
 			Variants:    discriminated,
 			Carrier:     carrier,
+			Direction:   direction,
 			Introduced:  r.definition.Introduced,
 		}, nil
 	}
@@ -160,6 +190,7 @@ func (r Reading) union() (Definition, error) {
 		Description: r.definition.Description,
 		Variants:    variants,
 		Carrier:     carrier,
+		Direction:   direction,
 		Introduced:  r.definition.Introduced,
 	}, nil
 }
@@ -205,10 +236,15 @@ func (r Reading) alias() (Alias, error) {
 	if err != nil {
 		return Alias{}, fmt.Errorf("resolving alias %s: %w", r.definition.Ref, err)
 	}
+	direction, err := r.direction()
+	if err != nil {
+		return Alias{}, fmt.Errorf("joining alias %s: %w", r.definition.Ref, err)
+	}
 	return Alias{
 		Ref:         r.definition.Ref,
 		Name:        r.definition.Name,
 		Type:        typ,
 		Description: r.definition.Description,
+		Direction:   direction,
 	}, nil
 }

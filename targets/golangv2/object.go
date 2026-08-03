@@ -63,3 +63,9 @@ func (o Object) Files() []Attached {
 func (o Object) Rewrites() bool {
 	return o.inner.Rewrites
 }
+
+// Direction returns which way the object travels, which is what decides the
+// half of the codec it has to declare.
+func (o Object) Direction() Direction {
+	return NewDirection(o.inner.Direction)
+}

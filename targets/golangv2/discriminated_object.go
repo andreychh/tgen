@@ -72,3 +72,10 @@ func (o DiscriminatedObject) Rewrites() bool {
 func (o DiscriminatedObject) Discriminator() Discriminator {
 	return NewDiscriminator(o.inner.Discriminator)
 }
+
+// Direction returns which way the object travels, which is what decides the
+// half of the codec it has to declare. An object no request carries never
+// writes the value telling it apart, however plainly it is told apart.
+func (o DiscriminatedObject) Direction() Direction {
+	return NewDirection(o.inner.Direction)
+}
