@@ -54,6 +54,7 @@ type {{$union}} interface{ sealed{{$union}}() }
 {{range .Variants}}
 func ({{.Name}}) sealed{{$union}}() {}
 {{- end}}
+{{- if .Direction.Received}}
 
 func unmarshal{{$union}}(data []byte) ({{$union}}, error) {
 	var mark struct {
@@ -75,4 +76,5 @@ func unmarshal{{$union}}(data []byte) ({{$union}}, error) {
 		return nil, fmt.Errorf("unknown {{$union}} %q", mark.Key)
 	}
 }
+{{- end}}
 {{- end}}

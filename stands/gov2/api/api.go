@@ -1144,26 +1144,6 @@ type ReplyParameters struct {
 	PollOptionID *string `json:"poll_option_id,omitempty"`
 }
 
-func (o *ReplyParameters) UnmarshalJSON(data []byte) error {
-	type alias ReplyParameters
-	var aux struct {
-		ChatID json.RawMessage `json:"chat_id"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = ReplyParameters(aux.alias)
-	if aux.ChatID != nil {
-		result, err := unmarshalChatID(aux.ChatID)
-		if err != nil {
-			return err
-		}
-		o.ChatID = result
-	}
-	return nil
-}
-
 // This object describes the origin of a message. It can be one of
 //
 // See https://core.telegram.org/bots/api#messageorigin
@@ -1222,17 +1202,6 @@ type MessageOriginUser struct {
 	SenderUser User `json:"sender_user"`
 }
 
-func (o MessageOriginUser) MarshalJSON() ([]byte, error) {
-	type alias MessageOriginUser
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "user",
-		alias: alias(o),
-	})
-}
-
 // The message was originally sent by an unknown user.
 //
 // See https://core.telegram.org/bots/api#messageoriginhiddenuser
@@ -1241,17 +1210,6 @@ type MessageOriginHiddenUser struct {
 	Date int64 `json:"date"`
 	// Name of the user that sent the message originally
 	SenderUserName string `json:"sender_user_name"`
-}
-
-func (o MessageOriginHiddenUser) MarshalJSON() ([]byte, error) {
-	type alias MessageOriginHiddenUser
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "hidden_user",
-		alias: alias(o),
-	})
 }
 
 // The message was originally sent on behalf of a chat to a group chat.
@@ -1267,17 +1225,6 @@ type MessageOriginChat struct {
 	AuthorSignature *string `json:"author_signature,omitempty"`
 }
 
-func (o MessageOriginChat) MarshalJSON() ([]byte, error) {
-	type alias MessageOriginChat
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "chat",
-		alias: alias(o),
-	})
-}
-
 // The message was originally sent to a channel chat.
 //
 // See https://core.telegram.org/bots/api#messageoriginchannel
@@ -1290,17 +1237,6 @@ type MessageOriginChannel struct {
 	MessageID int64 `json:"message_id"`
 	// Signature of the original post author
 	AuthorSignature *string `json:"author_signature,omitempty"`
-}
-
-func (o MessageOriginChannel) MarshalJSON() ([]byte, error) {
-	type alias MessageOriginChannel
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "channel",
-		alias: alias(o),
-	})
 }
 
 // This object represents one size of a photo or a file / sticker thumbnail.
@@ -1625,34 +1561,12 @@ type PaidMediaLivePhoto struct {
 	LivePhoto LivePhoto `json:"live_photo"`
 }
 
-func (o PaidMediaLivePhoto) MarshalJSON() ([]byte, error) {
-	type alias PaidMediaLivePhoto
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "live_photo",
-		alias: alias(o),
-	})
-}
-
 // The paid media is a photo.
 //
 // See https://core.telegram.org/bots/api#paidmediaphoto
 type PaidMediaPhoto struct {
 	// The photo
 	Photo []PhotoSize `json:"photo"`
-}
-
-func (o PaidMediaPhoto) MarshalJSON() ([]byte, error) {
-	type alias PaidMediaPhoto
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "photo",
-		alias: alias(o),
-	})
 }
 
 // The paid media isn't available before the payment.
@@ -1667,34 +1581,12 @@ type PaidMediaPreview struct {
 	Duration *int64 `json:"duration,omitempty"`
 }
 
-func (o PaidMediaPreview) MarshalJSON() ([]byte, error) {
-	type alias PaidMediaPreview
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "preview",
-		alias: alias(o),
-	})
-}
-
 // The paid media is a video.
 //
 // See https://core.telegram.org/bots/api#paidmediavideo
 type PaidMediaVideo struct {
 	// The video
 	Video Video `json:"video"`
-}
-
-func (o PaidMediaVideo) MarshalJSON() ([]byte, error) {
-	type alias PaidMediaVideo
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "video",
-		alias: alias(o),
-	})
 }
 
 // This object represents a phone contact.
@@ -1784,67 +1676,6 @@ func (InputMediaPhoto) sealedInputPollMedia() {}
 func (InputMediaVenue) sealedInputPollMedia() {}
 func (InputMediaVideo) sealedInputPollMedia() {}
 
-func unmarshalInputPollMedia(data []byte) (InputPollMedia, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "animation":
-		var variant InputMediaAnimation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "audio":
-		var variant InputMediaAudio
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "document":
-		var variant InputMediaDocument
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "live_photo":
-		var variant InputMediaLivePhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "location":
-		var variant InputMediaLocation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputMediaPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "venue":
-		var variant InputMediaVenue
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputMediaVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputPollMedia %q", mark.Key)
-	}
-}
-
 // This object represents the content of a poll option to be sent. It should be
 // one of
 //
@@ -1863,67 +1694,6 @@ func (InputMediaPhoto) sealedInputPollOptionMedia() {}
 func (InputMediaSticker) sealedInputPollOptionMedia() {}
 func (InputMediaVenue) sealedInputPollOptionMedia() {}
 func (InputMediaVideo) sealedInputPollOptionMedia() {}
-
-func unmarshalInputPollOptionMedia(data []byte) (InputPollOptionMedia, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "animation":
-		var variant InputMediaAnimation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "link":
-		var variant InputMediaLink
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "live_photo":
-		var variant InputMediaLivePhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "location":
-		var variant InputMediaLocation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputMediaPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "sticker":
-		var variant InputMediaSticker
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "venue":
-		var variant InputMediaVenue
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputMediaVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputPollOptionMedia %q", mark.Key)
-	}
-}
 
 // This object contains information about one answer option in a poll.
 //
@@ -1966,26 +1736,6 @@ type InputPollOption struct {
 	TextEntities []MessageEntity `json:"text_entities,omitempty"`
 	// Media added to the poll option
 	Media InputPollOptionMedia `json:"media,omitempty"`
-}
-
-func (o *InputPollOption) UnmarshalJSON(data []byte) error {
-	type alias InputPollOption
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputPollOption(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputPollOptionMedia(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	return nil
 }
 
 func (o InputPollOption) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -2401,17 +2151,6 @@ type BackgroundFillSolid struct {
 	Color int64 `json:"color"`
 }
 
-func (o BackgroundFillSolid) MarshalJSON() ([]byte, error) {
-	type alias BackgroundFillSolid
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "solid",
-		alias: alias(o),
-	})
-}
-
 // The background is a gradient fill.
 //
 // See https://core.telegram.org/bots/api#backgroundfillgradient
@@ -2424,17 +2163,6 @@ type BackgroundFillGradient struct {
 	RotationAngle int64 `json:"rotation_angle"`
 }
 
-func (o BackgroundFillGradient) MarshalJSON() ([]byte, error) {
-	type alias BackgroundFillGradient
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "gradient",
-		alias: alias(o),
-	})
-}
-
 // The background is a freeform gradient that rotates after every message in the
 // chat.
 //
@@ -2443,17 +2171,6 @@ type BackgroundFillFreeformGradient struct {
 	// A list of the 3 or 4 base colors that are used to generate the freeform
 	// gradient in the RGB24 format
 	Colors []int64 `json:"colors"`
-}
-
-func (o BackgroundFillFreeformGradient) MarshalJSON() ([]byte, error) {
-	type alias BackgroundFillFreeformGradient
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "freeform_gradient",
-		alias: alias(o),
-	})
 }
 
 // This object describes the type of a background. Currently, it can be one of
@@ -2514,17 +2231,6 @@ type BackgroundTypeFill struct {
 	DarkThemeDimming int64 `json:"dark_theme_dimming"`
 }
 
-func (o BackgroundTypeFill) MarshalJSON() ([]byte, error) {
-	type alias BackgroundTypeFill
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "fill",
-		alias: alias(o),
-	})
-}
-
 func (o *BackgroundTypeFill) UnmarshalJSON(data []byte) error {
 	type alias BackgroundTypeFill
 	var aux struct {
@@ -2560,17 +2266,6 @@ type BackgroundTypeWallpaper struct {
 	IsMoving *bool `json:"is_moving,omitempty"`
 }
 
-func (o BackgroundTypeWallpaper) MarshalJSON() ([]byte, error) {
-	type alias BackgroundTypeWallpaper
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "wallpaper",
-		alias: alias(o),
-	})
-}
-
 // The background is a .PNG or .TGV (gzipped subset of SVG with MIME type
 // “application/x-tgwallpattern”) pattern to be combined with the background
 // fill chosen by the user.
@@ -2588,17 +2283,6 @@ type BackgroundTypePattern struct {
 	IsInverted *bool `json:"is_inverted,omitempty"`
 	// True, if the background moves slightly when the device is tilted
 	IsMoving *bool `json:"is_moving,omitempty"`
-}
-
-func (o BackgroundTypePattern) MarshalJSON() ([]byte, error) {
-	type alias BackgroundTypePattern
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "pattern",
-		alias: alias(o),
-	})
 }
 
 func (o *BackgroundTypePattern) UnmarshalJSON(data []byte) error {
@@ -2627,17 +2311,6 @@ func (o *BackgroundTypePattern) UnmarshalJSON(data []byte) error {
 type BackgroundTypeChatTheme struct {
 	// Name of the chat theme, which is usually an emoji
 	ThemeName string `json:"theme_name"`
-}
-
-func (o BackgroundTypeChatTheme) MarshalJSON() ([]byte, error) {
-	type alias BackgroundTypeChatTheme
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "chat_theme",
-		alias: alias(o),
-	})
 }
 
 // This object represents a chat background.
@@ -3868,17 +3541,6 @@ type ChatMemberOwner struct {
 	CustomTitle *string `json:"custom_title,omitempty"`
 }
 
-func (o ChatMemberOwner) MarshalJSON() ([]byte, error) {
-	type alias ChatMemberOwner
-	return json.Marshal(struct {
-		Status string `json:"status"`
-		alias
-	}{
-		Status: "creator",
-		alias: alias(o),
-	})
-}
-
 // Represents a chat member that has some additional privileges.
 //
 // See https://core.telegram.org/bots/api#chatmemberadministrator
@@ -3939,17 +3601,6 @@ type ChatMemberAdministrator struct {
 	CustomTitle *string `json:"custom_title,omitempty"`
 }
 
-func (o ChatMemberAdministrator) MarshalJSON() ([]byte, error) {
-	type alias ChatMemberAdministrator
-	return json.Marshal(struct {
-		Status string `json:"status"`
-		alias
-	}{
-		Status: "administrator",
-		alias: alias(o),
-	})
-}
-
 // Represents a chat member that has no additional privileges or restrictions.
 //
 // See https://core.telegram.org/bots/api#chatmembermember
@@ -3960,17 +3611,6 @@ type ChatMemberMember struct {
 	Tag *string `json:"tag,omitempty"`
 	// Date when the user's subscription will expire; Unix time
 	UntilDate *int64 `json:"until_date,omitempty"`
-}
-
-func (o ChatMemberMember) MarshalJSON() ([]byte, error) {
-	type alias ChatMemberMember
-	return json.Marshal(struct {
-		Status string `json:"status"`
-		alias
-	}{
-		Status: "member",
-		alias: alias(o),
-	})
 }
 
 // Represents a chat member that is under certain restrictions in the chat.
@@ -4024,17 +3664,6 @@ type ChatMemberRestricted struct {
 	Tag *string `json:"tag,omitempty"`
 }
 
-func (o ChatMemberRestricted) MarshalJSON() ([]byte, error) {
-	type alias ChatMemberRestricted
-	return json.Marshal(struct {
-		Status string `json:"status"`
-		alias
-	}{
-		Status: "restricted",
-		alias: alias(o),
-	})
-}
-
 // Represents a chat member that isn't currently a member of the chat, but may
 // join it themselves.
 //
@@ -4042,17 +3671,6 @@ func (o ChatMemberRestricted) MarshalJSON() ([]byte, error) {
 type ChatMemberLeft struct {
 	// Information about the user
 	User User `json:"user"`
-}
-
-func (o ChatMemberLeft) MarshalJSON() ([]byte, error) {
-	type alias ChatMemberLeft
-	return json.Marshal(struct {
-		Status string `json:"status"`
-		alias
-	}{
-		Status: "left",
-		alias: alias(o),
-	})
 }
 
 // Represents a chat member that was banned in the chat and can't return to the
@@ -4065,17 +3683,6 @@ type ChatMemberBanned struct {
 	// Date when restrictions will be lifted for this user; Unix time. If 0, then
 	// the user is banned forever.
 	UntilDate int64 `json:"until_date"`
-}
-
-func (o ChatMemberBanned) MarshalJSON() ([]byte, error) {
-	type alias ChatMemberBanned
-	return json.Marshal(struct {
-		Status string `json:"status"`
-		alias
-	}{
-		Status: "kicked",
-		alias: alias(o),
-	})
 }
 
 // Represents a join request sent to a chat.
@@ -4272,49 +3879,6 @@ func (StoryAreaTypeLink) sealedStoryAreaType() {}
 func (StoryAreaTypeWeather) sealedStoryAreaType() {}
 func (StoryAreaTypeUniqueGift) sealedStoryAreaType() {}
 
-func unmarshalStoryAreaType(data []byte) (StoryAreaType, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "location":
-		var variant StoryAreaTypeLocation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "suggested_reaction":
-		var variant StoryAreaTypeSuggestedReaction
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "link":
-		var variant StoryAreaTypeLink
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "weather":
-		var variant StoryAreaTypeWeather
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "unique_gift":
-		var variant StoryAreaTypeUniqueGift
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown StoryAreaType %q", mark.Key)
-	}
-}
-
 // Describes a story area pointing to a location. Currently, a story can have up
 // to 10 location areas.
 //
@@ -4361,26 +3925,6 @@ func (o StoryAreaTypeSuggestedReaction) MarshalJSON() ([]byte, error) {
 		Type: "suggested_reaction",
 		alias: alias(o),
 	})
-}
-
-func (o *StoryAreaTypeSuggestedReaction) UnmarshalJSON(data []byte) error {
-	type alias StoryAreaTypeSuggestedReaction
-	var aux struct {
-		ReactionType json.RawMessage `json:"reaction_type"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = StoryAreaTypeSuggestedReaction(aux.alias)
-	if aux.ReactionType != nil {
-		result, err := unmarshalReactionType(aux.ReactionType)
-		if err != nil {
-			return err
-		}
-		o.ReactionType = result
-	}
-	return nil
 }
 
 // Describes a story area pointing to an HTTP or tg:// link. Currently, a story
@@ -4455,26 +3999,6 @@ type StoryArea struct {
 	Position StoryAreaPosition `json:"position"`
 	// Type of the area
 	Type StoryAreaType `json:"type"`
-}
-
-func (o *StoryArea) UnmarshalJSON(data []byte) error {
-	type alias StoryArea
-	var aux struct {
-		Type json.RawMessage `json:"type"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = StoryArea(aux.alias)
-	if aux.Type != nil {
-		result, err := unmarshalStoryAreaType(aux.Type)
-		if err != nil {
-			return err
-		}
-		o.Type = result
-	}
-	return nil
 }
 
 // Represents a location to which a chat is connected.
@@ -5018,17 +4542,6 @@ type OwnedGiftRegular struct {
 	UniqueGiftNumber *int64 `json:"unique_gift_number,omitempty"`
 }
 
-func (o OwnedGiftRegular) MarshalJSON() ([]byte, error) {
-	type alias OwnedGiftRegular
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "regular",
-		alias: alias(o),
-	})
-}
-
 // Describes a unique gift received and owned by a user or a chat.
 //
 // See https://core.telegram.org/bots/api#ownedgiftunique
@@ -5054,17 +4567,6 @@ type OwnedGiftUnique struct {
 	// Point in time (Unix timestamp) when the gift can be transferred. If it is in
 	// the past, then the gift can be transferred now.
 	NextTransferDate *int64 `json:"next_transfer_date,omitempty"`
-}
-
-func (o OwnedGiftUnique) MarshalJSON() ([]byte, error) {
-	type alias OwnedGiftUnique
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "unique",
-		alias: alias(o),
-	})
 }
 
 // Contains the list of gifts received and owned by a user or a chat.
@@ -5173,61 +4675,6 @@ func (BotCommandScopeChat) sealedBotCommandScope() {}
 func (BotCommandScopeChatAdministrators) sealedBotCommandScope() {}
 func (BotCommandScopeChatMember) sealedBotCommandScope() {}
 
-func unmarshalBotCommandScope(data []byte) (BotCommandScope, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "default":
-		var variant BotCommandScopeDefault
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "all_private_chats":
-		var variant BotCommandScopeAllPrivateChats
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "all_group_chats":
-		var variant BotCommandScopeAllGroupChats
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "all_chat_administrators":
-		var variant BotCommandScopeAllChatAdministrators
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "chat":
-		var variant BotCommandScopeChat
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "chat_administrators":
-		var variant BotCommandScopeChatAdministrators
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "chat_member":
-		var variant BotCommandScopeChatMember
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown BotCommandScope %q", mark.Key)
-	}
-}
-
 // Represents the default scope of bot commands. Default commands are used if no
 // commands with a narrower scope are specified for the user.
 //
@@ -5320,26 +4767,6 @@ func (o BotCommandScopeChat) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *BotCommandScopeChat) UnmarshalJSON(data []byte) error {
-	type alias BotCommandScopeChat
-	var aux struct {
-		ChatID json.RawMessage `json:"chat_id"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = BotCommandScopeChat(aux.alias)
-	if aux.ChatID != nil {
-		result, err := unmarshalChatID(aux.ChatID)
-		if err != nil {
-			return err
-		}
-		o.ChatID = result
-	}
-	return nil
-}
-
 // Represents the scope of bot commands, covering all administrators of a
 // specific group or supergroup chat.
 //
@@ -5360,26 +4787,6 @@ func (o BotCommandScopeChatAdministrators) MarshalJSON() ([]byte, error) {
 		Type: "chat_administrators",
 		alias: alias(o),
 	})
-}
-
-func (o *BotCommandScopeChatAdministrators) UnmarshalJSON(data []byte) error {
-	type alias BotCommandScopeChatAdministrators
-	var aux struct {
-		ChatID json.RawMessage `json:"chat_id"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = BotCommandScopeChatAdministrators(aux.alias)
-	if aux.ChatID != nil {
-		result, err := unmarshalChatID(aux.ChatID)
-		if err != nil {
-			return err
-		}
-		o.ChatID = result
-	}
-	return nil
 }
 
 // Represents the scope of bot commands, covering a specific member of a group
@@ -5404,26 +4811,6 @@ func (o BotCommandScopeChatMember) MarshalJSON() ([]byte, error) {
 		Type: "chat_member",
 		alias: alias(o),
 	})
-}
-
-func (o *BotCommandScopeChatMember) UnmarshalJSON(data []byte) error {
-	type alias BotCommandScopeChatMember
-	var aux struct {
-		ChatID json.RawMessage `json:"chat_id"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = BotCommandScopeChatMember(aux.alias)
-	if aux.ChatID != nil {
-		result, err := unmarshalChatID(aux.ChatID)
-		if err != nil {
-			return err
-		}
-		o.ChatID = result
-	}
-	return nil
 }
 
 // This object represents the bot's name.
@@ -5606,17 +4993,6 @@ type ChatBoostSourcePremium struct {
 	User User `json:"user"`
 }
 
-func (o ChatBoostSourcePremium) MarshalJSON() ([]byte, error) {
-	type alias ChatBoostSourcePremium
-	return json.Marshal(struct {
-		Source string `json:"source"`
-		alias
-	}{
-		Source: "premium",
-		alias: alias(o),
-	})
-}
-
 // The boost was obtained by the creation of Telegram Premium gift codes to
 // boost a chat. Each such code boosts the chat 4 times for the duration of the
 // corresponding Telegram Premium subscription.
@@ -5625,17 +5001,6 @@ func (o ChatBoostSourcePremium) MarshalJSON() ([]byte, error) {
 type ChatBoostSourceGiftCode struct {
 	// User for which the gift code was created
 	User User `json:"user"`
-}
-
-func (o ChatBoostSourceGiftCode) MarshalJSON() ([]byte, error) {
-	type alias ChatBoostSourceGiftCode
-	return json.Marshal(struct {
-		Source string `json:"source"`
-		alias
-	}{
-		Source: "gift_code",
-		alias: alias(o),
-	})
 }
 
 // The boost was obtained by the creation of a Telegram Premium or a Telegram
@@ -5656,17 +5021,6 @@ type ChatBoostSourceGiveaway struct {
 	PrizeStarCount *int64 `json:"prize_star_count,omitempty"`
 	// True, if the giveaway was completed, but there was no user to win the prize
 	IsUnclaimed *bool `json:"is_unclaimed,omitempty"`
-}
-
-func (o ChatBoostSourceGiveaway) MarshalJSON() ([]byte, error) {
-	type alias ChatBoostSourceGiveaway
-	return json.Marshal(struct {
-		Source string `json:"source"`
-		alias
-	}{
-		Source: "giveaway",
-		alias: alias(o),
-	})
 }
 
 // This object contains information about a chat boost.
@@ -5918,55 +5272,6 @@ func (InputMediaLivePhoto) sealedInputMedia() {}
 func (InputMediaPhoto) sealedInputMedia() {}
 func (InputMediaVideo) sealedInputMedia() {}
 
-func unmarshalInputMedia(data []byte) (InputMedia, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "animation":
-		var variant InputMediaAnimation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "audio":
-		var variant InputMediaAudio
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "document":
-		var variant InputMediaDocument
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "live_photo":
-		var variant InputMediaLivePhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputMediaPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputMediaVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputMedia %q", mark.Key)
-	}
-}
-
 // Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to
 // be sent.
 //
@@ -6016,34 +5321,6 @@ func (o InputMediaAnimation) MarshalJSON() ([]byte, error) {
 		Type: "animation",
 		alias: alias(o),
 	})
-}
-
-func (o *InputMediaAnimation) UnmarshalJSON(data []byte) error {
-	type alias InputMediaAnimation
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Thumbnail json.RawMessage `json:"thumbnail"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaAnimation(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Thumbnail != nil {
-		result, err := unmarshalInputFile(aux.Thumbnail)
-		if err != nil {
-			return err
-		}
-		o.Thumbnail = result
-	}
-	return nil
 }
 
 func (o InputMediaAnimation) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -6113,34 +5390,6 @@ func (o InputMediaAudio) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputMediaAudio) UnmarshalJSON(data []byte) error {
-	type alias InputMediaAudio
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Thumbnail json.RawMessage `json:"thumbnail"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaAudio(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Thumbnail != nil {
-		result, err := unmarshalInputFile(aux.Thumbnail)
-		if err != nil {
-			return err
-		}
-		o.Thumbnail = result
-	}
-	return nil
-}
-
 func (o InputMediaAudio) resolve(sink *fileSink) (json.RawMessage, error) {
 	media := o.Media.attach(sink)
 	var thumbnail *string
@@ -6204,34 +5453,6 @@ func (o InputMediaDocument) MarshalJSON() ([]byte, error) {
 		Type: "document",
 		alias: alias(o),
 	})
-}
-
-func (o *InputMediaDocument) UnmarshalJSON(data []byte) error {
-	type alias InputMediaDocument
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Thumbnail json.RawMessage `json:"thumbnail"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaDocument(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Thumbnail != nil {
-		result, err := unmarshalInputFile(aux.Thumbnail)
-		if err != nil {
-			return err
-		}
-		o.Thumbnail = result
-	}
-	return nil
 }
 
 func (o InputMediaDocument) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -6320,34 +5541,6 @@ func (o InputMediaLivePhoto) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputMediaLivePhoto) UnmarshalJSON(data []byte) error {
-	type alias InputMediaLivePhoto
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Photo json.RawMessage `json:"photo"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaLivePhoto(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Photo != nil {
-		result, err := unmarshalInputFile(aux.Photo)
-		if err != nil {
-			return err
-		}
-		o.Photo = result
-	}
-	return nil
-}
-
 func (o InputMediaLivePhoto) resolve(sink *fileSink) (json.RawMessage, error) {
 	media := o.Media.attach(sink)
 	photo := o.Photo.attach(sink)
@@ -6427,26 +5620,6 @@ func (o InputMediaPhoto) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputMediaPhoto) UnmarshalJSON(data []byte) error {
-	type alias InputMediaPhoto
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaPhoto(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	return nil
-}
-
 func (o InputMediaPhoto) resolve(sink *fileSink) (json.RawMessage, error) {
 	media := o.Media.attach(sink)
 	type alias InputMediaPhoto
@@ -6484,26 +5657,6 @@ func (o InputMediaSticker) MarshalJSON() ([]byte, error) {
 		Type: "sticker",
 		alias: alias(o),
 	})
-}
-
-func (o *InputMediaSticker) UnmarshalJSON(data []byte) error {
-	type alias InputMediaSticker
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaSticker(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	return nil
 }
 
 func (o InputMediaSticker) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -6619,42 +5772,6 @@ func (o InputMediaVideo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputMediaVideo) UnmarshalJSON(data []byte) error {
-	type alias InputMediaVideo
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Thumbnail json.RawMessage `json:"thumbnail"`
-		Cover json.RawMessage `json:"cover"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaVideo(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Thumbnail != nil {
-		result, err := unmarshalInputFile(aux.Thumbnail)
-		if err != nil {
-			return err
-		}
-		o.Thumbnail = result
-	}
-	if aux.Cover != nil {
-		result, err := unmarshalInputFile(aux.Cover)
-		if err != nil {
-			return err
-		}
-		o.Cover = result
-	}
-	return nil
-}
-
 func (o InputMediaVideo) resolve(sink *fileSink) (json.RawMessage, error) {
 	media := o.Media.attach(sink)
 	var thumbnail *string
@@ -6717,26 +5834,6 @@ func (o InputMediaVoiceNote) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputMediaVoiceNote) UnmarshalJSON(data []byte) error {
-	type alias InputMediaVoiceNote
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputMediaVoiceNote(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	return nil
-}
-
 func (o InputMediaVoiceNote) resolve(sink *fileSink) (json.RawMessage, error) {
 	media := o.Media.attach(sink)
 	type alias InputMediaVoiceNote
@@ -6763,37 +5860,6 @@ type InputPaidMedia interface {
 func (InputPaidMediaLivePhoto) sealedInputPaidMedia() {}
 func (InputPaidMediaPhoto) sealedInputPaidMedia() {}
 func (InputPaidMediaVideo) sealedInputPaidMedia() {}
-
-func unmarshalInputPaidMedia(data []byte) (InputPaidMedia, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "live_photo":
-		var variant InputPaidMediaLivePhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputPaidMediaPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputPaidMediaVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputPaidMedia %q", mark.Key)
-	}
-}
 
 // The paid media to send is a live photo.
 //
@@ -6822,34 +5888,6 @@ func (o InputPaidMediaLivePhoto) MarshalJSON() ([]byte, error) {
 		Type: "live_photo",
 		alias: alias(o),
 	})
-}
-
-func (o *InputPaidMediaLivePhoto) UnmarshalJSON(data []byte) error {
-	type alias InputPaidMediaLivePhoto
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Photo json.RawMessage `json:"photo"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputPaidMediaLivePhoto(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Photo != nil {
-		result, err := unmarshalInputFile(aux.Photo)
-		if err != nil {
-			return err
-		}
-		o.Photo = result
-	}
-	return nil
 }
 
 func (o InputPaidMediaLivePhoto) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -6890,26 +5928,6 @@ func (o InputPaidMediaPhoto) MarshalJSON() ([]byte, error) {
 		Type: "photo",
 		alias: alias(o),
 	})
-}
-
-func (o *InputPaidMediaPhoto) UnmarshalJSON(data []byte) error {
-	type alias InputPaidMediaPhoto
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputPaidMediaPhoto(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	return nil
 }
 
 func (o InputPaidMediaPhoto) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -6974,42 +5992,6 @@ func (o InputPaidMediaVideo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputPaidMediaVideo) UnmarshalJSON(data []byte) error {
-	type alias InputPaidMediaVideo
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		Thumbnail json.RawMessage `json:"thumbnail"`
-		Cover json.RawMessage `json:"cover"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputPaidMediaVideo(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputFile(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	if aux.Thumbnail != nil {
-		result, err := unmarshalInputFile(aux.Thumbnail)
-		if err != nil {
-			return err
-		}
-		o.Thumbnail = result
-	}
-	if aux.Cover != nil {
-		result, err := unmarshalInputFile(aux.Cover)
-		if err != nil {
-			return err
-		}
-		o.Cover = result
-	}
-	return nil
-}
-
 func (o InputPaidMediaVideo) resolve(sink *fileSink) (json.RawMessage, error) {
 	media := o.Media.attach(sink)
 	var thumbnail *string
@@ -7050,31 +6032,6 @@ type InputProfilePhoto interface {
 func (InputProfilePhotoStatic) sealedInputProfilePhoto() {}
 func (InputProfilePhotoAnimated) sealedInputProfilePhoto() {}
 
-func unmarshalInputProfilePhoto(data []byte) (InputProfilePhoto, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "static":
-		var variant InputProfilePhotoStatic
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "animated":
-		var variant InputProfilePhotoAnimated
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputProfilePhoto %q", mark.Key)
-	}
-}
-
 // A static profile photo in the .JPG format.
 //
 // See https://core.telegram.org/bots/api#inputprofilephotostatic
@@ -7095,26 +6052,6 @@ func (o InputProfilePhotoStatic) MarshalJSON() ([]byte, error) {
 		Type: "static",
 		alias: alias(o),
 	})
-}
-
-func (o *InputProfilePhotoStatic) UnmarshalJSON(data []byte) error {
-	type alias InputProfilePhotoStatic
-	var aux struct {
-		Photo json.RawMessage `json:"photo"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputProfilePhotoStatic(aux.alias)
-	if aux.Photo != nil {
-		result, err := unmarshalInputFile(aux.Photo)
-		if err != nil {
-			return err
-		}
-		o.Photo = result
-	}
-	return nil
 }
 
 func (o InputProfilePhotoStatic) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -7156,26 +6093,6 @@ func (o InputProfilePhotoAnimated) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputProfilePhotoAnimated) UnmarshalJSON(data []byte) error {
-	type alias InputProfilePhotoAnimated
-	var aux struct {
-		Animation json.RawMessage `json:"animation"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputProfilePhotoAnimated(aux.alias)
-	if aux.Animation != nil {
-		result, err := unmarshalInputFile(aux.Animation)
-		if err != nil {
-			return err
-		}
-		o.Animation = result
-	}
-	return nil
-}
-
 func (o InputProfilePhotoAnimated) resolve(sink *fileSink) (json.RawMessage, error) {
 	animation := o.Animation.attach(sink)
 	type alias InputProfilePhotoAnimated
@@ -7203,31 +6120,6 @@ type InputStoryContent interface {
 func (InputStoryContentPhoto) sealedInputStoryContent() {}
 func (InputStoryContentVideo) sealedInputStoryContent() {}
 
-func unmarshalInputStoryContent(data []byte) (InputStoryContent, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "photo":
-		var variant InputStoryContentPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputStoryContentVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputStoryContent %q", mark.Key)
-	}
-}
-
 // Describes a photo to post as a story.
 //
 // See https://core.telegram.org/bots/api#inputstorycontentphoto
@@ -7249,26 +6141,6 @@ func (o InputStoryContentPhoto) MarshalJSON() ([]byte, error) {
 		Type: "photo",
 		alias: alias(o),
 	})
-}
-
-func (o *InputStoryContentPhoto) UnmarshalJSON(data []byte) error {
-	type alias InputStoryContentPhoto
-	var aux struct {
-		Photo json.RawMessage `json:"photo"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputStoryContentPhoto(aux.alias)
-	if aux.Photo != nil {
-		result, err := unmarshalInputFile(aux.Photo)
-		if err != nil {
-			return err
-		}
-		o.Photo = result
-	}
-	return nil
 }
 
 func (o InputStoryContentPhoto) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -7315,26 +6187,6 @@ func (o InputStoryContentVideo) MarshalJSON() ([]byte, error) {
 		Type: "video",
 		alias: alias(o),
 	})
-}
-
-func (o *InputStoryContentVideo) UnmarshalJSON(data []byte) error {
-	type alias InputStoryContentVideo
-	var aux struct {
-		Video json.RawMessage `json:"video"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputStoryContentVideo(aux.alias)
-	if aux.Video != nil {
-		result, err := unmarshalInputFile(aux.Video)
-		if err != nil {
-			return err
-		}
-		o.Video = result
-	}
-	return nil
 }
 
 func (o InputStoryContentVideo) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -13340,26 +12192,6 @@ type InputSticker struct {
 	Keywords []string `json:"keywords,omitempty"`
 }
 
-func (o *InputSticker) UnmarshalJSON(data []byte) error {
-	type alias InputSticker
-	var aux struct {
-		Sticker json.RawMessage `json:"sticker"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputSticker(aux.alias)
-	if aux.Sticker != nil {
-		result, err := unmarshalInputFile(aux.Sticker)
-		if err != nil {
-			return err
-		}
-		o.Sticker = result
-	}
-	return nil
-}
-
 func (o InputSticker) resolve(sink *fileSink) (json.RawMessage, error) {
 	sticker := o.Sticker.attach(sink)
 	type alias InputSticker
@@ -13986,30 +12818,6 @@ type InputRichMessage struct {
 	SkipEntityDetection *bool `json:"skip_entity_detection,omitempty"`
 }
 
-func (o *InputRichMessage) UnmarshalJSON(data []byte) error {
-	type alias InputRichMessage
-	var aux struct {
-		Blocks []json.RawMessage `json:"blocks"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichMessage(aux.alias)
-	if aux.Blocks != nil {
-		result := make([]InputRichBlock, len(aux.Blocks))
-		for i, raw := range aux.Blocks {
-			v, err := unmarshalInputRichBlock(raw)
-			if err != nil {
-				return err
-			}
-			result[i] = v
-		}
-		o.Blocks = result
-	}
-	return nil
-}
-
 func (o InputRichMessage) resolve(sink *fileSink) (json.RawMessage, error) {
 	blocks := make([]json.RawMessage, len(o.Blocks))
 	for i, el := range o.Blocks {
@@ -14050,26 +12858,6 @@ type InputRichMessageMedia struct {
 	// The media to be sent. Everything except the media itself and its properties
 	// is ignored.
 	Media InputRichMedia `json:"media"`
-}
-
-func (o *InputRichMessageMedia) UnmarshalJSON(data []byte) error {
-	type alias InputRichMessageMedia
-	var aux struct {
-		Media json.RawMessage `json:"media"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichMessageMedia(aux.alias)
-	if aux.Media != nil {
-		result, err := unmarshalInputRichMedia(aux.Media)
-		if err != nil {
-			return err
-		}
-		o.Media = result
-	}
-	return nil
 }
 
 func (o InputRichMessageMedia) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -15516,17 +14304,6 @@ type RichBlockParagraph struct {
 	Text RichText `json:"text"`
 }
 
-func (o RichBlockParagraph) MarshalJSON() ([]byte, error) {
-	type alias RichBlockParagraph
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "paragraph",
-		alias: alias(o),
-	})
-}
-
 func (o *RichBlockParagraph) UnmarshalJSON(data []byte) error {
 	type alias RichBlockParagraph
 	var aux struct {
@@ -15556,17 +14333,6 @@ type RichBlockSectionHeading struct {
 	Text RichText `json:"text"`
 	// Relative size of the text font; 1-6, 1 is the largest, 6 is the smallest
 	Size int64 `json:"size"`
-}
-
-func (o RichBlockSectionHeading) MarshalJSON() ([]byte, error) {
-	type alias RichBlockSectionHeading
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "heading",
-		alias: alias(o),
-	})
 }
 
 func (o *RichBlockSectionHeading) UnmarshalJSON(data []byte) error {
@@ -15600,17 +14366,6 @@ type RichBlockPreformatted struct {
 	Language *string `json:"language,omitempty"`
 }
 
-func (o RichBlockPreformatted) MarshalJSON() ([]byte, error) {
-	type alias RichBlockPreformatted
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "pre",
-		alias: alias(o),
-	})
-}
-
 func (o *RichBlockPreformatted) UnmarshalJSON(data []byte) error {
 	type alias RichBlockPreformatted
 	var aux struct {
@@ -15639,17 +14394,6 @@ type RichBlockFooter struct {
 	Text RichText `json:"text"`
 }
 
-func (o RichBlockFooter) MarshalJSON() ([]byte, error) {
-	type alias RichBlockFooter
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "footer",
-		alias: alias(o),
-	})
-}
-
 func (o *RichBlockFooter) UnmarshalJSON(data []byte) error {
 	type alias RichBlockFooter
 	var aux struct {
@@ -15676,17 +14420,6 @@ func (o *RichBlockFooter) UnmarshalJSON(data []byte) error {
 type RichBlockDivider struct {
 }
 
-func (o RichBlockDivider) MarshalJSON() ([]byte, error) {
-	type alias RichBlockDivider
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "divider",
-		alias: alias(o),
-	})
-}
-
 // A block with a mathematical expression in LaTeX format, corresponding to the
 // custom HTML tag <tg-math-block>.
 //
@@ -15694,17 +14427,6 @@ func (o RichBlockDivider) MarshalJSON() ([]byte, error) {
 type RichBlockMathematicalExpression struct {
 	// The mathematical expression in LaTeX format
 	Expression string `json:"expression"`
-}
-
-func (o RichBlockMathematicalExpression) MarshalJSON() ([]byte, error) {
-	type alias RichBlockMathematicalExpression
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "mathematical_expression",
-		alias: alias(o),
-	})
 }
 
 // A block with an anchor, corresponding to the HTML tag <a> with the attribute
@@ -15716,17 +14438,6 @@ type RichBlockAnchor struct {
 	Name string `json:"name"`
 }
 
-func (o RichBlockAnchor) MarshalJSON() ([]byte, error) {
-	type alias RichBlockAnchor
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "anchor",
-		alias: alias(o),
-	})
-}
-
 // A list of blocks, corresponding to the HTML tag <ul> or <ol> with multiple
 // nested tags <li>.
 //
@@ -15734,17 +14445,6 @@ func (o RichBlockAnchor) MarshalJSON() ([]byte, error) {
 type RichBlockList struct {
 	// Items of the list
 	Items []RichBlockListItem `json:"items"`
-}
-
-func (o RichBlockList) MarshalJSON() ([]byte, error) {
-	type alias RichBlockList
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "list",
-		alias: alias(o),
-	})
 }
 
 // A block quotation, corresponding to the HTML tag <blockquote>.
@@ -15755,17 +14455,6 @@ type RichBlockBlockQuotation struct {
 	Blocks []RichBlock `json:"blocks"`
 	// Credit of the block
 	Credit RichText `json:"credit,omitempty"`
-}
-
-func (o RichBlockBlockQuotation) MarshalJSON() ([]byte, error) {
-	type alias RichBlockBlockQuotation
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "blockquote",
-		alias: alias(o),
-	})
 }
 
 func (o *RichBlockBlockQuotation) UnmarshalJSON(data []byte) error {
@@ -15811,17 +14500,6 @@ type RichBlockPullQuotation struct {
 	Credit RichText `json:"credit,omitempty"`
 }
 
-func (o RichBlockPullQuotation) MarshalJSON() ([]byte, error) {
-	type alias RichBlockPullQuotation
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "pullquote",
-		alias: alias(o),
-	})
-}
-
 func (o *RichBlockPullQuotation) UnmarshalJSON(data []byte) error {
 	type alias RichBlockPullQuotation
 	var aux struct {
@@ -15860,17 +14538,6 @@ type RichBlockCollage struct {
 	Caption *RichBlockCaption `json:"caption,omitempty"`
 }
 
-func (o RichBlockCollage) MarshalJSON() ([]byte, error) {
-	type alias RichBlockCollage
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "collage",
-		alias: alias(o),
-	})
-}
-
 func (o *RichBlockCollage) UnmarshalJSON(data []byte) error {
 	type alias RichBlockCollage
 	var aux struct {
@@ -15903,17 +14570,6 @@ type RichBlockSlideshow struct {
 	Blocks []RichBlock `json:"blocks"`
 	// Caption of the block
 	Caption *RichBlockCaption `json:"caption,omitempty"`
-}
-
-func (o RichBlockSlideshow) MarshalJSON() ([]byte, error) {
-	type alias RichBlockSlideshow
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "slideshow",
-		alias: alias(o),
-	})
 }
 
 func (o *RichBlockSlideshow) UnmarshalJSON(data []byte) error {
@@ -15954,17 +14610,6 @@ type RichBlockTable struct {
 	Caption RichText `json:"caption,omitempty"`
 }
 
-func (o RichBlockTable) MarshalJSON() ([]byte, error) {
-	type alias RichBlockTable
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "table",
-		alias: alias(o),
-	})
-}
-
 func (o *RichBlockTable) UnmarshalJSON(data []byte) error {
 	type alias RichBlockTable
 	var aux struct {
@@ -15996,17 +14641,6 @@ type RichBlockDetails struct {
 	Blocks []RichBlock `json:"blocks"`
 	// True, if the content of the block is visible by default
 	IsOpen *bool `json:"is_open,omitempty"`
-}
-
-func (o RichBlockDetails) MarshalJSON() ([]byte, error) {
-	type alias RichBlockDetails
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "details",
-		alias: alias(o),
-	})
 }
 
 func (o *RichBlockDetails) UnmarshalJSON(data []byte) error {
@@ -16057,17 +14691,6 @@ type RichBlockMap struct {
 	Caption *RichBlockCaption `json:"caption,omitempty"`
 }
 
-func (o RichBlockMap) MarshalJSON() ([]byte, error) {
-	type alias RichBlockMap
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "map",
-		alias: alias(o),
-	})
-}
-
 // A block with an animation, corresponding to the HTML tag <video>.
 //
 // See https://core.telegram.org/bots/api#richblockanimation
@@ -16080,17 +14703,6 @@ type RichBlockAnimation struct {
 	Caption *RichBlockCaption `json:"caption,omitempty"`
 }
 
-func (o RichBlockAnimation) MarshalJSON() ([]byte, error) {
-	type alias RichBlockAnimation
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "animation",
-		alias: alias(o),
-	})
-}
-
 // A block with a music file, corresponding to the HTML tag <audio>.
 //
 // See https://core.telegram.org/bots/api#richblockaudio
@@ -16099,17 +14711,6 @@ type RichBlockAudio struct {
 	Audio Audio `json:"audio"`
 	// Caption of the block
 	Caption *RichBlockCaption `json:"caption,omitempty"`
-}
-
-func (o RichBlockAudio) MarshalJSON() ([]byte, error) {
-	type alias RichBlockAudio
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "audio",
-		alias: alias(o),
-	})
 }
 
 // A block with a photo, corresponding to the HTML tag <img>.
@@ -16124,17 +14725,6 @@ type RichBlockPhoto struct {
 	Caption *RichBlockCaption `json:"caption,omitempty"`
 }
 
-func (o RichBlockPhoto) MarshalJSON() ([]byte, error) {
-	type alias RichBlockPhoto
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "photo",
-		alias: alias(o),
-	})
-}
-
 // A block with a video, corresponding to the HTML tag <video>.
 //
 // See https://core.telegram.org/bots/api#richblockvideo
@@ -16147,17 +14737,6 @@ type RichBlockVideo struct {
 	Caption *RichBlockCaption `json:"caption,omitempty"`
 }
 
-func (o RichBlockVideo) MarshalJSON() ([]byte, error) {
-	type alias RichBlockVideo
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "video",
-		alias: alias(o),
-	})
-}
-
 // A block with a voice note, corresponding to the HTML tag <audio>.
 //
 // See https://core.telegram.org/bots/api#richblockvoicenote
@@ -16166,17 +14745,6 @@ type RichBlockVoiceNote struct {
 	VoiceNote Voice `json:"voice_note"`
 	// Caption of the block
 	Caption *RichBlockCaption `json:"caption,omitempty"`
-}
-
-func (o RichBlockVoiceNote) MarshalJSON() ([]byte, error) {
-	type alias RichBlockVoiceNote
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "voice_note",
-		alias: alias(o),
-	})
 }
 
 // A block with a “Thinking…” placeholder, corresponding to the custom HTML tag
@@ -16189,17 +14757,6 @@ type RichBlockThinking struct {
 	// Text of the block. See https://t.me/addemoji/AIActions for examples of custom
 	// emoji that are recommended for usage in the block.
 	Text RichText `json:"text"`
-}
-
-func (o RichBlockThinking) MarshalJSON() ([]byte, error) {
-	type alias RichBlockThinking
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "thinking",
-		alias: alias(o),
-	})
 }
 
 func (o *RichBlockThinking) UnmarshalJSON(data []byte) error {
@@ -16238,30 +14795,6 @@ type InputRichBlockListItem struct {
 	// lowercase letters, “A” for uppercase letters, “i” for lowercase Roman
 	// numerals, “I” for uppercase Roman numerals, or “1” for decimal numbers
 	Type *string `json:"type,omitempty"`
-}
-
-func (o *InputRichBlockListItem) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockListItem
-	var aux struct {
-		Blocks []json.RawMessage `json:"blocks"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockListItem(aux.alias)
-	if aux.Blocks != nil {
-		result := make([]InputRichBlock, len(aux.Blocks))
-		for i, raw := range aux.Blocks {
-			v, err := unmarshalInputRichBlock(raw)
-			if err != nil {
-				return err
-			}
-			result[i] = v
-		}
-		o.Blocks = result
-	}
-	return nil
 }
 
 func (o InputRichBlockListItem) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -16315,145 +14848,6 @@ func (InputRichBlockVideo) sealedInputRichBlock() {}
 func (InputRichBlockVoiceNote) sealedInputRichBlock() {}
 func (InputRichBlockThinking) sealedInputRichBlock() {}
 
-func unmarshalInputRichBlock(data []byte) (InputRichBlock, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "paragraph":
-		var variant InputRichBlockParagraph
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "heading":
-		var variant InputRichBlockSectionHeading
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "pre":
-		var variant InputRichBlockPreformatted
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "footer":
-		var variant InputRichBlockFooter
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "divider":
-		var variant InputRichBlockDivider
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "mathematical_expression":
-		var variant InputRichBlockMathematicalExpression
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "anchor":
-		var variant InputRichBlockAnchor
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "list":
-		var variant InputRichBlockList
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "blockquote":
-		var variant InputRichBlockBlockQuotation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "pullquote":
-		var variant InputRichBlockPullQuotation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "collage":
-		var variant InputRichBlockCollage
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "slideshow":
-		var variant InputRichBlockSlideshow
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "table":
-		var variant InputRichBlockTable
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "details":
-		var variant InputRichBlockDetails
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "map":
-		var variant InputRichBlockMap
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "animation":
-		var variant InputRichBlockAnimation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "audio":
-		var variant InputRichBlockAudio
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputRichBlockPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputRichBlockVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "voice_note":
-		var variant InputRichBlockVoiceNote
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "thinking":
-		var variant InputRichBlockThinking
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputRichBlock %q", mark.Key)
-	}
-}
-
 // A text paragraph, corresponding to the HTML tag <p>.
 //
 // See https://core.telegram.org/bots/api#inputrichblockparagraph
@@ -16471,26 +14865,6 @@ func (o InputRichBlockParagraph) MarshalJSON() ([]byte, error) {
 		Type: "paragraph",
 		alias: alias(o),
 	})
-}
-
-func (o *InputRichBlockParagraph) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockParagraph
-	var aux struct {
-		Text json.RawMessage `json:"text"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockParagraph(aux.alias)
-	if aux.Text != nil {
-		result, err := unmarshalRichText(aux.Text)
-		if err != nil {
-			return err
-		}
-		o.Text = result
-	}
-	return nil
 }
 
 func (o InputRichBlockParagraph) resolve(_ *fileSink) (json.RawMessage, error) {
@@ -16519,26 +14893,6 @@ func (o InputRichBlockSectionHeading) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputRichBlockSectionHeading) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockSectionHeading
-	var aux struct {
-		Text json.RawMessage `json:"text"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockSectionHeading(aux.alias)
-	if aux.Text != nil {
-		result, err := unmarshalRichText(aux.Text)
-		if err != nil {
-			return err
-		}
-		o.Text = result
-	}
-	return nil
-}
-
 func (o InputRichBlockSectionHeading) resolve(_ *fileSink) (json.RawMessage, error) {
 	return json.Marshal(o)
 }
@@ -16565,26 +14919,6 @@ func (o InputRichBlockPreformatted) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputRichBlockPreformatted) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockPreformatted
-	var aux struct {
-		Text json.RawMessage `json:"text"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockPreformatted(aux.alias)
-	if aux.Text != nil {
-		result, err := unmarshalRichText(aux.Text)
-		if err != nil {
-			return err
-		}
-		o.Text = result
-	}
-	return nil
-}
-
 func (o InputRichBlockPreformatted) resolve(_ *fileSink) (json.RawMessage, error) {
 	return json.Marshal(o)
 }
@@ -16606,26 +14940,6 @@ func (o InputRichBlockFooter) MarshalJSON() ([]byte, error) {
 		Type: "footer",
 		alias: alias(o),
 	})
-}
-
-func (o *InputRichBlockFooter) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockFooter
-	var aux struct {
-		Text json.RawMessage `json:"text"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockFooter(aux.alias)
-	if aux.Text != nil {
-		result, err := unmarshalRichText(aux.Text)
-		if err != nil {
-			return err
-		}
-		o.Text = result
-	}
-	return nil
 }
 
 func (o InputRichBlockFooter) resolve(_ *fileSink) (json.RawMessage, error) {
@@ -16763,38 +15077,6 @@ func (o InputRichBlockBlockQuotation) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputRichBlockBlockQuotation) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockBlockQuotation
-	var aux struct {
-		Blocks []json.RawMessage `json:"blocks"`
-		Credit json.RawMessage `json:"credit"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockBlockQuotation(aux.alias)
-	if aux.Blocks != nil {
-		result := make([]InputRichBlock, len(aux.Blocks))
-		for i, raw := range aux.Blocks {
-			v, err := unmarshalInputRichBlock(raw)
-			if err != nil {
-				return err
-			}
-			result[i] = v
-		}
-		o.Blocks = result
-	}
-	if aux.Credit != nil {
-		result, err := unmarshalRichText(aux.Credit)
-		if err != nil {
-			return err
-		}
-		o.Credit = result
-	}
-	return nil
-}
-
 func (o InputRichBlockBlockQuotation) resolve(sink *fileSink) (json.RawMessage, error) {
 	blocks := make([]json.RawMessage, len(o.Blocks))
 	for i, el := range o.Blocks {
@@ -16838,34 +15120,6 @@ func (o InputRichBlockPullQuotation) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputRichBlockPullQuotation) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockPullQuotation
-	var aux struct {
-		Text json.RawMessage `json:"text"`
-		Credit json.RawMessage `json:"credit"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockPullQuotation(aux.alias)
-	if aux.Text != nil {
-		result, err := unmarshalRichText(aux.Text)
-		if err != nil {
-			return err
-		}
-		o.Text = result
-	}
-	if aux.Credit != nil {
-		result, err := unmarshalRichText(aux.Credit)
-		if err != nil {
-			return err
-		}
-		o.Credit = result
-	}
-	return nil
-}
-
 func (o InputRichBlockPullQuotation) resolve(_ *fileSink) (json.RawMessage, error) {
 	return json.Marshal(o)
 }
@@ -16889,30 +15143,6 @@ func (o InputRichBlockCollage) MarshalJSON() ([]byte, error) {
 		Type: "collage",
 		alias: alias(o),
 	})
-}
-
-func (o *InputRichBlockCollage) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockCollage
-	var aux struct {
-		Blocks []json.RawMessage `json:"blocks"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockCollage(aux.alias)
-	if aux.Blocks != nil {
-		result := make([]InputRichBlock, len(aux.Blocks))
-		for i, raw := range aux.Blocks {
-			v, err := unmarshalInputRichBlock(raw)
-			if err != nil {
-				return err
-			}
-			result[i] = v
-		}
-		o.Blocks = result
-	}
-	return nil
 }
 
 func (o InputRichBlockCollage) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -16955,30 +15185,6 @@ func (o InputRichBlockSlideshow) MarshalJSON() ([]byte, error) {
 		Type: "slideshow",
 		alias: alias(o),
 	})
-}
-
-func (o *InputRichBlockSlideshow) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockSlideshow
-	var aux struct {
-		Blocks []json.RawMessage `json:"blocks"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockSlideshow(aux.alias)
-	if aux.Blocks != nil {
-		result := make([]InputRichBlock, len(aux.Blocks))
-		for i, raw := range aux.Blocks {
-			v, err := unmarshalInputRichBlock(raw)
-			if err != nil {
-				return err
-			}
-			result[i] = v
-		}
-		o.Blocks = result
-	}
-	return nil
 }
 
 func (o InputRichBlockSlideshow) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -17027,26 +15233,6 @@ func (o InputRichBlockTable) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputRichBlockTable) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockTable
-	var aux struct {
-		Caption json.RawMessage `json:"caption"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockTable(aux.alias)
-	if aux.Caption != nil {
-		result, err := unmarshalRichText(aux.Caption)
-		if err != nil {
-			return err
-		}
-		o.Caption = result
-	}
-	return nil
-}
-
 func (o InputRichBlockTable) resolve(_ *fileSink) (json.RawMessage, error) {
 	return json.Marshal(o)
 }
@@ -17073,38 +15259,6 @@ func (o InputRichBlockDetails) MarshalJSON() ([]byte, error) {
 		Type: "details",
 		alias: alias(o),
 	})
-}
-
-func (o *InputRichBlockDetails) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockDetails
-	var aux struct {
-		Summary json.RawMessage `json:"summary"`
-		Blocks []json.RawMessage `json:"blocks"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockDetails(aux.alias)
-	if aux.Summary != nil {
-		result, err := unmarshalRichText(aux.Summary)
-		if err != nil {
-			return err
-		}
-		o.Summary = result
-	}
-	if aux.Blocks != nil {
-		result := make([]InputRichBlock, len(aux.Blocks))
-		for i, raw := range aux.Blocks {
-			v, err := unmarshalInputRichBlock(raw)
-			if err != nil {
-				return err
-			}
-			result[i] = v
-		}
-		o.Blocks = result
-	}
-	return nil
 }
 
 func (o InputRichBlockDetails) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -17374,26 +15528,6 @@ func (o InputRichBlockThinking) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InputRichBlockThinking) UnmarshalJSON(data []byte) error {
-	type alias InputRichBlockThinking
-	var aux struct {
-		Text json.RawMessage `json:"text"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InputRichBlockThinking(aux.alias)
-	if aux.Text != nil {
-		result, err := unmarshalRichText(aux.Text)
-		if err != nil {
-			return err
-		}
-		o.Text = result
-	}
-	return nil
-}
-
 func (o InputRichBlockThinking) resolve(_ *fileSink) (json.RawMessage, error) {
 	return json.Marshal(o)
 }
@@ -17571,26 +15705,6 @@ func (o InlineQueryResultArticle) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultArticle) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultArticle
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultArticle(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultArticle) resolve(sink *fileSink) (json.RawMessage, error) {
 	inputMessageContent, err := o.InputMessageContent.resolve(sink)
 	if err != nil {
@@ -17654,26 +15768,6 @@ func (o InlineQueryResultPhoto) MarshalJSON() ([]byte, error) {
 		Type: "photo",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultPhoto) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultPhoto
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultPhoto(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultPhoto) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -17748,26 +15842,6 @@ func (o InlineQueryResultGif) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultGif) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultGif
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultGif(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultGif) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -17839,26 +15913,6 @@ func (o InlineQueryResultMpeg4Gif) MarshalJSON() ([]byte, error) {
 		Type: "mpeg4_gif",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultMpeg4Gif) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultMpeg4Gif
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultMpeg4Gif(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultMpeg4Gif) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -17939,26 +15993,6 @@ func (o InlineQueryResultVideo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultVideo) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultVideo
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultVideo(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultVideo) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -18021,26 +16055,6 @@ func (o InlineQueryResultAudio) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultAudio) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultAudio
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultAudio(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultAudio) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -18100,26 +16114,6 @@ func (o InlineQueryResultVoice) MarshalJSON() ([]byte, error) {
 		Type: "voice",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultVoice) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultVoice
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultVoice(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultVoice) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -18192,26 +16186,6 @@ func (o InlineQueryResultDocument) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultDocument) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultDocument
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultDocument(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultDocument) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -18280,26 +16254,6 @@ func (o InlineQueryResultLocation) MarshalJSON() ([]byte, error) {
 		Type: "location",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultLocation) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultLocation
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultLocation(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultLocation) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -18372,26 +16326,6 @@ func (o InlineQueryResultVenue) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultVenue) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultVenue
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultVenue(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultVenue) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -18450,26 +16384,6 @@ func (o InlineQueryResultContact) MarshalJSON() ([]byte, error) {
 		Type: "contact",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultContact) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultContact
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultContact(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultContact) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -18562,26 +16476,6 @@ func (o InlineQueryResultCachedPhoto) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultCachedPhoto) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedPhoto
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedPhoto(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultCachedPhoto) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -18641,26 +16535,6 @@ func (o InlineQueryResultCachedGif) MarshalJSON() ([]byte, error) {
 		Type: "gif",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultCachedGif) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedGif
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedGif(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultCachedGif) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -18726,26 +16600,6 @@ func (o InlineQueryResultCachedMpeg4Gif) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultCachedMpeg4Gif) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedMpeg4Gif
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedMpeg4Gif(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultCachedMpeg4Gif) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -18793,26 +16647,6 @@ func (o InlineQueryResultCachedSticker) MarshalJSON() ([]byte, error) {
 		Type: "sticker",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultCachedSticker) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedSticker
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedSticker(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultCachedSticker) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -18874,26 +16708,6 @@ func (o InlineQueryResultCachedDocument) MarshalJSON() ([]byte, error) {
 		Type: "document",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultCachedDocument) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedDocument
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedDocument(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultCachedDocument) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -18959,26 +16773,6 @@ func (o InlineQueryResultCachedVideo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultCachedVideo) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedVideo
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedVideo(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultCachedVideo) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -19038,26 +16832,6 @@ func (o InlineQueryResultCachedVoice) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (o *InlineQueryResultCachedVoice) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedVoice
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedVoice(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
-}
-
 func (o InlineQueryResultCachedVoice) resolve(sink *fileSink) (json.RawMessage, error) {
 	var inputMessageContent json.RawMessage
 	if o.InputMessageContent != nil {
@@ -19113,26 +16887,6 @@ func (o InlineQueryResultCachedAudio) MarshalJSON() ([]byte, error) {
 		Type: "audio",
 		alias: alias(o),
 	})
-}
-
-func (o *InlineQueryResultCachedAudio) UnmarshalJSON(data []byte) error {
-	type alias InlineQueryResultCachedAudio
-	var aux struct {
-		InputMessageContent json.RawMessage `json:"input_message_content"`
-		alias
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	*o = InlineQueryResultCachedAudio(aux.alias)
-	if aux.InputMessageContent != nil {
-		result, err := unmarshalInputMessageContent(aux.InputMessageContent)
-		if err != nil {
-			return err
-		}
-		o.InputMessageContent = result
-	}
-	return nil
 }
 
 func (o InlineQueryResultCachedAudio) resolve(sink *fileSink) (json.RawMessage, error) {
@@ -20001,17 +17755,6 @@ func unmarshalRevenueWithdrawalState(data []byte) (RevenueWithdrawalState, error
 type RevenueWithdrawalStatePending struct {
 }
 
-func (o RevenueWithdrawalStatePending) MarshalJSON() ([]byte, error) {
-	type alias RevenueWithdrawalStatePending
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "pending",
-		alias: alias(o),
-	})
-}
-
 // The withdrawal succeeded.
 //
 // See https://core.telegram.org/bots/api#revenuewithdrawalstatesucceeded
@@ -20022,32 +17765,10 @@ type RevenueWithdrawalStateSucceeded struct {
 	URL string `json:"url"`
 }
 
-func (o RevenueWithdrawalStateSucceeded) MarshalJSON() ([]byte, error) {
-	type alias RevenueWithdrawalStateSucceeded
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "succeeded",
-		alias: alias(o),
-	})
-}
-
 // The withdrawal failed and the transaction was refunded.
 //
 // See https://core.telegram.org/bots/api#revenuewithdrawalstatefailed
 type RevenueWithdrawalStateFailed struct {
-}
-
-func (o RevenueWithdrawalStateFailed) MarshalJSON() ([]byte, error) {
-	type alias RevenueWithdrawalStateFailed
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "failed",
-		alias: alias(o),
-	})
 }
 
 // Contains information about the affiliate that received a commission via this
@@ -20176,17 +17897,6 @@ type TransactionPartnerUser struct {
 	PremiumSubscriptionDuration *int64 `json:"premium_subscription_duration,omitempty"`
 }
 
-func (o TransactionPartnerUser) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerUser
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "user",
-		alias: alias(o),
-	})
-}
-
 func (o *TransactionPartnerUser) UnmarshalJSON(data []byte) error {
 	type alias TransactionPartnerUser
 	var aux struct {
@@ -20221,17 +17931,6 @@ type TransactionPartnerChat struct {
 	Gift *Gift `json:"gift,omitempty"`
 }
 
-func (o TransactionPartnerChat) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerChat
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "chat",
-		alias: alias(o),
-	})
-}
-
 // Describes the affiliate program that issued the affiliate commission received
 // via this transaction.
 //
@@ -20244,34 +17943,12 @@ type TransactionPartnerAffiliateProgram struct {
 	SponsorUser *User `json:"sponsor_user,omitempty"`
 }
 
-func (o TransactionPartnerAffiliateProgram) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerAffiliateProgram
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "affiliate_program",
-		alias: alias(o),
-	})
-}
-
 // Describes a withdrawal transaction with Fragment.
 //
 // See https://core.telegram.org/bots/api#transactionpartnerfragment
 type TransactionPartnerFragment struct {
 	// State of the transaction if the transaction is outgoing
 	WithdrawalState RevenueWithdrawalState `json:"withdrawal_state,omitempty"`
-}
-
-func (o TransactionPartnerFragment) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerFragment
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "fragment",
-		alias: alias(o),
-	})
 }
 
 func (o *TransactionPartnerFragment) UnmarshalJSON(data []byte) error {
@@ -20300,17 +17977,6 @@ func (o *TransactionPartnerFragment) UnmarshalJSON(data []byte) error {
 type TransactionPartnerTelegramAds struct {
 }
 
-func (o TransactionPartnerTelegramAds) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerTelegramAds
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "telegram_ads",
-		alias: alias(o),
-	})
-}
-
 // Describes a transaction with payment for paid broadcasting.
 //
 // See https://core.telegram.org/bots/api#transactionpartnertelegramapi
@@ -20320,32 +17986,10 @@ type TransactionPartnerTelegramAPI struct {
 	RequestCount int64 `json:"request_count"`
 }
 
-func (o TransactionPartnerTelegramAPI) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerTelegramAPI
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "telegram_api",
-		alias: alias(o),
-	})
-}
-
 // Describes a transaction with an unknown source or recipient.
 //
 // See https://core.telegram.org/bots/api#transactionpartnerother
 type TransactionPartnerOther struct {
-}
-
-func (o TransactionPartnerOther) MarshalJSON() ([]byte, error) {
-	type alias TransactionPartnerOther
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		alias
-	}{
-		Type: "other",
-		alias: alias(o),
-	})
 }
 
 // Describes a Telegram Star transaction. Note that if the buyer initiates a
@@ -20552,73 +18196,6 @@ func (PassportElementErrorFiles) sealedPassportElementError() {}
 func (PassportElementErrorTranslationFile) sealedPassportElementError() {}
 func (PassportElementErrorTranslationFiles) sealedPassportElementError() {}
 func (PassportElementErrorUnspecified) sealedPassportElementError() {}
-
-func unmarshalPassportElementError(data []byte) (PassportElementError, error) {
-	var mark struct {
-		Key string `json:"source"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "data":
-		var variant PassportElementErrorDataField
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "front_side":
-		var variant PassportElementErrorFrontSide
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "reverse_side":
-		var variant PassportElementErrorReverseSide
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "selfie":
-		var variant PassportElementErrorSelfie
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "file":
-		var variant PassportElementErrorFile
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "files":
-		var variant PassportElementErrorFiles
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "translation_file":
-		var variant PassportElementErrorTranslationFile
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "translation_files":
-		var variant PassportElementErrorTranslationFiles
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "unspecified":
-		var variant PassportElementErrorUnspecified
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown PassportElementError %q", mark.Key)
-	}
-}
 
 // Represents an issue in one of the data fields that was provided by the user.
 // The error is considered resolved when the field's value changes.
@@ -21080,49 +18657,6 @@ func (InputMediaLivePhoto) sealedInputMediaGroup() {}
 func (InputMediaPhoto) sealedInputMediaGroup() {}
 func (InputMediaVideo) sealedInputMediaGroup() {}
 
-func unmarshalInputMediaGroup(data []byte) (InputMediaGroup, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "audio":
-		var variant InputMediaAudio
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "document":
-		var variant InputMediaDocument
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "live_photo":
-		var variant InputMediaLivePhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputMediaPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputMediaVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputMediaGroup %q", mark.Key)
-	}
-}
-
 // InputRichMedia represents a media element embedded in a rich message.
 //sumtype:decl
 type InputRichMedia interface {
@@ -21135,49 +18669,6 @@ func (InputMediaAudio) sealedInputRichMedia() {}
 func (InputMediaPhoto) sealedInputRichMedia() {}
 func (InputMediaVideo) sealedInputRichMedia() {}
 func (InputMediaVoiceNote) sealedInputRichMedia() {}
-
-func unmarshalInputRichMedia(data []byte) (InputRichMedia, error) {
-	var mark struct {
-		Key string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &mark); err != nil {
-		return nil, err
-	}
-	switch mark.Key {
-	case "animation":
-		var variant InputMediaAnimation
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "audio":
-		var variant InputMediaAudio
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "photo":
-		var variant InputMediaPhoto
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "video":
-		var variant InputMediaVideo
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	case "voice_note":
-		var variant InputMediaVoiceNote
-		if err := json.Unmarshal(data, &variant); err != nil {
-			return nil, err
-		}
-		return variant, nil
-	default:
-		return nil, fmt.Errorf("unknown InputRichMedia %q", mark.Key)
-	}
-}
 
 // InputFile represents a file to send, either by file ID or by uploading.
 //sumtype:decl

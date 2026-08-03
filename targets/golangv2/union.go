@@ -58,6 +58,13 @@ func (u Union) Variants() []Variant {
 	return slices.NewMapped(u.inner.Variants, NewVariant)
 }
 
+// Direction returns which way the union travels. The interface and the markers
+// are the same either way; the decoder written by hand for this reference is
+// what the direction decides the need for.
+func (u Union) Direction() Direction {
+	return NewDirection(u.inner.Direction)
+}
+
 // Variant represents the Go declaration of one variant of a union: the marker
 // tying the type it names to the interface.
 type Variant struct {
@@ -75,8 +82,9 @@ func (v Variant) Name() string {
 }
 
 // DiscriminatedUnion represents the Go declaration of a union one key tells
-// every variant of apart: the interface, the marker each variant carries, and
-// the decoder reading that key off the payload to pick one.
+// every variant of apart: the interface, the marker each variant carries, and —
+// when a response ever carries the union — the decoder reading that key off the
+// payload to pick one.
 type DiscriminatedUnion struct {
 	inner ir.DiscriminatedUnion
 }
@@ -124,6 +132,13 @@ func (u DiscriminatedUnion) Carrier() bool {
 // documentation listed them.
 func (u DiscriminatedUnion) Variants() []DiscriminatedVariant {
 	return slices.NewMapped(u.inner.Variants, NewDiscriminatedVariant)
+}
+
+// Direction returns which way the union travels, which is what decides whether
+// the decoder is declared at all: a union no response ever carries is never
+// read, however plainly the key tells its variants apart.
+func (u DiscriminatedUnion) Direction() Direction {
+	return NewDirection(u.inner.Direction)
 }
 
 // DiscriminatedVariant represents the Go declaration of one variant of a
