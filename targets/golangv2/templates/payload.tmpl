@@ -12,9 +12,9 @@
 {{- /*
 	payload_form writes the body of a method reaching a file. Every such
 	parameter hands its file to the sink and leaves behind a value pointing at
-	it; the body then shadows the parameter with that value, and rides the alias
-	for everything else. The alias is a defined type and holds no method, so the
-	shadow is what encoding/json writes.
+	it; the struct the payload carries then shadows the parameter with that
+	value, and rides the alias for everything else. The alias is a defined type
+	and holds no method, so the shadow is what encoding/json writes.
 */}}
 {{- define "payload_form"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
 	sink := newFileSink()
@@ -22,7 +22,7 @@
 {{- render .Template .}}
 {{- end}}
 	type alias {{.Name}}
-	body := struct {
+	return newFormPayload(struct {
 {{- range .Payload.Files}}
 		{{.Name}} {{.Shadow}} {{.Tag}}
 {{- end}}
@@ -32,6 +32,5 @@
 		{{.Name}}: {{.Local}},
 {{- end}}
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 {{- end}}

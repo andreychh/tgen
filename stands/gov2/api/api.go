@@ -231,14 +231,13 @@ func (m SetWebhookMethod) payload() (formPayload, error) {
 		certificate = m.Certificate.place(sink, "certificate")
 	}
 	type alias SetWebhookMethod
-	body := struct {
+	return newFormPayload(struct {
 		Certificate *string `json:"certificate,omitempty"`
 		alias
 	}{
 		Certificate: certificate,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to remove webhook integration if you decide to switch back to
@@ -6651,14 +6650,13 @@ func (m SendPhotoMethod) payload() (formPayload, error) {
 	sink := newFileSink()
 	photo := m.Photo.place(sink, "photo")
 	type alias SendPhotoMethod
-	body := struct {
+	return newFormPayload(struct {
 		Photo *string `json:"photo,omitempty"`
 		alias
 	}{
 		Photo: photo,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send live photos. On success, the sent Message is
@@ -6750,7 +6748,7 @@ func (m SendLivePhotoMethod) payload() (formPayload, error) {
 	livePhoto := m.LivePhoto.place(sink, "live_photo")
 	photo := m.Photo.place(sink, "photo")
 	type alias SendLivePhotoMethod
-	body := struct {
+	return newFormPayload(struct {
 		LivePhoto *string `json:"live_photo,omitempty"`
 		Photo *string `json:"photo,omitempty"`
 		alias
@@ -6758,8 +6756,7 @@ func (m SendLivePhotoMethod) payload() (formPayload, error) {
 		LivePhoto: livePhoto,
 		Photo: photo,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send audio files, if you want Telegram clients to display
@@ -6862,7 +6859,7 @@ func (m SendAudioMethod) payload() (formPayload, error) {
 		thumbnail = m.Thumbnail.place(sink, "thumbnail")
 	}
 	type alias SendAudioMethod
-	body := struct {
+	return newFormPayload(struct {
 		Audio *string `json:"audio,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
@@ -6870,8 +6867,7 @@ func (m SendAudioMethod) payload() (formPayload, error) {
 		Audio: audio,
 		Thumbnail: thumbnail,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send general files. On success, the sent Message is
@@ -6969,7 +6965,7 @@ func (m SendDocumentMethod) payload() (formPayload, error) {
 		thumbnail = m.Thumbnail.place(sink, "thumbnail")
 	}
 	type alias SendDocumentMethod
-	body := struct {
+	return newFormPayload(struct {
 		Document *string `json:"document,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
@@ -6977,8 +6973,7 @@ func (m SendDocumentMethod) payload() (formPayload, error) {
 		Document: document,
 		Thumbnail: thumbnail,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send video files, Telegram clients support MPEG4 videos
@@ -7098,7 +7093,7 @@ func (m SendVideoMethod) payload() (formPayload, error) {
 		cover = m.Cover.place(sink, "cover")
 	}
 	type alias SendVideoMethod
-	body := struct {
+	return newFormPayload(struct {
 		Video *string `json:"video,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		Cover *string `json:"cover,omitempty"`
@@ -7108,8 +7103,7 @@ func (m SendVideoMethod) payload() (formPayload, error) {
 		Thumbnail: thumbnail,
 		Cover: cover,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send animation files (GIF or H.264/MPEG-4 AVC video
@@ -7215,7 +7209,7 @@ func (m SendAnimationMethod) payload() (formPayload, error) {
 		thumbnail = m.Thumbnail.place(sink, "thumbnail")
 	}
 	type alias SendAnimationMethod
-	body := struct {
+	return newFormPayload(struct {
 		Animation *string `json:"animation,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
@@ -7223,8 +7217,7 @@ func (m SendAnimationMethod) payload() (formPayload, error) {
 		Animation: animation,
 		Thumbnail: thumbnail,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send audio files, if you want Telegram clients to display
@@ -7310,14 +7303,13 @@ func (m SendVoiceMethod) payload() (formPayload, error) {
 	sink := newFileSink()
 	voice := m.Voice.place(sink, "voice")
 	type alias SendVoiceMethod
-	body := struct {
+	return newFormPayload(struct {
 		Voice *string `json:"voice,omitempty"`
 		alias
 	}{
 		Voice: voice,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // As of v.4.0, Telegram clients support rounded square MPEG4 videos of up to 1
@@ -7407,7 +7399,7 @@ func (m SendVideoNoteMethod) payload() (formPayload, error) {
 		thumbnail = m.Thumbnail.place(sink, "thumbnail")
 	}
 	type alias SendVideoNoteMethod
-	body := struct {
+	return newFormPayload(struct {
 		VideoNote *string `json:"video_note,omitempty"`
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
@@ -7415,8 +7407,7 @@ func (m SendVideoNoteMethod) payload() (formPayload, error) {
 		VideoNote: videoNote,
 		Thumbnail: thumbnail,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send paid media. On success, the sent Message is returned.
@@ -7498,14 +7489,13 @@ func (m SendPaidMediaMethod) payload() (formPayload, error) {
 		media[i] = data
 	}
 	type alias SendPaidMediaMethod
-	body := struct {
+	return newFormPayload(struct {
 		Media []json.RawMessage `json:"media"`
 		alias
 	}{
 		Media: media,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send a group of photos, live photos, videos, documents or
@@ -7568,14 +7558,13 @@ func (m SendMediaGroupMethod) payload() (formPayload, error) {
 		media[i] = data
 	}
 	type alias SendMediaGroupMethod
-	body := struct {
+	return newFormPayload(struct {
 		Media []json.RawMessage `json:"media"`
 		alias
 	}{
 		Media: media,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send point on the map. On success, the sent Message is
@@ -7955,7 +7944,7 @@ func (m SendPollMethod) payload() (formPayload, error) {
 		media = data
 	}
 	type alias SendPollMethod
-	body := struct {
+	return newFormPayload(struct {
 		Options []json.RawMessage `json:"options"`
 		ExplanationMedia json.RawMessage `json:"explanation_media,omitempty"`
 		Media json.RawMessage `json:"media,omitempty"`
@@ -7965,8 +7954,7 @@ func (m SendPollMethod) payload() (formPayload, error) {
 		ExplanationMedia: explanationMedia,
 		Media: media,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to send a checklist on behalf of a connected business
@@ -8968,14 +8956,13 @@ func (m SetChatPhotoMethod) payload() (formPayload, error) {
 	sink := newFileSink()
 	photo := m.Photo.place(sink, "photo")
 	type alias SetChatPhotoMethod
-	body := struct {
+	return newFormPayload(struct {
 		Photo *string `json:"photo,omitempty"`
 		alias
 	}{
 		Photo: photo,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to delete a chat photo. Photos can't be changed for private
@@ -9784,14 +9771,13 @@ func (m AnswerGuestQueryMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias AnswerGuestQueryMethod
-	body := struct {
+	return newFormPayload(struct {
 		Result json.RawMessage `json:"result"`
 		alias
 	}{
 		Result: result,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to get the list of boosts added to a chat by a user. Requires
@@ -10209,14 +10195,13 @@ func (m SetMyProfilePhotoMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias SetMyProfilePhotoMethod
-	body := struct {
+	return newFormPayload(struct {
 		Photo json.RawMessage `json:"photo"`
 		alias
 	}{
 		Photo: photo,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Removes the profile photo of the bot. Requires no parameters. Returns True on
@@ -10697,14 +10682,13 @@ func (m SetBusinessAccountProfilePhotoMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias SetBusinessAccountProfilePhotoMethod
-	body := struct {
+	return newFormPayload(struct {
 		Photo json.RawMessage `json:"photo"`
 		alias
 	}{
 		Photo: photo,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Removes the current profile photo of a managed business account. Requires the
@@ -11096,14 +11080,13 @@ func (m PostStoryMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias PostStoryMethod
-	body := struct {
+	return newFormPayload(struct {
 		Content json.RawMessage `json:"content"`
 		alias
 	}{
 		Content: content,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Reposts a story on behalf of a business account from another business
@@ -11189,14 +11172,13 @@ func (m EditStoryMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias EditStoryMethod
-	body := struct {
+	return newFormPayload(struct {
 		Content json.RawMessage `json:"content"`
 		alias
 	}{
 		Content: content,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Deletes a story previously posted by the bot on behalf of a managed business
@@ -11254,14 +11236,13 @@ func (m AnswerWebAppQueryMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias AnswerWebAppQueryMethod
-	body := struct {
+	return newFormPayload(struct {
 		Result json.RawMessage `json:"result"`
 		alias
 	}{
 		Result: result,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Stores a message that can be sent by a user of a Mini App. Returns a
@@ -11302,14 +11283,13 @@ func (m SavePreparedInlineMessageMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias SavePreparedInlineMessageMethod
-	body := struct {
+	return newFormPayload(struct {
 		Result json.RawMessage `json:"result"`
 		alias
 	}{
 		Result: result,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Stores a keyboard button that can be used by a user within a Mini App.
@@ -11402,14 +11382,13 @@ func (m EditMessageTextMethod) payload() (formPayload, error) {
 		richMessage = data
 	}
 	type alias EditMessageTextMethod
-	body := struct {
+	return newFormPayload(struct {
 		RichMessage json.RawMessage `json:"rich_message,omitempty"`
 		alias
 	}{
 		RichMessage: richMessage,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to edit captions of messages. On success, if the edited
@@ -11515,14 +11494,13 @@ func (m EditMessageMediaMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias EditMessageMediaMethod
-	body := struct {
+	return newFormPayload(struct {
 		Media json.RawMessage `json:"media"`
 		alias
 	}{
 		Media: media,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to edit live location messages. A location can be edited
@@ -11807,14 +11785,13 @@ func (m EditEphemeralMessageMediaMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias EditEphemeralMessageMediaMethod
-	body := struct {
+	return newFormPayload(struct {
 		Media json.RawMessage `json:"media"`
 		alias
 	}{
 		Media: media,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to edit the caption of an ephemeral message. Note that it is
@@ -12276,14 +12253,13 @@ func (m SendStickerMethod) payload() (formPayload, error) {
 	sink := newFileSink()
 	sticker := m.Sticker.place(sink, "sticker")
 	type alias SendStickerMethod
-	body := struct {
+	return newFormPayload(struct {
 		Sticker *string `json:"sticker,omitempty"`
 		alias
 	}{
 		Sticker: sticker,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to get a sticker set. On success, a StickerSet object is
@@ -12369,14 +12345,13 @@ func (m UploadStickerFileMethod) payload() (formPayload, error) {
 	sink := newFileSink()
 	sticker := m.Sticker.place(sink, "sticker")
 	type alias UploadStickerFileMethod
-	body := struct {
+	return newFormPayload(struct {
 		Sticker *string `json:"sticker,omitempty"`
 		alias
 	}{
 		Sticker: sticker,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to create a new sticker set owned by a user. The bot will be
@@ -12425,14 +12400,13 @@ func (m CreateNewStickerSetMethod) payload() (formPayload, error) {
 		stickers[i] = data
 	}
 	type alias CreateNewStickerSetMethod
-	body := struct {
+	return newFormPayload(struct {
 		Stickers []json.RawMessage `json:"stickers"`
 		alias
 	}{
 		Stickers: stickers,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to add a new sticker to a set created by the bot. Emoji
@@ -12466,14 +12440,13 @@ func (m AddStickerToSetMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias AddStickerToSetMethod
-	body := struct {
+	return newFormPayload(struct {
 		Sticker json.RawMessage `json:"sticker"`
 		alias
 	}{
 		Sticker: sticker,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to move a sticker in a set created by the bot to a specific
@@ -12553,14 +12526,13 @@ func (m ReplaceStickerInSetMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias ReplaceStickerInSetMethod
-	body := struct {
+	return newFormPayload(struct {
 		Sticker json.RawMessage `json:"sticker"`
 		alias
 	}{
 		Sticker: sticker,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to change the list of emoji assigned to a regular or custom
@@ -12703,14 +12675,13 @@ func (m SetStickerSetThumbnailMethod) payload() (formPayload, error) {
 		thumbnail = m.Thumbnail.place(sink, "thumbnail")
 	}
 	type alias SetStickerSetThumbnailMethod
-	body := struct {
+	return newFormPayload(struct {
 		Thumbnail *string `json:"thumbnail,omitempty"`
 		alias
 	}{
 		Thumbnail: thumbnail,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to set the thumbnail of a custom emoji sticker set. Returns
@@ -12938,14 +12909,13 @@ func (m SendRichMessageMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias SendRichMessageMethod
-	body := struct {
+	return newFormPayload(struct {
 		RichMessage json.RawMessage `json:"rich_message"`
 		alias
 	}{
 		RichMessage: richMessage,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // Use this method to stream a partial rich message to a user while the message
@@ -12983,14 +12953,13 @@ func (m SendRichMessageDraftMethod) payload() (formPayload, error) {
 		return formPayload{}, err
 	}
 	type alias SendRichMessageDraftMethod
-	body := struct {
+	return newFormPayload(struct {
 		RichMessage json.RawMessage `json:"rich_message"`
 		alias
 	}{
 		RichMessage: richMessage,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // This object represents a rich formatted text. Currently, it can be either a
@@ -15601,14 +15570,13 @@ func (m AnswerInlineQueryMethod) payload() (formPayload, error) {
 		results[i] = data
 	}
 	type alias AnswerInlineQueryMethod
-	body := struct {
+	return newFormPayload(struct {
 		Results []json.RawMessage `json:"results"`
 		alias
 	}{
 		Results: results,
 		alias: alias(m),
-	}
-	return newFormPayload(body, sink.files), nil
+	}, sink.files), nil
 }
 
 // This object represents a button to be shown above inline query results. You
