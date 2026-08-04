@@ -52,29 +52,17 @@
       "rangeStrategy": "bump"
     },
     {
-      "description": "Go stand pins the minimum supported Go version — bump the language manually, not via Renovate",
+      "description": "Every stand pins the minimum supported language version — bump it manually, not via Renovate",
       "matchManagers": [
         "mise",
         "gomod"
       ],
       "matchFileNames": [
-        "stands/go/mise.toml",
-        "stands/go/go.mod"
+        "stands/*/mise.toml",
+        "stands/*/go.mod"
       ],
       "matchDepNames": [
-        "go"
-      ],
-      "enabled": false
-    },
-    {
-      "description": "Python stand pins the minimum supported Python version — bump the language manually, not via Renovate",
-      "matchManagers": [
-        "mise"
-      ],
-      "matchFileNames": [
-        "stands/python/mise.toml"
-      ],
-      "matchDepNames": [
+        "go",
         "python"
       ],
       "enabled": false
@@ -86,6 +74,7 @@
   "osvVulnerabilityAlerts": true,
   "customManagers": [
     {
+      "description": "The mise every workflow installs",
       "customType": "regex",
       "managerFilePatterns": [
         "/^\\.github/workflows/.*\\.yml$/"
