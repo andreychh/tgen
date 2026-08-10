@@ -13024,7 +13024,166 @@ func unmarshalRichText(data []byte) (RichText, error) {
 		}
 		return sequence, nil
 	}
-	return nil, fmt.Errorf("cannot unmarshal %s into RichText: the marked variants are not dispatched yet", data)
+	var mark struct {
+		Key string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &mark); err != nil {
+		return nil, err
+	}
+	switch mark.Key {
+	case "bold":
+		var variant RichTextBold
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "italic":
+		var variant RichTextItalic
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "underline":
+		var variant RichTextUnderline
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "strikethrough":
+		var variant RichTextStrikethrough
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "spoiler":
+		var variant RichTextSpoiler
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "date_time":
+		var variant RichTextDateTime
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "text_mention":
+		var variant RichTextTextMention
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "subscript":
+		var variant RichTextSubscript
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "superscript":
+		var variant RichTextSuperscript
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "marked":
+		var variant RichTextMarked
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "code":
+		var variant RichTextCode
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "custom_emoji":
+		var variant RichTextCustomEmoji
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "mathematical_expression":
+		var variant RichTextMathematicalExpression
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "url":
+		var variant RichTextURL
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "email_address":
+		var variant RichTextEmailAddress
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "phone_number":
+		var variant RichTextPhoneNumber
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "bank_card_number":
+		var variant RichTextBankCardNumber
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "mention":
+		var variant RichTextMention
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "hashtag":
+		var variant RichTextHashtag
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "cashtag":
+		var variant RichTextCashtag
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "bot_command":
+		var variant RichTextBotCommand
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "anchor":
+		var variant RichTextAnchor
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "anchor_link":
+		var variant RichTextAnchorLink
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "reference":
+		var variant RichTextReference
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "reference_link":
+		var variant RichTextReferenceLink
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	default:
+		return nil, fmt.Errorf("unknown RichText %q", mark.Key)
+	}
 }
 
 // A bold text.
