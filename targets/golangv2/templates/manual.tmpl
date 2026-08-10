@@ -117,9 +117,13 @@ func ({{.Name}}) sealed{{$union}}() {}
 	edited message when the bot may read it, the True marker when the message is
 	inline and beyond reach. An object never decodes as a boolean and a boolean
 	never as an object, so trying them in turn tells them apart.
+
+	The count is pinned beside the direction: trying two in turn is enough because
+	there are two, and a third would be tried by nothing written here.
 */}}
 {{- define "manual_maybemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
 {{- assert (and (not .Direction.Sent) .Direction.Received) "MaybeMessage no longer travels inbound"}}
+{{- assert (eq (len .Variants) 2) "MaybeMessage no longer stands for 2 variants"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
@@ -140,9 +144,14 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	arrives as. Both variants are objects, so trying them in turn would let the
 	first swallow the second. The documentation tells them apart by a value
 	instead: an inaccessible message always dates from zero.
+
+	The count is pinned beside the direction: a date tells these two apart and says
+	nothing about a third, which would arrive as whichever of the two its date
+	happened to match.
 */}}
 {{- define "manual_maybeinaccessiblemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
 {{- assert (and (not .Direction.Sent) .Direction.Received) "MaybeInaccessibleMessage no longer travels inbound"}}
+{{- assert (eq (len .Variants) 2) "MaybeInaccessibleMessage no longer stands for 2 variants"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
@@ -188,13 +197,31 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	text, an array is a sequence of runs, and everything else is one of the
 	variants a key tells apart.
 
-	That last switch is missing, and it is the one thing here that should not be
-	written by hand: twenty-five cases that drift the moment Telegram names a
-	twenty-sixth. Which is what a Union record cannot express yet — it drops the
-	marks of the variants that do carry them.
+	That last switch is written out here, variant by variant, and it is the one
+	thing in this file a specification could describe: twenty-five variants marked
+	under one key with values of their own, which is the shape a discriminated
+	union has. It is written by hand because the union is not one. A Union record
+	says nothing tells its variants apart and a DiscriminatedUnion says one key
+	tells every variant apart; the two partition the unions the page names, and
+	this union falls between them — twenty-five marked variants and two that are
+	not objects at all. Naming that third case is a change to the model, not to a
+	template, and it is not made here.
+
+	What the list costs is drift: a variant Telegram names tomorrow is missing
+	from it, and so is a value Telegram renames. Both come out as a refusal — the
+	key reaches the default and the decoder says it knows no such variant — which
+	is why the list can be carried by hand until the model grows the case. A
+	decoder that guessed instead could not be.
+
+	The count is pinned for the same reason the direction is: a variant added to
+	the union is a case missing from the list, and nothing but the number says so
+	while the marks stop at the model. It pins what the block can see and not what
+	it relies on — a renamed value leaves the count where it was, and comes out as
+	the refusal above.
 */}}
 {{- define "manual_richtext"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
 {{- assert (and .Direction.Sent .Direction.Received) "RichText no longer travels both ways"}}
+{{- assert (eq (len .Variants) 27) "RichText no longer stands for 27 variants"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
@@ -224,6 +251,165 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 		}
 		return sequence, nil
 	}
-	return nil, fmt.Errorf("cannot unmarshal %s into {{.Name}}: the marked variants are not dispatched yet", data)
+	var mark struct {
+		Key string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &mark); err != nil {
+		return nil, err
+	}
+	switch mark.Key {
+	case "bold":
+		var variant RichTextBold
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "italic":
+		var variant RichTextItalic
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "underline":
+		var variant RichTextUnderline
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "strikethrough":
+		var variant RichTextStrikethrough
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "spoiler":
+		var variant RichTextSpoiler
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "date_time":
+		var variant RichTextDateTime
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "text_mention":
+		var variant RichTextTextMention
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "subscript":
+		var variant RichTextSubscript
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "superscript":
+		var variant RichTextSuperscript
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "marked":
+		var variant RichTextMarked
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "code":
+		var variant RichTextCode
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "custom_emoji":
+		var variant RichTextCustomEmoji
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "mathematical_expression":
+		var variant RichTextMathematicalExpression
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "url":
+		var variant RichTextURL
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "email_address":
+		var variant RichTextEmailAddress
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "phone_number":
+		var variant RichTextPhoneNumber
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "bank_card_number":
+		var variant RichTextBankCardNumber
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "mention":
+		var variant RichTextMention
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "hashtag":
+		var variant RichTextHashtag
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "cashtag":
+		var variant RichTextCashtag
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "bot_command":
+		var variant RichTextBotCommand
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "anchor":
+		var variant RichTextAnchor
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "anchor_link":
+		var variant RichTextAnchorLink
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "reference":
+		var variant RichTextReference
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "reference_link":
+		var variant RichTextReferenceLink
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	default:
+		return nil, fmt.Errorf("unknown {{.Name}} %q", mark.Key)
+	}
 }
 {{- end}}
