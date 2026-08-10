@@ -250,11 +250,12 @@ tasks:
       - mise run test
 
   stands:check:gov2:
-    desc: Verify the generated nanopass Go code compiles
+    desc: Verify the generated nanopass Go code compiles and tests pass
     dir: stands/gov2
     cmds:
       - mise trust --quiet
       - mise run check
+      - mise run test
 
   stands:check:python:
     desc: Verify the generated Python code passes type checking
