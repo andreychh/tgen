@@ -100,6 +100,44 @@ func TestSendPhotoMethod_Call(t *testing.T) {
 	}
 }
 
+func TestSendDocumentMethod_Call(t *testing.T) {
+	cases := []struct {
+		name     string
+		markup   api.ReplyMarkup
+		entities []api.MessageEntity
+		key      string
+		want     string
+	}{
+		{
+			name:   "carries an object parameter into the body as the JSON it is",
+			markup: api.ReplyKeyboardRemove{RemoveKeyboard: true},
+			key:    "reply_markup",
+			want:   `{"remove_keyboard":true}`,
+		},
+		{
+			name:     "carries a sequence parameter into the body as the JSON it is",
+			entities: []api.MessageEntity{{Type: "bold", Offset: 0, Length: 4}},
+			key:      "caption_entities",
+			want:     `[{"type":"bold","offset":0,"length":4}]`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			conn := NewCapturingConnection()
+			_, err := api.SendDocumentMethod{
+				ChatID:          api.ID(-1001234567890),
+				Document:        api.Upload{Name: "смета.pdf", Reader: strings.NewReader("%PDF")},
+				ReplyMarkup:     tc.markup,
+				CaptionEntities: tc.entities,
+			}.Call(context.Background(), conn)
+			require.NoError(t, err)
+			value, ok := requireForm(t, conn.Request()).Field(tc.key)
+			require.True(t, ok, "a parameter that is not a file must ride in the body of the same request")
+			assert.JSONEq(t, tc.want, value, "a parameter that is no string must ride in the body verbatim, never quoted as one")
+		})
+	}
+}
+
 func TestSendMediaGroupMethod_Call(t *testing.T) {
 	cases := []struct {
 		name  string
