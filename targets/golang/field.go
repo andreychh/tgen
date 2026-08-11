@@ -4,91 +4,36 @@
 package golang
 
 import (
-	"fmt"
-
-	"github.com/andreychh/tgen/model/ir"
+	ir "github.com/andreychh/tgen/model/ir/v2"
 )
 
+// Field represents the Go declaration of a field an object owns or a parameter
+// a method takes.
 type Field struct {
 	inner ir.Field
 }
 
+// NewField creates a Field from the record of a field.
 func NewField(f ir.Field) Field {
 	return Field{inner: f}
 }
 
-func (f Field) Name() (string, error) {
-	key, err := f.inner.Key()
-	if err != nil {
-		return "", err
-	}
-	return NewNameFromKey(key).Value(), nil
+// Doc returns the doc comment of the declaration.
+func (f Field) Doc() string {
+	return NewFieldGodoc(f.inner.Description).Value()
 }
 
-func (f Field) Type() (Type, error) {
-	typ, err := f.inner.Type()
-	if err != nil {
-		return Type{}, err
-	}
-	opt, err := f.inner.Optionality()
-	if err != nil {
-		return Type{}, err
-	}
-	return NewType(typ, opt), nil
+// Name returns the Go name the field declares.
+func (f Field) Name() string {
+	return NewNameFromKey(f.inner.Key).Value()
 }
 
-func (f Field) Optional() (bool, error) {
-	opt, err := f.inner.Optionality()
-	if err != nil {
-		return false, err
-	}
-	return bool(opt), nil
+// Type returns the Go type expression of the field.
+func (f Field) Type() string {
+	return NewType(f.inner.Type, f.inner.Optionality).Value()
 }
 
-func (f Field) Key() (string, error) {
-	key, err := f.inner.Key()
-	if err != nil {
-		return "", err
-	}
-	return string(key), nil
-}
-
-func (f Field) Tag() (string, error) {
-	key, err := f.inner.Key()
-	if err != nil {
-		return "", err
-	}
-	opt, err := f.inner.Optionality()
-	if err != nil {
-		return "", err
-	}
-	return NewTag(key, opt).Value(), nil
-}
-
-func (f Field) Doc() (string, error) {
-	desc, err := f.inner.Description().Value()
-	if err != nil {
-		return "", err
-	}
-	return NewFieldGodoc(desc).Value(), nil
-}
-
-func (f Field) IsInputFile() (bool, error) {
-	return f.inner.IsInputFile()
-}
-
-func (f Field) Part() (string, error) {
-	typ, err := f.Type()
-	if err != nil {
-		return "", err
-	}
-	part, err := typ.Part()
-	if err != nil {
-		return "", err
-	}
-	name, err := f.Name()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf(part, "m."+name), nil
+// Tag returns the struct tag of the field.
+func (f Field) Tag() string {
+	return NewTag(f.inner.Key, f.inner.Optionality).Value()
 }

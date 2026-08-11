@@ -1,39 +1,24 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
-{{- $name := .Name}}
-{{- $ret := .ReturnType}}
-{{- $shape := $ret.Shape}}
-{{.Doc}}
-type {{$name}}Method struct {
-{{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-	{{.Doc}}
-    {{.Name}} {{.Type.Value}} {{.Tag}}
-{{- end}}
+{{- /*
+	method writes one API method: the struct holding its parameters, the Call
+	joining the two slots, and the payload method holding the request slot on
+	its own. The struct comes from the shape every declaration with fields
+	shares, so the parameters are spelled the way an object's fields are.
+*/}}
+{{- define "method"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+{{- template "struct" .}}
+
+func (m {{.Name}}) Call(ctx context.Context, conn Connection) {{.Return.Signature}} {
+	payload, err := m.payload()
+	if err != nil {
+		{{.Return.Fail}}
+	}
+{{- render .Return.Template .}}
 }
 
-func (m {{$name}}Method) Call(ctx context.Context, conn Connection) ({{$ret.Value}}, error) {
-	payload := newMultipartPayload()
-{{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/golang.Field*/}}
-{{- if .Optional}}
-	if m.{{.Name}} != nil {
-		if err := {{.Part}}.write(payload, "{{.Key}}"); err != nil {
-			return {{$ret.Zero}}, err
-		}
-	}
-{{- else}}
-	if err := {{.Part}}.write(payload, "{{.Key}}"); err != nil {
-		return {{$ret.Zero}}, err
-	}
-{{- end}}
-{{- end}}
-{{- if eq $shape "union_array"}}
-{{- template "method_response_union_array" .}}
-{{- else if eq $shape "union"}}
-{{- template "method_response_union" .}}
-{{- else}}
-{{- template "method_response_plain" .}}
-{{- end}}
+func (m {{.Name}}) payload() ({{.Payload.Type}}, error) {
+{{- render .Payload.Template .}}
 }
 {{- end}}

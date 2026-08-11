@@ -1,0 +1,80 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	A union carries a file as soon as one variant does, so the rewrite lands in
+	the interface and every variant has to answer for it — including those holding
+	no file. Their rewrite is not written here: a variant may be admitted by two
+	such unions at once, and only the variant itself can say the method once. It
+	is written where the variant is declared, driven by Rewrites.
+*/}}
+
+{{- /*
+	union writes the shell of a union and nothing else: the interface, and on
+	every variant the marker admitting it. The decoder is missing on purpose —
+	which variant a payload holds is not written anywhere the specification can
+	be read from, so the block claiming this reference writes it by hand.
+*/}}
+{{- define "union"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
+{{- $union := .Name}}
+{{.Doc}}
+//sumtype:decl
+{{if .Carrier -}}
+type {{$union}} interface {
+	resolve(sink *fileSink) (json.RawMessage, error)
+	sealed{{$union}}()
+}
+{{- else -}}
+type {{$union}} interface{ sealed{{$union}}() }
+{{- end}}
+{{range .Variants}}
+func ({{.Name}}) sealed{{$union}}() {}
+{{- end}}
+{{- end}}
+
+{{- /*
+	discriminated_union writes the shell and the decoder of a union one key tells
+	every variant apart. encoding/json cannot decode into an interface, so the
+	decoder reads that key off the payload first and hands the payload to the
+	variant the key names — the inbound mirror of the constant a variant writes
+	when it marshals itself.
+*/}}
+{{- define "discriminated_union"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedUnion*/}}
+{{- $union := .Name}}
+{{.Doc}}
+//sumtype:decl
+{{if .Carrier -}}
+type {{$union}} interface {
+	resolve(sink *fileSink) (json.RawMessage, error)
+	sealed{{$union}}()
+}
+{{- else -}}
+type {{$union}} interface{ sealed{{$union}}() }
+{{- end}}
+{{range .Variants}}
+func ({{.Name}}) sealed{{$union}}() {}
+{{- end}}
+{{- if .Direction.Received}}
+
+func unmarshal{{$union}}(data []byte) ({{$union}}, error) {
+	var mark struct {
+		Key string `json:{{.Key}}`
+	}
+	if err := json.Unmarshal(data, &mark); err != nil {
+		return nil, err
+	}
+	switch mark.Key {
+{{- range .Variants}}
+	case {{.Value}}:
+		var variant {{.Name}}
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+{{- end}}
+	default:
+		return nil, fmt.Errorf("unknown {{$union}} %q", mark.Key)
+	}
+}
+{{- end}}
+{{- end}}

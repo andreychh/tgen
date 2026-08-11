@@ -1,0 +1,38 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- define "return_command"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+	return conn.Do(ctx, "{{.Wire}}", payload, new(bool))
+{{- end}}
+
+{{- define "return_plain"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+	var resp {{.Return.Value}}
+	if err := conn.Do(ctx, "{{.Wire}}", payload, &resp); err != nil {
+		{{.Return.Fail}}
+	}
+	return resp, nil
+{{- end}}
+
+{{- define "return_union"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+	var resp json.RawMessage
+	if err := conn.Do(ctx, "{{.Wire}}", payload, &resp); err != nil {
+		{{.Return.Fail}}
+	}
+	return unmarshal{{.Return.Name}}(resp)
+{{- end}}
+
+{{- define "return_union_array"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
+	var resp []json.RawMessage
+	if err := conn.Do(ctx, "{{.Wire}}", payload, &resp); err != nil {
+		{{.Return.Fail}}
+	}
+	result := make([]{{.Return.Name}}, len(resp))
+	for i, r := range resp {
+		v, err := unmarshal{{.Return.Name}}(r)
+		if err != nil {
+			{{.Return.Fail}}
+		}
+		result[i] = v
+	}
+	return result, nil
+{{- end}}

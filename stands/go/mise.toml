@@ -14,6 +14,6 @@ dir = "api"
 run = "go build ./..."
 
 [tasks.test]
-description = "Run tests for the generated Go stand"
+description = "Run tests for the generated nanopass Go stand"
 dir = "api"
 run = "go clean -testcache && go test -race ./..."

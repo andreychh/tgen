@@ -1,0 +1,65 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	struct writes the type declaration shared by every object, whatever tells it
+	apart. It is a shape, not an entity: any view offering Doc, Name and Fields
+	renders through it, and no kinship between those views is implied.
+*/}}
+{{- define "struct"}}
+{{.Doc}}
+type {{.Name}} struct {
+{{- range .Fields}}
+{{- with .Doc}}
+	{{.}}
+{{- end}}
+	{{.Name}} {{.Type}} {{.Tag}}
+{{- end}}
+}
+{{- end}}
+
+{{- define "object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
+{{- template "struct" .}}
+{{- if and .Direction.Received .Unions}}
+{{template "unmarshal_object" .}}
+{{- end}}
+{{- if .Files}}
+{{template "resolve_object" .}}
+{{- else if .Rewrites}}
+{{template "resolve_marshal" .}}
+{{- end}}
+{{- end}}
+
+{{- define "discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}
+{{- template "struct" .}}
+{{- if .Direction.Sent}}
+
+func (o {{.Name}}) MarshalJSON() ([]byte, error) {
+	type alias {{.Name}}
+	return json.Marshal(struct {
+{{- with .Discriminator}}
+		{{.Name}} {{.Type}} {{.Tag}}
+{{- end}}
+		alias
+	}{
+{{- with .Discriminator}}
+		{{.Name}}: {{.Value}},
+{{- end}}
+		alias: alias(o),
+	})
+}
+{{- end}}
+{{- if and .Direction.Received .Unions}}
+{{template "unmarshal_object" .}}
+{{- end}}
+{{- if .Files}}
+{{template "resolve_discriminated_object" .}}
+{{- else if .Rewrites}}
+{{template "resolve_marshal" .}}
+{{- end}}
+{{- end}}
+
+{{- define "alias"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Alias*/}}
+{{.Doc}}
+type {{.Name}} {{.Type}}
+{{- end}}

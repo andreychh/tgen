@@ -1,0 +1,78 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	resolve_marshal writes the rewrite of a declaration that a union reaching a
+	file admits, but which holds no file of its own. It has nothing to hand over,
+	so it rewrites itself by marshalling — which for a declaration a union tells
+	apart still writes the discriminator, since its own marshaller does. A variant
+	can be admitted by two such unions at once, which is why the rewrite is
+	written here, once, where the variant is declared.
+
+	It is a shape, not an entity: any view offering Name renders through it.
+*/}}
+{{- define "resolve_marshal"}}
+func (o {{.Name}}) resolve(_ *fileSink) (json.RawMessage, error) {
+	return json.Marshal(o)
+}
+{{- end}}
+
+{{- /*
+	resolve_object writes how an object holding a file rewrites itself into the
+	JSON its owner embeds. It cannot marshal normally: a file has to leave the
+	body for a part of its own, so every such field hands its file to the sink
+	and is shadowed by the reference left behind. Everything else rides the
+	alias, which is a defined type and holds no method, so marshalling the
+	shadow never calls back into this object.
+*/}}
+{{- define "resolve_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
+func (o {{.Name}}) resolve(sink *fileSink) (json.RawMessage, error) {
+{{- range .Files}}
+{{- render .Template .}}
+{{- end}}
+	type alias {{.Name}}
+	return json.Marshal(struct {
+{{- range .Files}}
+		{{.Name}} {{.Shadow}} {{.Tag}}
+{{- end}}
+		alias
+	}{
+{{- range .Files}}
+		{{.Name}}: {{.Local}},
+{{- end}}
+		alias: alias(o),
+	})
+}
+{{- end}}
+
+{{- /*
+	resolve_discriminated_object writes the same rewrite for an object a union
+	tells apart. It repeats the discriminator its marshaller would have written,
+	because the alias the shadow rides strips that marshaller away and nothing
+	else would write it.
+*/}}
+{{- define "resolve_discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}
+func (o {{.Name}}) resolve(sink *fileSink) (json.RawMessage, error) {
+{{- range .Files}}
+{{- render .Template .}}
+{{- end}}
+	type alias {{.Name}}
+	return json.Marshal(struct {
+{{- with .Discriminator}}
+		{{.Name}} {{.Type}} {{.Tag}}
+{{- end}}
+{{- range .Files}}
+		{{.Name}} {{.Shadow}} {{.Tag}}
+{{- end}}
+		alias
+	}{
+{{- with .Discriminator}}
+		{{.Name}}: {{.Value}},
+{{- end}}
+{{- range .Files}}
+		{{.Name}}: {{.Local}},
+{{- end}}
+		alias: alias(o),
+	})
+}
+{{- end}}

@@ -4,194 +4,126 @@
 package golang
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/andreychh/tgen/model"
-	"github.com/andreychh/tgen/model/ir"
-	"github.com/andreychh/tgen/model/types"
+	"github.com/andreychh/tgen/model/primitive"
+	"github.com/andreychh/tgen/model/typebound"
 )
 
-const (
-	typeInteger = "Integer"
-	typeInt     = "Int"
-	typeFloat   = "Float"
-	typeString  = "String"
-	typeBoolean = "Boolean"
-	typeTrue    = "True"
-)
-
-//nolint:gochecknoglobals // immutable lookup table, not mutable global state
-var primitives = map[string]string{
-	typeInteger: "int64",
-	typeInt:     "int64",
-	typeFloat:   "float64",
-	typeString:  "string",
-	typeBoolean: "bool",
-	typeTrue:    "bool",
-}
-
-//nolint:gochecknoglobals // immutable lookup table, not mutable global state
-var zeros = map[string]string{
-	typeInteger: "0",
-	typeInt:     "0",
-	typeFloat:   "0",
-	typeString:  `""`,
-	typeBoolean: "false",
-	typeTrue:    "false",
-}
-
-//nolint:gochecknoglobals // immutable lookup table, not mutable global state
-var parts = map[string]string{
-	typeInteger: "newInt64Part",
-	typeInt:     "newInt64Part",
-	typeFloat:   "newFloat64Part",
-	typeString:  "newStringPart",
-	typeBoolean: "newBoolPart",
-	typeTrue:    "newBoolPart",
-}
-
-const zeroNil = "nil"
-
-// Type represents a Go type expression used in generated code, with its optionality.
+// Type represents a Go type expression rendered from a resolved type and the
+// optionality of whatever carries it.
 type Type struct {
-	typ ir.Type
+	typ typebound.Type
 	opt model.Optionality
 }
 
-// NewType creates a Type from an ir.Type and its optionality.
-func NewType(typ ir.Type, opt model.Optionality) Type {
+// NewType creates a Type from a resolved type and its optionality.
+func NewType(typ typebound.Type, opt model.Optionality) Type {
 	return Type{typ: typ, opt: opt}
 }
 
-func NewRequiredType(typ ir.Type) Type {
+// NewRequiredType creates a Type from a resolved type no optionality applies
+// to, such as the return of a method.
+func NewRequiredType(typ typebound.Type) Type {
 	return NewType(typ, false)
 }
 
-func (t Type) IsUnion() (bool, error) {
-	kind, err := t.typ.Kind()
-	if err != nil {
-		return false, err
+// Value returns the Go type expression: the name of the atom, enclosed in one
+// slice per dimension, or behind a pointer when an optional single value needs
+// one to tell an absent field from a zero one.
+func (t Type) Value() string {
+	if t.pointer() {
+		return "*" + t.Name()
 	}
-	return kind == types.KindUnion, nil
+	return strings.Repeat("[]", int(t.typ.Dimensionality())) + t.Name()
 }
 
-func (t Type) Shape() (Shape, error) {
-	isUnion, err := t.IsUnion()
-	if err != nil {
-		return "", err
+// Name returns the Go name of the atom the type holds, without the slices or
+// the pointer enclosing it.
+func (t Type) Name() string {
+	switch atom := t.typ.Atom().(type) {
+	case typebound.Primitive:
+		return builtin(atom.Kind())
+	case typebound.Object:
+		return NewName(atom.Name()).Value()
+	case typebound.Union:
+		return NewName(atom.Name()).Value()
+	case typebound.Alias:
+		return NewName(atom.Name()).Value()
+	default:
+		panic(fmt.Sprintf("golang: unknown atom %T", atom))
 	}
-	if !isUnion {
-		return ShapePlain, nil
-	}
-	dim, err := t.typ.Dimensionality()
-	if err != nil {
-		return "", err
-	}
-	if dim == 1 {
-		return ShapeUnionArray, nil
-	}
-	return ShapeUnion, nil
 }
 
-func (t Type) Name() (string, error) {
-	return t.typ.Name()
+// Zero returns the Go expression the type's zero value is written as: the
+// literal of a built-in, an empty composite of an object, what an alias stands
+// for, and nil for everything Go already gives a nil.
+func (t Type) Zero() string {
+	if t.pointer() || t.Array() {
+		return "nil"
+	}
+	switch atom := t.typ.Atom().(type) {
+	case typebound.Primitive:
+		return literal(atom.Kind())
+	case typebound.Object:
+		return NewName(atom.Name()).Value() + "{}"
+	case typebound.Union:
+		return "nil"
+	case typebound.Alias:
+		return NewRequiredType(atom.Under()).Zero()
+	default:
+		panic(fmt.Sprintf("golang: unknown atom %T", atom))
+	}
 }
 
-func (t Type) Value() (string, error) {
-	name, err := t.typ.Name()
-	if err != nil {
-		return "", err
-	}
-	dim, err := t.typ.Dimensionality()
-	if err != nil {
-		return "", err
-	}
-	rendered, ok := primitives[name]
-	if !ok {
-		rendered = NewName(model.Name(name)).Value()
-	}
-	ptr, err := t.hasPointer()
-	if err != nil {
-		return "", err
-	}
-	if ptr {
-		return "*" + rendered, nil
-	}
-	return strings.Repeat("[]", dim) + rendered, nil
+// Union reports whether the atom the type holds names a union.
+func (t Type) Union() bool {
+	_, union := t.typ.Atom().(typebound.Union)
+	return union
 }
 
-func (t Type) Part() (string, error) {
-	depth, err := t.typ.Dimensionality()
-	if err != nil {
-		return "", err
-	}
-	name, err := t.Name()
-	if err != nil {
-		return "", err
-	}
-	if depth > 0 {
-		if _, ok := parts[name]; ok {
-			return "newPrimitiveSlicePart(%s)", nil
-		}
-		return "newObjectSlicePart(%s)", nil
-	}
-	part, ok := parts[name]
-	if !ok {
-		return "%s", nil
-	}
-	ptr, err := t.hasPointer()
-	if err != nil {
-		return "", err
-	}
-	if ptr {
-		return part + "(*%s)", nil
-	}
-	return part + "(%s)", nil
+// Array reports whether the type encloses its atom in at least one slice.
+func (t Type) Array() bool {
+	return t.typ.Dimensionality() > 0
 }
 
-func (t Type) Zero() (string, error) {
-	if t.opt {
-		return zeroNil, nil
-	}
-	depth, err := t.typ.Dimensionality()
-	if err != nil {
-		return "", err
-	}
-	if depth > 0 {
-		return zeroNil, nil
-	}
-	isUnion, err := t.IsUnion()
-	if err != nil {
-		return "", err
-	}
-	if isUnion {
-		return zeroNil, nil
-	}
-	name, err := t.Name()
-	if err != nil {
-		return "", err
-	}
-	if zero, ok := zeros[name]; ok {
-		return zero, nil
-	}
-	formatted := NewName(model.Name(name)).Value()
-	return formatted + "{}", nil
-}
-
-func (t Type) hasPointer() (bool, error) {
+// pointer reports whether the type renders behind a pointer: only an optional
+// single value does, since a slice and a union interface already carry nil.
+func (t Type) pointer() bool {
 	if !t.opt {
-		return false, nil
+		return false
 	}
-	depth, err := t.typ.Dimensionality()
-	if err != nil {
-		return false, err
+	return !t.Array() && !t.Union()
+}
+
+// builtin returns the Go type a built-in of the documentation renders as.
+func builtin(kind primitive.Kind) string {
+	switch kind {
+	case primitive.Integer:
+		return "int64"
+	case primitive.Float:
+		return "float64"
+	case primitive.String:
+		return "string"
+	case primitive.Boolean, primitive.True:
+		return "bool"
+	default:
+		panic(fmt.Sprintf("golang: unknown primitive %q", kind))
 	}
-	if depth > 0 {
-		return false, nil
+}
+
+// literal returns the Go expression the zero value of a built-in is written as.
+func literal(kind primitive.Kind) string {
+	switch kind {
+	case primitive.Integer, primitive.Float:
+		return "0"
+	case primitive.String:
+		return `""`
+	case primitive.Boolean, primitive.True:
+		return "false"
+	default:
+		panic(fmt.Sprintf("golang: unknown primitive %q", kind))
 	}
-	isUnion, err := t.IsUnion()
-	if err != nil {
-		return false, err
-	}
-	return !isUnion, nil
 }
