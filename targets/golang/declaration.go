@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package golangv2
+package golang
 
 import (
 	"fmt"
@@ -39,6 +39,6 @@ func NewDeclaration(record ir.Definition) Declaration {
 	case ir.Method:
 		return NewMethod(record)
 	default:
-		panic(fmt.Sprintf("golangv2: unknown definition %T", record))
+		panic(fmt.Sprintf("golang: unknown definition %T", record))
 	}
 }

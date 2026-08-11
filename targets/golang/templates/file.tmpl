@@ -15,7 +15,7 @@
 	part named by the parameter's own key, and leaves behind the reference the
 	sink wrote for it.
 */}}
-{{- define "file_place"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Placed*/}}
+{{- define "file_place"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Placed*/}}
 {{- if .Optional}}
 	var {{.Local}} *string
 	if {{.Receiver}}.{{.Name}} != nil {
@@ -32,7 +32,7 @@
 	reference to it. The reference is taken through a local, since the target
 	the generated code lands in predates taking the address of a call.
 */}}
-{{- define "file_attach"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Attached*/}}
+{{- define "file_attach"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Attached*/}}
 {{- if .Optional}}
 	var {{.Local}} *string
 	if {{.Receiver}}.{{.Name}} != nil {

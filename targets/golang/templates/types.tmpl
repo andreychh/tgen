@@ -18,7 +18,7 @@ type {{.Name}} struct {
 }
 {{- end}}
 
-{{- define "object"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Object*/}}
+{{- define "object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
 {{- template "struct" .}}
 {{- if and .Direction.Received .Unions}}
 {{template "unmarshal_object" .}}
@@ -30,7 +30,7 @@ type {{.Name}} struct {
 {{- end}}
 {{- end}}
 
-{{- define "discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.DiscriminatedObject*/}}
+{{- define "discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}
 {{- template "struct" .}}
 {{- if .Direction.Sent}}
 
@@ -59,7 +59,7 @@ func (o {{.Name}}) MarshalJSON() ([]byte, error) {
 {{- end}}
 {{- end}}
 
-{{- define "alias"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Alias*/}}
+{{- define "alias"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Alias*/}}
 {{.Doc}}
 type {{.Name}} {{.Type}}
 {{- end}}

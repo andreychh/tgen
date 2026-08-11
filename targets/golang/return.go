@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package golangv2
+package golang
 
 import (
 	"fmt"
@@ -148,7 +148,7 @@ func (r Result) Return() Return {
 	case ir.Value:
 		return r.carried(NewRequiredType(inner.Type()))
 	default:
-		panic(fmt.Sprintf("golangv2: unknown result %T", inner))
+		panic(fmt.Sprintf("golang: unknown result %T", inner))
 	}
 }
 

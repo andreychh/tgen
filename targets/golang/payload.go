@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package golangv2
+package golang
 
 // Payload represents the request slot of a generated method: the concrete type
 // its payload method returns, and the template that renders that method's body.

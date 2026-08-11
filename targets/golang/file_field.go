@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package golangv2
+package golang
 
 import (
 	"github.com/iancoleman/strcase"

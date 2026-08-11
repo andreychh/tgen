@@ -15,7 +15,7 @@
 	which variant a payload holds is not written anywhere the specification can
 	be read from, so the block claiming this reference writes it by hand.
 */}}
-{{- define "union"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Union*/}}
+{{- define "union"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
 {{- $union := .Name}}
 {{.Doc}}
 //sumtype:decl
@@ -39,7 +39,7 @@ func ({{.Name}}) sealed{{$union}}() {}
 	variant the key names — the inbound mirror of the constant a variant writes
 	when it marshals itself.
 */}}
-{{- define "discriminated_union"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.DiscriminatedUnion*/}}
+{{- define "discriminated_union"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedUnion*/}}
 {{- $union := .Name}}
 {{.Doc}}
 //sumtype:decl

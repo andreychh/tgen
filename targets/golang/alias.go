@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Andrey Chernykh
 // SPDX-License-Identifier: MIT
 
-package golangv2
+package golang
 
 import (
 	ir "github.com/andreychh/tgen/model/ir/v2"

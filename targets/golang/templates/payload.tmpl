@@ -1,11 +1,11 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "payload_empty"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+{{- define "payload_empty"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
 	return emptyPayload{}, nil
 {{- end}}
 
-{{- define "payload_json"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+{{- define "payload_json"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
 	return newJSONPayload(m), nil
 {{- end}}
 
@@ -16,7 +16,7 @@
 	value, and rides the alias for everything else. The alias is a defined type
 	and holds no method, so the shadow is what encoding/json writes.
 */}}
-{{- define "payload_form"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Method*/}}
+{{- define "payload_form"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Method*/}}
 	sink := newFileSink()
 {{- range .Payload.Files}}
 {{- render .Template .}}

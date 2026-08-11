@@ -25,7 +25,7 @@ func (o {{.Name}}) resolve(_ *fileSink) (json.RawMessage, error) {
 	alias, which is a defined type and holds no method, so marshalling the
 	shadow never calls back into this object.
 */}}
-{{- define "resolve_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.Object*/}}
+{{- define "resolve_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
 func (o {{.Name}}) resolve(sink *fileSink) (json.RawMessage, error) {
 {{- range .Files}}
 {{- render .Template .}}
@@ -51,7 +51,7 @@ func (o {{.Name}}) resolve(sink *fileSink) (json.RawMessage, error) {
 	because the alias the shadow rides strips that marshaller away and nothing
 	else would write it.
 */}}
-{{- define "resolve_discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golangv2.DiscriminatedObject*/}}
+{{- define "resolve_discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.DiscriminatedObject*/}}
 func (o {{.Name}}) resolve(sink *fileSink) (json.RawMessage, error) {
 {{- range .Files}}
 {{- render .Template .}}

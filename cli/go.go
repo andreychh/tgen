@@ -10,11 +10,10 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andreychh/tgen/meta"
-	"github.com/andreychh/tgen/model/ir"
-	"github.com/andreychh/tgen/model/spec/gq"
-	"github.com/andreychh/tgen/model/spec/overlays"
+	ir "github.com/andreychh/tgen/model/ir/v2"
 	"github.com/andreychh/tgen/output"
 	"github.com/andreychh/tgen/source"
+	"github.com/andreychh/tgen/targets"
 	"github.com/andreychh/tgen/targets/golang"
 	"github.com/spf13/cobra"
 )
@@ -59,13 +58,16 @@ func goAction(cmd *cobra.Command, _ []string, m meta.Meta) error {
 	if err != nil {
 		return fmt.Errorf("parsing HTML from %q: %w", location, err)
 	}
+	spec, err := NewPipeline(doc).Specification()
+	if err != nil {
+		return fmt.Errorf("running the pipeline over %q: %w", location, err)
+	}
 	artifacts, err := golang.NewPass(
-		ir.NewSpecification(
-			overlays.NewSpecification(
-				gq.NewSpecificationFromDocument(doc),
-			),
+		golang.NewGeneration(
+			golang.NewSpecification(ir.NewSpecification(spec)),
+			"api",
+			targets.NewSnapshot(snapshot),
 		),
-		snapshot,
 	).Artifacts()
 	if err != nil {
 		return err
