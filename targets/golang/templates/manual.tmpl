@@ -31,7 +31,7 @@
 	never uploaded, so it stays in the body wherever it sits.
 */}}
 {{- define "manual_fileid"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Alias*/}}
-{{- assert (and .Direction.Sent (not .Direction.Received)) "FileID no longer travels outbound"}}
+{{- assert .Direction.Outbound "FileID no longer travels outbound"}}
 {{- template "alias" .}}
 
 func (f {{.Name}}) place(_ *fileSink, _ string) *string {
@@ -53,7 +53,7 @@ func (f {{.Name}}) attach(_ *fileSink) string {
 	leaves the reference the part is reached by.
 */}}
 {{- define "manual_upload"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Object*/}}
-{{- assert (and .Direction.Sent (not .Direction.Received)) "Upload no longer travels outbound"}}
+{{- assert .Direction.Outbound "Upload no longer travels outbound"}}
 {{.Doc}}
 type {{.Name}} struct {
 	Name   string
@@ -86,7 +86,7 @@ func (u {{.Name}}) name() string {
 	name the response gives it and not as this union.
 */}}
 {{- define "manual_inputfile"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
-{{- assert (and .Direction.Sent (not .Direction.Received)) "InputFile no longer travels outbound"}}
+{{- assert .Direction.Outbound "InputFile no longer travels outbound"}}
 {{- $union := .Name}}
 {{.Doc}}
 //sumtype:decl
@@ -108,7 +108,7 @@ func ({{.Name}}) sealed{{$union}}() {}
 	string is a username, and neither decodes as the other.
 */}}
 {{- define "manual_chatid"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
-{{- assert (and .Direction.Sent (not .Direction.Received)) "ChatID no longer travels outbound"}}
+{{- assert .Direction.Outbound "ChatID no longer travels outbound"}}
 {{- template "union" .}}
 {{- end}}
 
@@ -122,7 +122,7 @@ func ({{.Name}}) sealed{{$union}}() {}
 	there are two, and a third would be tried by nothing written here.
 */}}
 {{- define "manual_maybemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
-{{- assert (and (not .Direction.Sent) .Direction.Received) "MaybeMessage no longer travels inbound"}}
+{{- assert .Direction.Inbound "MaybeMessage no longer travels inbound"}}
 {{- assert (eq (len .Variants) 2) "MaybeMessage no longer stands for 2 variants"}}
 {{- template "union" .}}
 
@@ -150,7 +150,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	happened to match.
 */}}
 {{- define "manual_maybeinaccessiblemessage"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
-{{- assert (and (not .Direction.Sent) .Direction.Received) "MaybeInaccessibleMessage no longer travels inbound"}}
+{{- assert .Direction.Inbound "MaybeInaccessibleMessage no longer travels inbound"}}
 {{- assert (eq (len .Variants) 2) "MaybeInaccessibleMessage no longer stands for 2 variants"}}
 {{- template "union" .}}
 
@@ -186,7 +186,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	own; that object is only ever sent too, and is declared without one now.
 */}}
 {{- define "manual_inputmessagecontent"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
-{{- assert (and .Direction.Sent (not .Direction.Received)) "InputMessageContent no longer travels outbound"}}
+{{- assert .Direction.Outbound "InputMessageContent no longer travels outbound"}}
 {{- template "union" .}}
 {{- end}}
 
@@ -220,7 +220,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	the refusal above.
 */}}
 {{- define "manual_richtext"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
-{{- assert (and .Direction.Sent .Direction.Received) "RichText no longer travels both ways"}}
+{{- assert .Direction.Bidirectional "RichText no longer travels both ways"}}
 {{- assert (eq (len .Variants) 27) "RichText no longer stands for 27 variants"}}
 {{- template "union" .}}
 

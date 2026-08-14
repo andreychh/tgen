@@ -9,6 +9,12 @@ import "github.com/andreychh/tgen/model"
 // for it. A declaration travelling one way needs the half of the codec that way
 // calls for and no more, since nothing encodes a value no request ever carries
 // and nothing decodes one no response ever carries.
+//
+// Two kinds of question are asked of it and their answers must not be confused.
+// [Direction.Sent] and [Direction.Received] report what a declaration is capable
+// of, and one travelling both ways answers yes to each. [Direction.Outbound],
+// [Direction.Inbound] and [Direction.Bidirectional] name the exact direction,
+// and every declaration answers yes to one of the three.
 type Direction struct {
 	inner model.Direction
 }
@@ -19,15 +25,29 @@ func NewDirection(direction model.Direction) Direction {
 }
 
 // Sent reports whether a request ever carries the declaration, which is what
-// obliges it to write itself into JSON. One travelling both ways is sent no
-// less than one travelling outbound alone.
+// obliges it to write itself into JSON.
 func (d Direction) Sent() bool {
-	return d.inner == model.DirectionOutbound || d.inner == model.DirectionBidirectional
+	return d.Outbound() || d.Bidirectional()
 }
 
 // Received reports whether a response ever carries the declaration, which is
-// what obliges it to read itself out of JSON. One travelling both ways is
-// received no less than one travelling inbound alone.
+// what obliges it to read itself out of JSON.
 func (d Direction) Received() bool {
-	return d.inner == model.DirectionInbound || d.inner == model.DirectionBidirectional
+	return d.Inbound() || d.Bidirectional()
+}
+
+// Outbound reports whether a request alone carries the declaration.
+func (d Direction) Outbound() bool {
+	return d.inner == model.DirectionOutbound
+}
+
+// Inbound reports whether a response alone carries the declaration.
+func (d Direction) Inbound() bool {
+	return d.inner == model.DirectionInbound
+}
+
+// Bidirectional reports whether a request and a response both carry the
+// declaration.
+func (d Direction) Bidirectional() bool {
+	return d.inner == model.DirectionBidirectional
 }
