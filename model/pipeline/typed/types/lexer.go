@@ -13,8 +13,8 @@ import (
 	"github.com/andreychh/tgen/model/typeexpr"
 )
 
-// Lexer tokenizes the prose of a type cell, recognizing built-in type words
-// through a primitive vocabulary.
+// Lexer is a tokenizer over the prose of a type cell, recognizing built-in type
+// words through a primitive vocabulary.
 type Lexer struct {
 	phrase     prose.Phrase
 	primitives typeexpr.Primitives
@@ -26,8 +26,10 @@ func NewLexer(phrase prose.Phrase) Lexer {
 	return Lexer{phrase: phrase, primitives: typeexpr.NewPrimitives()}
 }
 
-// Tokens lexes the phrase into its tokens. It fails on a non-anchor link, an
-// unknown word, or an inline that is neither text nor a link.
+// Tokens returns the tokens the phrase lexes to, in the order the prose writes
+// them. It fails on a link that is not an anchor, an inline that is neither
+// text nor a link, an "Array" that "of" does not follow, and a word that names
+// no built-in type.
 func (l Lexer) Tokens() ([]Token, error) {
 	var out []Token
 	for _, node := range l.phrase.Inlines() {
@@ -40,8 +42,8 @@ func (l Lexer) Tokens() ([]Token, error) {
 	return out, nil
 }
 
-// inline lexes a single inline node into its tokens. It fails on a non-anchor
-// link or an inline that is neither text nor a link.
+// inline returns the tokens node lexes to. It fails on a link that is not an
+// anchor and on an inline that is neither text nor a link.
 func (l Lexer) inline(node prose.Inline) ([]Token, error) {
 	switch node := node.(type) {
 	case prose.Link:
@@ -57,8 +59,9 @@ func (l Lexer) inline(node prose.Inline) ([]Token, error) {
 	}
 }
 
-// words lexes the content of a text run into its structural and primitive
-// tokens. It fails when a word is neither a keyword nor a known primitive.
+// words returns the structural and primitive tokens the content of a text run
+// lexes to. It fails on an "Array" that "of" does not follow and on a word that
+// names no built-in type.
 func (l Lexer) words(content string) ([]Token, error) {
 	var out []Token
 	cursor := NewCursor(split(content))
@@ -74,8 +77,10 @@ func (l Lexer) words(content string) ([]Token, error) {
 				return nil, errors.New(`expected "of" after "Array"`)
 			}
 			out = append(out, NewArrayOf())
-		case "or", "and", ",":
-			out = append(out, NewSeparator())
+		case "or":
+			out = append(out, NewOr())
+		case "and", ",":
+			out = append(out, NewSeries())
 		default:
 			kind, known := l.primitives.Kind(word)
 			if !known {
