@@ -10,7 +10,9 @@ import (
 
 // Token is one lexical unit of a type expression. Its variants split into value
 // tokens that denote a type ([Ref], [Primitive]) and structural tokens that mark
-// composition ([ArrayOf], [Separator]).
+// composition ([ArrayOf], [Or], [Series]).
+//
+//sumtype:decl
 type Token interface {
 	isToken()
 }
@@ -32,7 +34,7 @@ func (r Ref) Reference() model.Reference {
 
 func (Ref) isToken() {}
 
-// Primitive is a built-in type word, one of the closed [primitive.Kind] set.
+// Primitive is a built-in type word, one of the closed set of [primitive.Kind].
 type Primitive struct {
 	kind primitive.Kind
 }
@@ -59,14 +61,24 @@ func NewArrayOf() ArrayOf {
 
 func (ArrayOf) isToken() {}
 
-// Separator divides the variants of a union. The spec writes it as "or" at the
-// top level and as commas with a final "and" inside an array element; all three
-// mean the same thing.
-type Separator struct{}
+// Or is the word "or", dividing the alternatives of the type as a whole.
+type Or struct{}
 
-// NewSeparator constructs a Separator token.
-func NewSeparator() Separator {
-	return Separator{}
+// NewOr constructs an Or token.
+func NewOr() Or {
+	return Or{}
 }
 
-func (Separator) isToken() {}
+func (Or) isToken() {}
+
+// Series is a comma, or the "and" that closes a comma list, dividing the
+// members of an enumeration. The documentation writes an array's element union
+// this way and a top-level union with [Or].
+type Series struct{}
+
+// NewSeries constructs a Series token.
+func NewSeries() Series {
+	return Series{}
+}
+
+func (Series) isToken() {}

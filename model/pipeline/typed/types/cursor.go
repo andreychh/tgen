@@ -10,7 +10,7 @@ type Cursor[T any] struct {
 	pos   int
 }
 
-// NewCursor constructs a Cursor positioned before the first item.
+// NewCursor constructs a Cursor over items, positioned at the first.
 func NewCursor[T any](items []T) *Cursor[T] {
 	return &Cursor[T]{
 		items: items,
@@ -42,8 +42,12 @@ func (c *Cursor[T]) Take() (T, bool) {
 	return item, true
 }
 
-// Skip consumes the current item without returning it, advancing the cursor.
+// Skip consumes the current item without returning it. An exhausted cursor is
+// left where it stands.
 func (c *Cursor[T]) Skip() {
+	if c.Done() {
+		return
+	}
 	c.pos++
 }
 
