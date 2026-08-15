@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/andreychh/tgen/model/prose"
+	"github.com/andreychh/tgen/model/prose/grammar"
 	"github.com/andreychh/tgen/model/typeexpr"
 )
 
@@ -33,19 +34,19 @@ func (r ReturnType) Value() (typeexpr.Expression, error) {
 	if !ok {
 		return nil, errors.New("method description does not open with a paragraph")
 	}
-	expr, found := NewSearch(rules()).Find(paragraph.Inlines())
+	expr, found := grammar.NewSearch(r.rules()).Find(paragraph.Inlines())
 	if !found {
 		return nil, errors.New("no rule matched the return clause")
 	}
 	return expr, nil
 }
 
-// rules assembles the return-clause production in priority order: the specific
-// array and union forms before the plain named and primitive forms, so a clause
-// like "Array of Update" is not first claimed by a plain named or primitive
-// rule.
-func rules() ProductionRule {
-	return NewProductionRule(
+// rules assembles the return-clause alternatives in priority order: the
+// specific array and union forms before the plain named and primitive forms, so
+// a clause like "Array of Update" is not first claimed by a plain named or
+// primitive rule.
+func (r ReturnType) rules() grammar.Choice[typeexpr.Expression] {
+	return grammar.NewChoice(
 		NewUnionRule(),
 		NewArrayRule(),
 		NewReturnsRule(),

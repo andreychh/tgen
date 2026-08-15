@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/andreychh/tgen/model/prose"
+	"github.com/andreychh/tgen/model/prose/grammar"
 	"github.com/andreychh/tgen/model/typeexpr"
 )
 
@@ -19,12 +20,7 @@ var (
 
 // Rule is a pattern that recognizes one structural form of a return clause,
 // decoding it into the type expression the clause names.
-type Rule interface {
-	// Match reports whether the rule's form begins at the front of inlines and
-	// returns the type expression it names. It reports false when the form does not
-	// start at inlines[0], leaving the caller to advance or try another rule.
-	Match(inlines []prose.Inline) (typeexpr.Expression, bool)
-}
+type Rule = grammar.Rule[typeexpr.Expression]
 
 // ReturnsRule is a [Rule] that recognizes "Returns <type>", where the type is
 // either a link to a documented type or an italic primitive word.
@@ -40,17 +36,16 @@ func (ReturnsRule) Match(inlines []prose.Inline) (typeexpr.Expression, bool) {
 	if len(inlines) < 2 {
 		return nil, false
 	}
-	if !NewMarker(returnsSignal).Matches(inlines[0]) {
+	if !grammar.NewMarker(returnsSignal).Matches(inlines[0]) {
 		return nil, false
 	}
 	if ref, ok := NewNamed().Matches(inlines[1]); ok {
 		return typeexpr.NewNamed(ref), true
 	}
-	kind, ok := NewPrimitive().Matches(inlines[1])
-	if !ok {
-		return nil, false
+	if kind, ok := NewPrimitive().Matches(inlines[1]); ok {
+		return typeexpr.NewPrimitive(kind), true
 	}
-	return typeexpr.NewPrimitive(kind), true
+	return nil, false
 }
 
 // ReturnedRule is a [Rule] that recognizes "<type> is returned", where the type
@@ -67,17 +62,16 @@ func (ReturnedRule) Match(inlines []prose.Inline) (typeexpr.Expression, bool) {
 	if len(inlines) < 2 {
 		return nil, false
 	}
-	if !NewMarker(returnedSignal).Matches(inlines[1]) {
+	if !grammar.NewMarker(returnedSignal).Matches(inlines[1]) {
 		return nil, false
 	}
 	if ref, ok := NewNamed().Matches(inlines[0]); ok {
 		return typeexpr.NewNamed(ref), true
 	}
-	kind, ok := NewPrimitive().Matches(inlines[0])
-	if !ok {
-		return nil, false
+	if kind, ok := NewPrimitive().Matches(inlines[0]); ok {
+		return typeexpr.NewPrimitive(kind), true
 	}
-	return typeexpr.NewPrimitive(kind), true
+	return nil, false
 }
 
 // ArrayRule is a [Rule] that recognizes "Array of <named>", a sequence whose
@@ -94,7 +88,7 @@ func (ArrayRule) Match(inlines []prose.Inline) (typeexpr.Expression, bool) {
 	if len(inlines) < 2 {
 		return nil, false
 	}
-	if !NewMarker(arrayOfSignal).Matches(inlines[0]) {
+	if !grammar.NewMarker(arrayOfSignal).Matches(inlines[0]) {
 		return nil, false
 	}
 	ref, ok := NewNamed().Matches(inlines[1])
@@ -123,14 +117,14 @@ func (UnionRule) Match(inlines []prose.Inline) (typeexpr.Expression, bool) {
 	if !ok {
 		return nil, false
 	}
-	if !NewMarker(otherwiseSignal).Matches(inlines[1]) {
+	if !grammar.NewMarker(otherwiseSignal).Matches(inlines[1]) {
 		return nil, false
 	}
 	kind, found := NewPrimitive().Matches(inlines[2])
 	if !found {
 		return nil, false
 	}
-	if !NewMarker(returnedSignal).Matches(inlines[3]) {
+	if !grammar.NewMarker(returnedSignal).Matches(inlines[3]) {
 		return nil, false
 	}
 	return typeexpr.NewUnion(typeexpr.NewNamed(ref), typeexpr.NewPrimitive(kind)), true

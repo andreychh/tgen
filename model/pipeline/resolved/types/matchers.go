@@ -9,37 +9,20 @@
 //
 // Decoding is driven by [Rule] implementations — [ReturnsRule], [ReturnedRule],
 // [ArrayRule], and [UnionRule] — each recognizing one structural form of the
-// clause. [ProductionRule] tries them in priority order; [Search] applies the
-// combined rule at every position in the paragraph until one matches.
+// clause. The machinery they are tried by comes from [grammar]: a choice takes
+// the first of them to match, and a search applies that choice at every
+// position in the paragraph until one matches.
 package types
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/andreychh/tgen/model"
 	"github.com/andreychh/tgen/model/primitive"
 	"github.com/andreychh/tgen/model/prose"
+	"github.com/andreychh/tgen/model/prose/grammar"
 	"github.com/andreychh/tgen/model/typeexpr"
 )
-
-// Marker represents a prose signal word — "Returns", "is returned", "Array of"
-// — recognized by a regular expression against plain text runs.
-type Marker struct {
-	pattern *regexp.Regexp
-}
-
-// NewMarker constructs a Marker from pattern.
-func NewMarker(pattern *regexp.Regexp) Marker {
-	return Marker{pattern: pattern}
-}
-
-// Matches reports whether the inline is a plain text run whose content
-// satisfies the marker's regular expression.
-func (m Marker) Matches(inline prose.Inline) bool {
-	text, ok := inline.(prose.Text)
-	return ok && text.Style() == prose.StylePlain && m.pattern.MatchString(text.Content())
-}
 
 // Named represents an in-page anchor link, the form a return clause uses to
 // identify a documented type.
@@ -53,11 +36,7 @@ func NewNamed() Named {
 // Matches reports whether the inline is a link to an in-page anchor and returns
 // the reference it addresses. The reference is empty when the report is false.
 func (Named) Matches(inline prose.Inline) (model.Reference, bool) {
-	link, ok := inline.(prose.Link)
-	if !ok {
-		return "", false
-	}
-	target, ok := link.Anchor()
+	target, ok := grammar.NewAnchor().Matches(inline)
 	if !ok {
 		return "", false
 	}
@@ -76,12 +55,12 @@ func NewPrimitive() Primitive {
 }
 
 // Matches reports whether the inline is an italic text run naming a built-in
-// type and returns the kind it names. The kind is empty when the report is
-// false.
+// type and returns the kind it names. Space around the word is ignored. The
+// kind is empty when the report is false.
 func (p Primitive) Matches(inline prose.Inline) (primitive.Kind, bool) {
-	text, ok := inline.(prose.Text)
-	if !ok || text.Style() != prose.StyleItalic {
+	content, ok := grammar.NewItalic().Matches(inline)
+	if !ok {
 		return "", false
 	}
-	return p.primitives.Kind(strings.TrimSpace(text.Content()))
+	return p.primitives.Kind(strings.TrimSpace(content))
 }
