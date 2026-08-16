@@ -4,6 +4,8 @@
 package pythonv2
 
 import (
+	"fmt"
+
 	ir "github.com/andreychh/tgen/model/ir/v2"
 )
 
@@ -34,8 +36,35 @@ func (f Field) Annotation() string {
 	return NewAnnotation(f.inner.Type, f.inner.Optionality).Value()
 }
 
-// Assignment returns what the declaration stands equal to, empty where the
-// annotation stands alone.
+// Assignment returns what the declaration stands equal to: the None an optional
+// field defaults to, and the key it is read from where the attribute it
+// declares stopped spelling that key. It is empty for a required field whose
+// attribute spells its key, which is what leaves the annotation standing alone.
+//
+// The key is written per field rather than derived for every field at once. One
+// key of the documented API — from — is a word Python reserves, so a rule
+// covering every model would be a rule the whole API pays for and one field
+// uses, and it would misread the first key that ever ends in an underscore of
+// its own.
 func (f Field) Assignment() string {
-	return NewAssignment(f.inner.Key, f.inner.Optionality).Value()
+	alias := f.alias()
+	if alias == "" {
+		if f.inner.Optionality {
+			return "None"
+		}
+		return ""
+	}
+	if f.inner.Optionality {
+		return fmt.Sprintf("Field(default=None, alias=%q)", alias)
+	}
+	return fmt.Sprintf("Field(alias=%q)", alias)
+}
+
+// alias returns the key the field is read from, empty where the attribute it
+// declares already spells that key.
+func (f Field) alias() string {
+	if f.Name() == string(f.inner.Key) {
+		return ""
+	}
+	return string(f.inner.Key)
 }

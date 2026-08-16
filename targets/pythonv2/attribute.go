@@ -38,7 +38,7 @@ func NewAttribute(k model.Key) Attribute {
 // Value returns the key as it is written, since the documentation already
 // spells a key in the lowercase words Python declares an attribute by, and
 // followed by an underscore where the key is a word Python reserves. The key
-// itself survives as the alias [Assignment] writes.
+// itself survives as the alias [Field.Assignment] writes.
 func (a Attribute) Value() string {
 	if keywords[a.key] {
 		return string(a.key) + "_"
