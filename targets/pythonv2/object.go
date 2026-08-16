@@ -1,0 +1,59 @@
+// SPDX-FileCopyrightText: 2026 Andrey Chernykh
+// SPDX-License-Identifier: MIT
+
+package pythonv2
+
+import (
+	ir "github.com/andreychh/tgen/model/ir/v2"
+	"github.com/andreychh/tgen/pkg/slices"
+)
+
+// Object represents the Python declaration of a documented object.
+type Object struct {
+	inner ir.Object
+}
+
+// NewObject creates an Object from the record of an object.
+func NewObject(o ir.Object) Object {
+	return Object{inner: o}
+}
+
+// Doc returns the docstring of the declaration, closing with a link back to the
+// section the object was read from.
+func (o Object) Doc() string {
+	return NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced).Value()
+}
+
+// Ref implements [Declaration].
+func (o Object) Ref() string {
+	return string(o.inner.Ref)
+}
+
+// Template implements [Declaration].
+func (o Object) Template() string {
+	return "object"
+}
+
+// Name returns the Python class the object declares.
+func (o Object) Name() string {
+	return NewClassName(o.inner.Name).Value()
+}
+
+// Fields returns the fields the object declares, the required ones before the
+// optional, as the pipeline's exit ordered them.
+func (o Object) Fields() []Field {
+	return slices.NewMapped(o.inner.Fields, NewField)
+}
+
+// Aliased reports whether any field of the object is read from a key its
+// attribute stopped spelling, which is what obliges the class to admit both
+// names. An object holding no such field is configured by nothing, rather than
+// carrying a rule the whole API would pay for and nine of its objects use.
+func (o Object) Aliased() bool {
+	for _, field := range o.Fields() {
+		if field.Aliased() {
+			return true
+		}
+	}
+	return false
+}

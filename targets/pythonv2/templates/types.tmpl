@@ -1,0 +1,35 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	object writes a documented object as the pydantic model standing for it. The
+	docstring of a class stands inside its body rather than above it, which is
+	where Python reads one from, and the docstring of a field stands under the
+	field for the same reason.
+
+	The configuration admitting both the attribute and the key is written only
+	where a field carries a key its attribute stopped spelling. Nine objects of
+	the documented API hold such a field; a rule generated onto every class would
+	be a rule the other three hundred pay a line for and never read.
+*/}}
+{{- define "object"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Object*/}}
+
+class {{.Name}}(BaseModel):
+{{- with .Doc}}
+    {{.}}
+{{- end}}
+{{- if .Aliased}}
+
+    model_config = ConfigDict(populate_by_name=True)
+{{- end}}
+{{- range .Fields}}
+
+    {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
+{{- with .Doc}}
+    {{.}}
+{{- end}}
+{{- end}}
+{{- if and (not .Doc) (not .Fields)}}
+    pass
+{{- end}}
+{{- end}}

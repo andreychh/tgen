@@ -10,9 +10,9 @@ import (
 // keywords holds every word Python reserves, which is what a field key may not
 // be spelled as. It holds the reserved words alone: a soft keyword — match,
 // case, type, _ — is a name the grammar reads as a keyword only where a keyword
-// can stand, and remains a legal attribute name everywhere else. Spelling one
-// of those away would rename "type", the key half the documented objects are
-// told apart by.
+// can stand, and remains a legal field name everywhere else. Spelling one of
+// those away would rename "type", the key half the documented objects are told
+// apart by.
 //
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var keywords = map[model.Key]bool{
@@ -25,23 +25,26 @@ var keywords = map[model.Key]bool{
 	"return": true, "try": true, "while": true, "with": true, "yield": true,
 }
 
-// Attribute represents a field key rendered as the name of a Python attribute.
-type Attribute struct {
+// FieldName represents a field key rendered as the name of a Python field. It
+// stands apart from [ClassName] because Python spells the two differently: a
+// class is declared by capitalized words, a field by the lowercase ones the
+// documentation already gives.
+type FieldName struct {
 	key model.Key
 }
 
-// NewAttribute creates an Attribute from a field key.
-func NewAttribute(k model.Key) Attribute {
-	return Attribute{key: k}
+// NewFieldName creates a FieldName from a field key.
+func NewFieldName(k model.Key) FieldName {
+	return FieldName{key: k}
 }
 
 // Value returns the key as it is written, since the documentation already
-// spells a key in the lowercase words Python declares an attribute by, and
-// followed by an underscore where the key is a word Python reserves. The key
-// itself survives as the alias [Field.Assignment] writes.
-func (a Attribute) Value() string {
-	if keywords[a.key] {
-		return string(a.key) + "_"
+// spells a key in the lowercase words Python declares a field by, and followed
+// by an underscore where the key is a word Python reserves. The key itself
+// survives as the alias [Field.Assignment] writes.
+func (n FieldName) Value() string {
+	if keywords[n.key] {
+		return string(n.key) + "_"
 	}
-	return string(a.key)
+	return string(n.key)
 }

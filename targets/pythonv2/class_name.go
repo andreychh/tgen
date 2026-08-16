@@ -18,20 +18,23 @@ var acronyms = map[string]string{
 	"Ip":  "IP",
 }
 
-// Name represents a documentation name rendered as a Python class name.
-type Name struct {
+// ClassName represents a documentation name rendered as the name of a Python
+// class. It stands apart from [FieldName] because Python spells the two
+// differently, which is what the Go target is spared: Go writes an exported
+// name one way wherever it stands, and renders both through one view.
+type ClassName struct {
 	inner model.Name
 }
 
-// NewName creates a Name from a documentation name.
-func NewName(n model.Name) Name {
-	return Name{inner: n}
+// NewClassName creates a ClassName from a documentation name.
+func NewClassName(n model.Name) ClassName {
+	return ClassName{inner: n}
 }
 
 // Value returns the name in the capitalized words a class is declared by, with
 // the acronyms spelled in capitals. The Go target spells them the same way, and
 // a name is what a reader of either target looks the other one up by.
-func (n Name) Value() string {
+func (n ClassName) Value() string {
 	camel := strcase.ToCamel(string(n.inner))
 	for wrong, right := range acronyms {
 		camel = strings.ReplaceAll(camel, wrong, right)

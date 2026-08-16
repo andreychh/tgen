@@ -12,7 +12,7 @@ import (
 	"github.com/andreychh/tgen/targets/pythonv2"
 )
 
-func TestAttribute_Value(t *testing.T) {
+func TestFieldName_Value(t *testing.T) {
 	cases := []struct {
 		name string
 		key  model.Key
@@ -66,12 +66,12 @@ func TestAttribute_Value(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := pythonv2.NewAttribute(c.key).Value()
+			got := pythonv2.NewFieldName(c.key).Value()
 			assert.Equal(
 				t,
 				c.want,
 				got,
-				"Attribute must spell a key away only where Python reserves it",
+				"FieldName must spell a key away only where Python reserves it",
 			)
 		})
 	}

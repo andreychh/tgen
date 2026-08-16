@@ -28,7 +28,7 @@ func (f Field) Doc() string {
 
 // Name returns the Python attribute the field declares.
 func (f Field) Name() string {
-	return NewAttribute(f.inner.Key).Value()
+	return NewFieldName(f.inner.Key).Value()
 }
 
 // Annotation returns the Python type annotation of the field.
@@ -58,6 +58,12 @@ func (f Field) Assignment() string {
 		return fmt.Sprintf("Field(default=None, alias=%q)", alias)
 	}
 	return fmt.Sprintf("Field(alias=%q)", alias)
+}
+
+// Aliased reports whether the field is read from a key its attribute stopped
+// spelling, which is what obliges the class declaring it to admit both names.
+func (f Field) Aliased() bool {
+	return f.alias() != ""
 }
 
 // alias returns the key the field is read from, empty where the attribute it

@@ -3,69 +3,2343 @@
 # 	tgen    (devel)
 # 	Bot API 10.2
 # changelog: https://core.telegram.org/bots/api-changelog#july-14-2026
-# TODO: update (object)
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class Update(BaseModel):
+    """This object represents an incoming update.
+    At most one of the optional fields can be present in any given
+    update.
+
+    See https://core.telegram.org/bots/api#update
+    """
+
+    update_id: int
+    """The update's unique identifier. Update identifiers start from a
+    certain positive number and increase sequentially. This identifier
+    becomes especially handy if you're using webhooks, since it allows
+    you to ignore repeated updates or to restore the correct update
+    sequence, should they get out of order. If there are no new updates
+    for at least a week, then identifier of the next update will be
+    chosen randomly instead of sequentially.
+    """
+
+    message: Message | None = None
+    """New incoming message of any kind - text, photo, sticker, etc."""
+
+    edited_message: Message | None = None
+    """New version of a message that is known to the bot and was edited.
+    This update may at times be triggered by changes to message fields
+    that are either unavailable or not actively used by your bot.
+    """
+
+    channel_post: Message | None = None
+    """New incoming channel post of any kind - text, photo, sticker, etc."""
+
+    edited_channel_post: Message | None = None
+    """New version of a channel post that is known to the bot and was
+    edited. This update may at times be triggered by changes to message
+    fields that are either unavailable or not actively used by your bot.
+    """
+
+    business_connection: BusinessConnection | None = None
+    """The bot was connected to or disconnected from a business account, or
+    a user edited an existing connection with the bot
+    """
+
+    business_message: Message | None = None
+    """New message from a connected business account"""
+
+    edited_business_message: Message | None = None
+    """New version of a message from a connected business account"""
+
+    deleted_business_messages: BusinessMessagesDeleted | None = None
+    """Messages were deleted from a connected business account"""
+
+    guest_message: Message | None = None
+    """New guest message. The bot can use the field Message.guest_query_id
+    and the method answerGuestQuery to send a message in response.
+    """
+
+    message_reaction: MessageReactionUpdated | None = None
+    """A reaction to a message was changed by a user. The bot must be an
+    administrator in the chat and must explicitly specify
+    "message_reaction" in the list of allowed_updates to receive these
+    updates. The update isn't received for reactions set by bots.
+    """
+
+    message_reaction_count: MessageReactionCountUpdated | None = None
+    """Reactions to a message with anonymous reactions were changed. The
+    bot must be an administrator in the chat and must explicitly specify
+    "message_reaction_count" in the list of allowed_updates to receive
+    these updates. The updates are grouped and can be sent with delay up
+    to a few minutes.
+    """
+
+    inline_query: InlineQuery | None = None
+    """New incoming inline query"""
+
+    chosen_inline_result: ChosenInlineResult | None = None
+    """The result of an inline query that was chosen by a user and sent to
+    their chat partner. Please see our documentation on the feedback
+    collecting for details on how to enable these updates for your bot.
+    """
+
+    callback_query: CallbackQuery | None = None
+    """New incoming callback query"""
+
+    shipping_query: ShippingQuery | None = None
+    """New incoming shipping query. Only for invoices with flexible price."""
+
+    pre_checkout_query: PreCheckoutQuery | None = None
+    """New incoming pre-checkout query. Contains full information about
+    checkout.
+    """
+
+    purchased_paid_media: PaidMediaPurchased | None = None
+    """A user purchased paid media with a non-empty payload sent by the bot
+    in a non-channel chat
+    """
+
+    poll: Poll | None = None
+    """New poll state. Bots receive only updates about manually stopped
+    polls and polls, which are sent by the bot.
+    """
+
+    poll_answer: PollAnswer | None = None
+    """A user changed their answer in a non-anonymous poll. Bots receive
+    new votes only in polls that were sent by the bot itself.
+    """
+
+    my_chat_member: ChatMemberUpdated | None = None
+    """The bot's chat member status was updated in a chat. For private
+    chats, this update is received only when the bot is blocked or
+    unblocked by the user.
+    """
+
+    chat_member: ChatMemberUpdated | None = None
+    """A chat member's status was updated in a chat. The bot must be an
+    administrator in the chat and must explicitly specify "chat_member"
+    in the list of allowed_updates to receive these updates.
+    """
+
+    chat_join_request: ChatJoinRequest | None = None
+    """A request to join the chat has been sent. The bot must have the
+    can_invite_users administrator right in the chat to receive these
+    updates.
+    """
+
+    chat_boost: ChatBoostUpdated | None = None
+    """A chat boost was added or changed. The bot must be an administrator
+    in the chat to receive these updates.
+    """
+
+    removed_chat_boost: ChatBoostRemoved | None = None
+    """A boost was removed from a chat. The bot must be an administrator in
+    the chat to receive these updates.
+    """
+
+    managed_bot: ManagedBotUpdated | None = None
+    """A new bot was created to be managed by the bot, or token or owner of
+    a managed bot was changed
+    """
+
+    subscription: BotSubscriptionUpdated | None = None
+    """User payment subscription has changed"""
 # TODO: getupdates (method)
 # TODO: setwebhook (method)
 # TODO: deletewebhook (method)
 # TODO: getwebhookinfo (method)
-# TODO: webhookinfo (object)
-# TODO: user (object)
-# TODO: chat (object)
-# TODO: chatfullinfo (object)
-# TODO: message (object)
-# TODO: messageid (object)
-# TODO: inaccessiblemessage (object)
+
+
+class WebhookInfo(BaseModel):
+    """Describes the current status of a webhook.
+
+    See https://core.telegram.org/bots/api#webhookinfo
+    """
+
+    url: str
+    """Webhook URL, may be empty if webhook is not set up"""
+
+    has_custom_certificate: bool
+    """True, if a custom certificate was provided for webhook certificate
+    checks
+    """
+
+    pending_update_count: int
+    """Number of updates awaiting delivery"""
+
+    ip_address: str | None = None
+    """Currently used webhook IP address"""
+
+    last_error_date: int | None = None
+    """Unix time for the most recent error that happened when trying to
+    deliver an update via webhook
+    """
+
+    last_error_message: str | None = None
+    """Error message in human-readable format for the most recent error
+    that happened when trying to deliver an update via webhook
+    """
+
+    last_synchronization_error_date: int | None = None
+    """Unix time of the most recent error that happened when trying to
+    synchronize available updates with Telegram datacenters
+    """
+
+    max_connections: int | None = None
+    """The maximum allowed number of simultaneous HTTPS connections to the
+    webhook for update delivery
+    """
+
+    allowed_updates: list[str] | None = None
+    """A list of update types the bot is subscribed to. Defaults to all
+    update types except chat_member, message_reaction, and
+    message_reaction_count.
+    """
+
+
+class User(BaseModel):
+    """This object represents a Telegram user or bot.
+
+    See https://core.telegram.org/bots/api#user
+    """
+
+    id: int
+    """Unique identifier for this user or bot. This number may have more
+    than 32 significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a 64-bit integer or double-precision float type
+    are safe for storing this identifier.
+    """
+
+    is_bot: bool
+    """True, if this user is a bot"""
+
+    first_name: str
+    """User's or bot's first name"""
+
+    last_name: str | None = None
+    """User's or bot's last name"""
+
+    username: str | None = None
+    """User's or bot's username"""
+
+    language_code: str | None = None
+    """IETF language tag of the user's language"""
+
+    is_premium: bool | None = None
+    """True, if this user is a Telegram Premium user"""
+
+    added_to_attachment_menu: bool | None = None
+    """True, if this user added the bot to the attachment menu"""
+
+    can_join_groups: bool | None = None
+    """True, if the bot can be invited to groups. Returned only in getMe."""
+
+    can_read_all_group_messages: bool | None = None
+    """True, if privacy mode is disabled for the bot. Returned only in
+    getMe.
+    """
+
+    supports_guest_queries: bool | None = None
+    """True, if the bot supports guest queries from chats it is not a
+    member of. Returned only in getMe.
+    """
+
+    supports_inline_queries: bool | None = None
+    """True, if the bot supports inline queries. Returned only in getMe."""
+
+    can_connect_to_business: bool | None = None
+    """True, if the bot can be connected to a user account to manage it.
+    Returned only in getMe.
+    """
+
+    has_main_web_app: bool | None = None
+    """True, if the bot has a main Web App. Returned only in getMe."""
+
+    has_topics_enabled: bool | None = None
+    """True, if the bot has forum topic mode enabled in private chats.
+    Returned only in getMe.
+    """
+
+    allows_users_to_create_topics: bool | None = None
+    """True, if the bot allows users to create and delete topics in private
+    chats. Returned only in getMe.
+    """
+
+    can_manage_bots: bool | None = None
+    """True, if other bots can be created to be controlled by the bot.
+    Returned only in getMe.
+    """
+
+    supports_join_request_queries: bool | None = None
+    """True, if the bot supports join request queries and can be assigned
+    to process them. Returned only in getMe.
+    """
+
+
+class Chat(BaseModel):
+    """This object represents a chat.
+
+    See https://core.telegram.org/bots/api#chat
+    """
+
+    id: int
+    """Unique identifier for this chat. This number may have more than 32
+    significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a signed 64-bit integer or double-precision
+    float type are safe for storing this identifier.
+    """
+
+    type: str
+    """Type of the chat, can be either “private”, “group”, “supergroup” or
+    “channel”
+    """
+
+    title: str | None = None
+    """Title, for supergroups, channels and group chats"""
+
+    username: str | None = None
+    """Username, for private chats, supergroups and channels if available"""
+
+    first_name: str | None = None
+    """First name of the other party in a private chat"""
+
+    last_name: str | None = None
+    """Last name of the other party in a private chat"""
+
+    is_forum: bool | None = None
+    """True, if the supergroup chat is a forum (has topics enabled)"""
+
+    is_direct_messages: bool | None = None
+    """True, if the chat is the direct messages chat of a channel"""
+
+
+class ChatFullInfo(BaseModel):
+    """This object contains full information about a chat.
+
+    See https://core.telegram.org/bots/api#chatfullinfo
+    """
+
+    id: int
+    """Unique identifier for this chat. This number may have more than 32
+    significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a signed 64-bit integer or double-precision
+    float type are safe for storing this identifier.
+    """
+
+    type: str
+    """Type of the chat, can be either “private”, “group”, “supergroup” or
+    “channel”
+    """
+
+    accent_color_id: int
+    """Identifier of the accent color for the chat name and backgrounds of
+    the chat photo, reply header, and link preview. See accent colors
+    for more details.
+    """
+
+    max_reaction_count: int
+    """The maximum number of reactions that can be set on a message in the
+    chat
+    """
+
+    accepted_gift_types: AcceptedGiftTypes
+    """Information about types of gifts that are accepted by the chat or by
+    the corresponding user for private chats
+    """
+
+    title: str | None = None
+    """Title, for supergroups, channels and group chats"""
+
+    username: str | None = None
+    """Username, for private chats, supergroups and channels if available"""
+
+    first_name: str | None = None
+    """First name of the other party in a private chat"""
+
+    last_name: str | None = None
+    """Last name of the other party in a private chat"""
+
+    is_forum: bool | None = None
+    """True, if the supergroup chat is a forum (has topics enabled)"""
+
+    is_direct_messages: bool | None = None
+    """True, if the chat is the direct messages chat of a channel"""
+
+    photo: ChatPhoto | None = None
+    """Chat photo"""
+
+    active_usernames: list[str] | None = None
+    """If non-empty, the list of all active chat usernames; for private
+    chats, supergroups and channels
+    """
+
+    birthdate: Birthdate | None = None
+    """For private chats, the date of birth of the user"""
+
+    business_intro: BusinessIntro | None = None
+    """For private chats with business accounts, the intro of the business"""
+
+    business_location: BusinessLocation | None = None
+    """For private chats with business accounts, the location of the
+    business
+    """
+
+    business_opening_hours: BusinessOpeningHours | None = None
+    """For private chats with business accounts, the opening hours of the
+    business
+    """
+
+    personal_chat: Chat | None = None
+    """For private chats, the personal channel of the user"""
+
+    parent_chat: Chat | None = None
+    """Information about the corresponding channel chat; for direct
+    messages chats only
+    """
+
+    available_reactions: list[ReactionType] | None = None
+    """List of available reactions allowed in the chat. If omitted, then
+    all emoji reactions are allowed.
+    """
+
+    background_custom_emoji_id: str | None = None
+    """Custom emoji identifier of the emoji chosen by the chat for the
+    reply header and link preview background
+    """
+
+    profile_accent_color_id: int | None = None
+    """Identifier of the accent color for the chat's profile background.
+    See profile accent colors for more details.
+    """
+
+    profile_background_custom_emoji_id: str | None = None
+    """Custom emoji identifier of the emoji chosen by the chat for its
+    profile background
+    """
+
+    emoji_status_custom_emoji_id: str | None = None
+    """Custom emoji identifier of the emoji status of the chat or the other
+    party in a private chat
+    """
+
+    emoji_status_expiration_date: int | None = None
+    """Expiration date of the emoji status of the chat or the other party
+    in a private chat, in Unix time, if any
+    """
+
+    bio: str | None = None
+    """Bio of the other party in a private chat"""
+
+    has_private_forwards: bool | None = None
+    """True, if privacy settings of the other party in the private chat
+    allows to use tg://user?id=<user_id> links only in chats with the
+    user
+    """
+
+    has_restricted_voice_and_video_messages: bool | None = None
+    """True, if the privacy settings of the other party restrict sending
+    voice and video note messages in the private chat
+    """
+
+    join_to_send_messages: bool | None = None
+    """True, if users need to join the supergroup before they can send
+    messages
+    """
+
+    join_by_request: bool | None = None
+    """True, if all users directly joining the supergroup without using an
+    invite link need to be approved by supergroup administrators
+    """
+
+    description: str | None = None
+    """Description, for groups, supergroups and channel chats"""
+
+    invite_link: str | None = None
+    """Primary invite link, for groups, supergroups and channel chats"""
+
+    pinned_message: Message | None = None
+    """The most recent pinned message (by sending date)"""
+
+    permissions: ChatPermissions | None = None
+    """Default chat member permissions, for groups and supergroups"""
+
+    can_send_paid_media: bool | None = None
+    """True, if paid media messages can be sent or forwarded to the channel
+    chat. The field is available only for channel chats.
+    """
+
+    slow_mode_delay: int | None = None
+    """For supergroups, the minimum allowed delay between consecutive
+    messages sent by each unprivileged user; in seconds
+    """
+
+    unrestrict_boost_count: int | None = None
+    """For supergroups, the minimum number of boosts that a
+    non-administrator user needs to add in order to ignore slow mode and
+    chat permissions
+    """
+
+    message_auto_delete_time: int | None = None
+    """The time after which all messages sent to the chat will be
+    automatically deleted; in seconds
+    """
+
+    has_aggressive_anti_spam_enabled: bool | None = None
+    """True, if aggressive anti-spam checks are enabled in the supergroup.
+    The field is only available to chat administrators.
+    """
+
+    has_hidden_members: bool | None = None
+    """True, if non-administrators can only get the list of bots and
+    administrators in the chat
+    """
+
+    has_protected_content: bool | None = None
+    """True, if messages from the chat can't be forwarded to other chats"""
+
+    has_visible_history: bool | None = None
+    """True, if new chat members will have access to old messages;
+    available only to chat administrators
+    """
+
+    sticker_set_name: str | None = None
+    """For supergroups, name of the group sticker set"""
+
+    can_set_sticker_set: bool | None = None
+    """True, if the bot can change the group sticker set"""
+
+    custom_emoji_sticker_set_name: str | None = None
+    """For supergroups, the name of the group's custom emoji sticker set.
+    Custom emoji from this set can be used by all users and bots in the
+    group.
+    """
+
+    linked_chat_id: int | None = None
+    """Unique identifier for the linked chat, i.e. the discussion group
+    identifier for a channel and vice versa; for supergroups and channel
+    chats. This identifier may be greater than 32 bits and some
+    programming languages may have difficulty/silent defects in
+    interpreting it. But it is smaller than 52 bits, so a signed 64 bit
+    integer or double-precision float type are safe for storing this
+    identifier.
+    """
+
+    location: ChatLocation | None = None
+    """For supergroups, the location to which the supergroup is connected"""
+
+    rating: UserRating | None = None
+    """For private chats, the rating of the user if any"""
+
+    first_profile_audio: Audio | None = None
+    """For private chats, the first audio added to the profile of the user"""
+
+    unique_gift_colors: UniqueGiftColors | None = None
+    """The color scheme based on a unique gift that must be used for the
+    chat's name, message replies and link previews
+    """
+
+    paid_message_star_count: int | None = None
+    """The number of Telegram Stars a general user has to pay to send a
+    message to the chat
+    """
+
+    guard_bot: User | None = None
+    """The bot that processes join request queries in the chat. The field
+    is only available to chat administrators.
+    """
+
+    community: Community | None = None
+    """The Community to which the chat belongs"""
+
+
+class Message(BaseModel):
+    """This object represents a message.
+
+    See https://core.telegram.org/bots/api#message
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    message_id: int
+    """Unique message identifier inside this chat; 0 for ephemeral
+    messages. In specific instances (e.g., a message containing a video
+    sent to a big chat), the server might automatically schedule a
+    message instead of sending it immediately. In such cases, this field
+    will be 0 and the relevant message will be unusable until it is
+    actually sent.
+    """
+
+    date: int
+    """Date the message was sent in Unix time. It is always a positive
+    number, representing a valid date.
+    """
+
+    chat: Chat
+    """Chat the message belongs to"""
+
+    message_thread_id: int | None = None
+    """Unique identifier of a message thread or forum topic to which the
+    message belongs; for supergroups and private chats only
+    """
+
+    direct_messages_topic: DirectMessagesTopic | None = None
+    """Information about the direct messages chat topic that contains the
+    message
+    """
+
+    from_: User | None = Field(default=None, alias="from")
+    """Sender of the message; may be empty for messages sent to channels.
+    For backward compatibility, if the message was sent on behalf of a
+    chat, the field contains a fake sender user in non-channel chats.
+    """
+
+    sender_chat: Chat | None = None
+    """Sender of the message when sent on behalf of a chat. For example,
+    the supergroup itself for messages sent by its anonymous
+    administrators or a linked channel for messages automatically
+    forwarded to the channel's discussion group. For backward
+    compatibility, if the message was sent on behalf of a chat, the
+    field from contains a fake sender user in non-channel chats.
+    """
+
+    sender_boost_count: int | None = None
+    """If the sender of the message boosted the chat, the number of boosts
+    added by the user
+    """
+
+    sender_business_bot: User | None = None
+    """The bot that actually sent the message on behalf of the business
+    account. Available only for outgoing messages sent on behalf of the
+    connected business account.
+    """
+
+    sender_tag: str | None = None
+    """Tag or custom title of the sender of the message; for supergroups
+    only
+    """
+
+    receiver_user: User | None = None
+    """For ephemeral messages, the user who received the message"""
+
+    ephemeral_message_id: int | None = None
+    """For ephemeral messages, identifier of the ephemeral message inside
+    this chat. The identifier may be reused for another ephemeral
+    message after the message is deleted or expires.
+    """
+
+    guest_query_id: str | None = None
+    """The unique identifier for the guest query. Use this identifier with
+    the method answerGuestQuery to send a response message. If
+    non-empty, the message belongs to the chat where the guest bot was
+    summoned, which may not coincide with other existing bot chats
+    sharing the same identifier.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection from which the message
+    was received. If non-empty, the message belongs to a chat of the
+    corresponding business account that is independent from any
+    potential bot chat which might share the same identifier.
+    """
+
+    forward_origin: MessageOrigin | None = None
+    """Information about the original message for forwarded messages"""
+
+    is_topic_message: bool | None = None
+    """True, if the message is sent to a topic in a forum supergroup or a
+    private chat with the bot
+    """
+
+    is_automatic_forward: bool | None = None
+    """True, if the message is a channel post that was automatically
+    forwarded to the connected discussion group
+    """
+
+    reply_to_message: Message | None = None
+    """For replies in the same chat and message thread, the original
+    message. Note that the Message object in this field will not contain
+    further reply_to_message fields even if it itself is a reply. If the
+    message is a reply to an ephemeral message, then this field may be
+    omitted.
+    """
+
+    external_reply: ExternalReplyInfo | None = None
+    """Information about the message that is being replied to, which may
+    come from another chat or forum topic
+    """
+
+    quote: TextQuote | None = None
+    """For replies that quote part of the original message, the quoted part
+    of the message
+    """
+
+    reply_to_story: Story | None = None
+    """For replies to a story, the original story"""
+
+    reply_to_checklist_task_id: int | None = None
+    """Identifier of the specific checklist task that is being replied to"""
+
+    reply_to_poll_option_id: str | None = None
+    """Persistent identifier of the specific poll option that is being
+    replied to
+    """
+
+    via_bot: User | None = None
+    """Bot through which the message was sent"""
+
+    guest_bot_caller_user: User | None = None
+    """For a message sent by a guest bot, this is the user whose original
+    message triggered the bot's response
+    """
+
+    guest_bot_caller_chat: Chat | None = None
+    """For a message sent by a guest bot, this is the chat whose original
+    message triggered the bot's response
+    """
+
+    edit_date: int | None = None
+    """Date the message was last edited in Unix time"""
+
+    has_protected_content: bool | None = None
+    """True, if the message can't be forwarded"""
+
+    is_from_offline: bool | None = None
+    """True, if the message was sent by an implicit action, for example, as
+    an away or a greeting business message, or as a scheduled message
+    """
+
+    is_paid_post: bool | None = None
+    """True, if the message is a paid post. Note that such posts must not
+    be deleted for 24 hours to receive the payment and can't be edited.
+    """
+
+    media_group_id: str | None = None
+    """The unique identifier inside this chat of a media message group this
+    message belongs to
+    """
+
+    author_signature: str | None = None
+    """Signature of the post author for messages in channels, or the custom
+    title of an anonymous group administrator
+    """
+
+    paid_star_count: int | None = None
+    """The number of Telegram Stars that were paid by the sender of the
+    message to send it
+    """
+
+    text: str | None = None
+    """For text messages, the actual UTF-8 text of the message"""
+
+    entities: list[MessageEntity] | None = None
+    """For text messages, special entities like usernames, URLs, bot
+    commands, etc. that appear in the text
+    """
+
+    link_preview_options: LinkPreviewOptions | None = None
+    """Options used for link preview generation for the message, if it is a
+    text message and link preview options were changed
+    """
+
+    suggested_post_info: SuggestedPostInfo | None = None
+    """Information about suggested post parameters if the message is a
+    suggested post in a channel direct messages chat. If the message is
+    an approved or declined suggested post, then it can't be edited.
+    """
+
+    effect_id: str | None = None
+    """Unique identifier of the message effect added to the message"""
+
+    rich_message: RichMessage | None = None
+    """Message is a rich formatted message"""
+
+    animation: Animation | None = None
+    """Message is an animation, information about the animation. For
+    backward compatibility, when this field is set, the document field
+    will also be set.
+    """
+
+    audio: Audio | None = None
+    """Message is an audio file, information about the file"""
+
+    document: Document | None = None
+    """Message is a general file, information about the file"""
+
+    live_photo: LivePhoto | None = None
+    """Message is a live photo, information about the live photo. For
+    backward compatibility, when this field is set, the photo field will
+    also be set.
+    """
+
+    paid_media: PaidMediaInfo | None = None
+    """Message contains paid media; information about the paid media"""
+
+    photo: list[PhotoSize] | None = None
+    """Message is a photo, available sizes of the photo"""
+
+    sticker: Sticker | None = None
+    """Message is a sticker, information about the sticker"""
+
+    story: Story | None = None
+    """Message is a forwarded story"""
+
+    video: Video | None = None
+    """Message is a video, information about the video"""
+
+    video_note: VideoNote | None = None
+    """Message is a video note, information about the video message"""
+
+    voice: Voice | None = None
+    """Message is a voice message, information about the file"""
+
+    caption: str | None = None
+    """Caption for the animation, audio, document, paid media, photo, video
+    or voice
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """For messages with a caption, special entities like usernames, URLs,
+    bot commands, etc. that appear in the caption
+    """
+
+    show_caption_above_media: bool | None = None
+    """True, if the caption must be shown above the message media"""
+
+    has_media_spoiler: bool | None = None
+    """True, if the message media is covered by a spoiler animation"""
+
+    checklist: Checklist | None = None
+    """Message is a checklist"""
+
+    contact: Contact | None = None
+    """Message is a shared contact, information about the contact"""
+
+    dice: Dice | None = None
+    """Message is a dice with random value"""
+
+    game: Game | None = None
+    """Message is a game, information about the game. More about games »"""
+
+    poll: Poll | None = None
+    """Message is a native poll, information about the poll"""
+
+    venue: Venue | None = None
+    """Message is a venue, information about the venue. For backward
+    compatibility, when this field is set, the location field will also
+    be set.
+    """
+
+    location: Location | None = None
+    """Message is a shared location, information about the location"""
+
+    new_chat_members: list[User] | None = None
+    """New members that were added to the group or supergroup and
+    information about them (the bot itself may be one of these members)
+    """
+
+    left_chat_member: User | None = None
+    """A member was removed from the group, information about them (this
+    member may be the bot itself)
+    """
+
+    chat_owner_left: ChatOwnerLeft | None = None
+    """Service message: chat owner has left"""
+
+    chat_owner_changed: ChatOwnerChanged | None = None
+    """Service message: chat owner has changed"""
+
+    new_chat_title: str | None = None
+    """A chat title was changed to this value"""
+
+    new_chat_photo: list[PhotoSize] | None = None
+    """A chat photo was change to this value"""
+
+    delete_chat_photo: bool | None = None
+    """Service message: the chat photo was deleted"""
+
+    group_chat_created: bool | None = None
+    """Service message: the group has been created"""
+
+    supergroup_chat_created: bool | None = None
+    """Service message: the supergroup has been created. This field can't
+    be received in a message coming through updates, because bot can't
+    be a member of a supergroup when it is created. It can only be found
+    in reply_to_message if someone replies to a very first message in a
+    directly created supergroup.
+    """
+
+    channel_chat_created: bool | None = None
+    """Service message: the channel has been created. This field can't be
+    received in a message coming through updates, because bot can't be a
+    member of a channel when it is created. It can only be found in
+    reply_to_message if someone replies to a very first message in a
+    channel.
+    """
+
+    message_auto_delete_timer_changed: MessageAutoDeleteTimerChanged | None = None
+    """Service message: auto-delete timer settings changed in the chat"""
+
+    migrate_to_chat_id: int | None = None
+    """The group has been migrated to a supergroup with the specified
+    identifier. This number may have more than 32 significant bits and
+    some programming languages may have difficulty/silent defects in
+    interpreting it. But it has at most 52 significant bits, so a signed
+    64-bit integer or double-precision float type are safe for storing
+    this identifier.
+    """
+
+    migrate_from_chat_id: int | None = None
+    """The supergroup has been migrated from a group with the specified
+    identifier. This number may have more than 32 significant bits and
+    some programming languages may have difficulty/silent defects in
+    interpreting it. But it has at most 52 significant bits, so a signed
+    64-bit integer or double-precision float type are safe for storing
+    this identifier.
+    """
+
+    pinned_message: MaybeInaccessibleMessage | None = None
+    """Specified message was pinned. Note that the Message object in this
+    field will not contain further reply_to_message fields even if it
+    itself is a reply.
+    """
+
+    invoice: Invoice | None = None
+    """Message is an invoice for a payment, information about the invoice.
+    More about payments »
+    """
+
+    successful_payment: SuccessfulPayment | None = None
+    """Message is a service message about a successful payment, information
+    about the payment. More about payments »
+    """
+
+    refunded_payment: RefundedPayment | None = None
+    """Message is a service message about a refunded payment, information
+    about the payment. More about payments »
+    """
+
+    users_shared: UsersShared | None = None
+    """Service message: users were shared with the bot"""
+
+    chat_shared: ChatShared | None = None
+    """Service message: a chat was shared with the bot"""
+
+    gift: GiftInfo | None = None
+    """Service message: a regular gift was sent or received"""
+
+    unique_gift: UniqueGiftInfo | None = None
+    """Service message: a unique gift was sent or received"""
+
+    gift_upgrade_sent: GiftInfo | None = None
+    """Service message: upgrade of a gift was purchased after the gift was
+    sent
+    """
+
+    connected_website: str | None = None
+    """The domain name of the website on which the user has logged in. More
+    about Telegram Login »
+    """
+
+    write_access_allowed: WriteAccessAllowed | None = None
+    """Service message: the user allowed the bot to write messages after
+    adding it to the attachment or side menu, launching a Web App from a
+    link, or accepting an explicit request from a Web App sent by the
+    method requestWriteAccess
+    """
+
+    passport_data: PassportData | None = None
+    """Telegram Passport data"""
+
+    proximity_alert_triggered: ProximityAlertTriggered | None = None
+    """Service message: a user in the chat triggered another user's
+    proximity alert while sharing Live Location
+    """
+
+    boost_added: ChatBoostAdded | None = None
+    """Service message: user boosted the chat"""
+
+    chat_background_set: ChatBackground | None = None
+    """Service message: chat background set"""
+
+    checklist_tasks_done: ChecklistTasksDone | None = None
+    """Service message: some tasks in a checklist were marked as done or
+    not done
+    """
+
+    checklist_tasks_added: ChecklistTasksAdded | None = None
+    """Service message: tasks were added to a checklist"""
+
+    community_chat_added: CommunityChatAdded | None = None
+    """Service message: chat added to a Community"""
+
+    community_chat_removed: CommunityChatRemoved | None = None
+    """Service message: chat removed from a Community"""
+
+    direct_message_price_changed: DirectMessagePriceChanged | None = None
+    """Service message: the price for paid messages in the corresponding
+    direct messages chat of a channel has changed
+    """
+
+    forum_topic_created: ForumTopicCreated | None = None
+    """Service message: forum topic created"""
+
+    forum_topic_edited: ForumTopicEdited | None = None
+    """Service message: forum topic edited"""
+
+    forum_topic_closed: ForumTopicClosed | None = None
+    """Service message: forum topic closed"""
+
+    forum_topic_reopened: ForumTopicReopened | None = None
+    """Service message: forum topic reopened"""
+
+    general_forum_topic_hidden: GeneralForumTopicHidden | None = None
+    """Service message: the 'General' forum topic hidden"""
+
+    general_forum_topic_unhidden: GeneralForumTopicUnhidden | None = None
+    """Service message: the 'General' forum topic unhidden"""
+
+    giveaway_created: GiveawayCreated | None = None
+    """Service message: a scheduled giveaway was created"""
+
+    giveaway: Giveaway | None = None
+    """The message is a scheduled giveaway message"""
+
+    giveaway_winners: GiveawayWinners | None = None
+    """A giveaway with public winners was completed"""
+
+    giveaway_completed: GiveawayCompleted | None = None
+    """Service message: a giveaway without public winners was completed"""
+
+    managed_bot_created: ManagedBotCreated | None = None
+    """Service message: user created a bot that will be managed by the
+    current bot
+    """
+
+    paid_message_price_changed: PaidMessagePriceChanged | None = None
+    """Service message: the price for paid messages has changed in the chat"""
+
+    poll_option_added: PollOptionAdded | None = None
+    """Service message: answer option was added to a poll"""
+
+    poll_option_deleted: PollOptionDeleted | None = None
+    """Service message: answer option was deleted from a poll"""
+
+    suggested_post_approved: SuggestedPostApproved | None = None
+    """Service message: a suggested post was approved"""
+
+    suggested_post_approval_failed: SuggestedPostApprovalFailed | None = None
+    """Service message: approval of a suggested post has failed"""
+
+    suggested_post_declined: SuggestedPostDeclined | None = None
+    """Service message: a suggested post was declined"""
+
+    suggested_post_paid: SuggestedPostPaid | None = None
+    """Service message: payment for a suggested post was received"""
+
+    suggested_post_refunded: SuggestedPostRefunded | None = None
+    """Service message: payment for a suggested post was refunded"""
+
+    video_chat_scheduled: VideoChatScheduled | None = None
+    """Service message: video chat scheduled"""
+
+    video_chat_started: VideoChatStarted | None = None
+    """Service message: video chat started"""
+
+    video_chat_ended: VideoChatEnded | None = None
+    """Service message: video chat ended"""
+
+    video_chat_participants_invited: VideoChatParticipantsInvited | None = None
+    """Service message: new participants invited to a video chat"""
+
+    web_app_data: WebAppData | None = None
+    """Service message: data sent by a Web App"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message. login_url buttons are
+    represented as ordinary url buttons.
+    """
+
+
+class MessageID(BaseModel):
+    """This object represents a unique message identifier.
+
+    See https://core.telegram.org/bots/api#messageid
+    """
+
+    message_id: int
+    """Unique message identifier. In specific instances (e.g., message
+    containing a video sent to a big chat), the server might
+    automatically schedule a message instead of sending it immediately.
+    In such cases, this field will be 0 and the relevant message will be
+    unusable until it is actually sent.
+    """
+
+
+class InaccessibleMessage(BaseModel):
+    """This object describes a message that was deleted or is otherwise
+    inaccessible to the bot.
+
+    See https://core.telegram.org/bots/api#inaccessiblemessage
+    """
+
+    chat: Chat
+    """Chat the message belonged to"""
+
+    message_id: int
+    """Unique message identifier inside the chat"""
+
+    date: int
+    """Always 0. The field can be used to differentiate regular and
+    inaccessible messages.
+    """
 # TODO: maybeinaccessiblemessage (union)
-# TODO: messageentity (object)
-# TODO: textquote (object)
-# TODO: externalreplyinfo (object)
-# TODO: replyparameters (object)
+
+
+class MessageEntity(BaseModel):
+    """This object represents one special entity in a text message. For
+    example, hashtags, usernames, URLs, etc.
+
+    See https://core.telegram.org/bots/api#messageentity
+    """
+
+    type: str
+    """Type of the entity. Currently, can be “mention” (@username),
+    “hashtag” (#hashtag or #hashtag@chatusername), “cashtag” ($USD or
+    $USD@chatusername), “bot_command” (/start@jobs_bot), “url”
+    (https://telegram.org), “email” (do-not-reply@telegram.org),
+    “phone_number” (+1-212-555-0123), “bold” (bold text), “italic”
+    (italic text), “underline” (underlined text), “strikethrough”
+    (strikethrough text), “spoiler” (spoiler message), “blockquote”
+    (block quotation), “expandable_blockquote” (collapsed-by-default
+    block quotation), “code” (monowidth string), “pre” (monowidth
+    block), “text_link” (for clickable text URLs), “text_mention” (for
+    users without usernames), “custom_emoji” (for inline custom emoji
+    stickers), or “date_time” (for formatted date and time).
+    """
+
+    offset: int
+    """Offset in UTF-16 code units to the start of the entity"""
+
+    length: int
+    """Length of the entity in UTF-16 code units"""
+
+    url: str | None = None
+    """For “text_link” only, URL that will be opened after user taps on the
+    text
+    """
+
+    user: User | None = None
+    """For “text_mention” only, the mentioned user"""
+
+    language: str | None = None
+    """For “pre” only, the programming language of the entity text"""
+
+    custom_emoji_id: str | None = None
+    """For “custom_emoji” only, unique identifier of the custom emoji. Use
+    getCustomEmojiStickers to get full information about the sticker.
+    """
+
+    unix_time: int | None = None
+    """For “date_time” only, the Unix time associated with the entity"""
+
+    date_time_format: str | None = None
+    """For “date_time” only, the string that defines the formatting of the
+    date and time. See date-time entity formatting for more details.
+    """
+
+
+class TextQuote(BaseModel):
+    """This object contains information about the quoted part of a message
+    that is replied to by the given message.
+
+    See https://core.telegram.org/bots/api#textquote
+    """
+
+    text: str
+    """Text of the quoted part of a message that is replied to by the given
+    message
+    """
+
+    position: int
+    """Approximate quote position in the original message in UTF-16 code
+    units as specified by the sender
+    """
+
+    entities: list[MessageEntity] | None = None
+    """Special entities that appear in the quote. Currently, only bold,
+    italic, underline, strikethrough, spoiler, custom_emoji, and
+    date_time entities are kept in quotes.
+    """
+
+    is_manual: bool | None = None
+    """True, if the quote was chosen manually by the message sender.
+    Otherwise, the quote was added automatically by the server.
+    """
+
+
+class ExternalReplyInfo(BaseModel):
+    """This object contains information about a message that is being
+    replied to, which may come from another chat or forum topic.
+
+    See https://core.telegram.org/bots/api#externalreplyinfo
+    """
+
+    origin: MessageOrigin
+    """Origin of the message replied to by the given message"""
+
+    chat: Chat | None = None
+    """Chat the original message belongs to. Available only if the chat is
+    a supergroup or a channel.
+    """
+
+    message_id: int | None = None
+    """Unique message identifier inside the original chat. Available only
+    if the original chat is a supergroup or a channel.
+    """
+
+    link_preview_options: LinkPreviewOptions | None = None
+    """Options used for link preview generation for the original message,
+    if it is a text message
+    """
+
+    animation: Animation | None = None
+    """Message is an animation, information about the animation"""
+
+    audio: Audio | None = None
+    """Message is an audio file, information about the file"""
+
+    document: Document | None = None
+    """Message is a general file, information about the file"""
+
+    live_photo: LivePhoto | None = None
+    """Message is a live photo, information about the live photo"""
+
+    paid_media: PaidMediaInfo | None = None
+    """Message contains paid media; information about the paid media"""
+
+    photo: list[PhotoSize] | None = None
+    """Message is a photo, available sizes of the photo"""
+
+    sticker: Sticker | None = None
+    """Message is a sticker, information about the sticker"""
+
+    story: Story | None = None
+    """Message is a forwarded story"""
+
+    video: Video | None = None
+    """Message is a video, information about the video"""
+
+    video_note: VideoNote | None = None
+    """Message is a video note, information about the video message"""
+
+    voice: Voice | None = None
+    """Message is a voice message, information about the file"""
+
+    has_media_spoiler: bool | None = None
+    """True, if the message media is covered by a spoiler animation"""
+
+    checklist: Checklist | None = None
+    """Message is a checklist"""
+
+    contact: Contact | None = None
+    """Message is a shared contact, information about the contact"""
+
+    dice: Dice | None = None
+    """Message is a dice with random value"""
+
+    game: Game | None = None
+    """Message is a game, information about the game. More about games »"""
+
+    giveaway: Giveaway | None = None
+    """Message is a scheduled giveaway, information about the giveaway"""
+
+    giveaway_winners: GiveawayWinners | None = None
+    """A giveaway with public winners was completed"""
+
+    invoice: Invoice | None = None
+    """Message is an invoice for a payment, information about the invoice.
+    More about payments »
+    """
+
+    location: Location | None = None
+    """Message is a shared location, information about the location"""
+
+    poll: Poll | None = None
+    """Message is a native poll, information about the poll"""
+
+    venue: Venue | None = None
+    """Message is a venue, information about the venue"""
+
+
+class ReplyParameters(BaseModel):
+    """Describes reply parameters for the message that is being sent.
+
+    See https://core.telegram.org/bots/api#replyparameters
+    """
+
+    message_id: int | None = None
+    """Identifier of the message that will be replied to in the current
+    chat, or in the chat chat_id if it is specified. Required if
+    ephemeral_message_id isn't specified.
+    """
+
+    chat_id: ChatID | None = None
+    """If the message to be replied to is from a different chat, unique
+    identifier for the chat or username of the bot, supergroup or
+    channel in the format @username. Not supported for messages sent on
+    behalf of a business account, messages from channel direct messages
+    chats and ephemeral messages.
+    """
+
+    ephemeral_message_id: int | None = None
+    """Identifier of the incoming ephemeral message that will be replied to
+    in the current chat. A reply to an ephemeral message must itself be
+    an ephemeral message. An ephemeral message may only be replied to
+    within 15 seconds of being sent. Required if message_id isn't
+    specified.
+    """
+
+    allow_sending_without_reply: bool | None = None
+    """Pass True if the message should be sent even if the specified
+    message to be replied to is not found. Always False for replies in
+    another chat or forum topic, and sent ephemeral messages. Always
+    True for messages sent on behalf of a business account.
+    """
+
+    quote: str | None = None
+    """Quoted part of the message to be replied to; 0-1024 characters after
+    entities parsing. The quote must be an exact substring of the
+    message to be replied to, including bold, italic, underline,
+    strikethrough, spoiler, custom_emoji, and date_time entities. The
+    message will fail to send if the quote isn't found in the original
+    message. Ignored for ephemeral messages.
+    """
+
+    quote_parse_mode: str | None = None
+    """Mode for parsing entities in the quote. See formatting options for
+    more details.
+    """
+
+    quote_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the quote.
+    It can be specified instead of quote_parse_mode.
+    """
+
+    quote_position: int | None = None
+    """Position of the quote in the original message in UTF-16 code units"""
+
+    checklist_task_id: int | None = None
+    """Identifier of the specific checklist task to be replied to"""
+
+    poll_option_id: str | None = None
+    """Persistent identifier of the specific poll option to be replied to"""
 # TODO: messageorigin (discriminated union)
 # TODO: messageoriginuser (discriminated object)
 # TODO: messageoriginhiddenuser (discriminated object)
 # TODO: messageoriginchat (discriminated object)
 # TODO: messageoriginchannel (discriminated object)
-# TODO: photosize (object)
-# TODO: animation (object)
-# TODO: audio (object)
-# TODO: document (object)
-# TODO: livephoto (object)
-# TODO: story (object)
-# TODO: videoquality (object)
-# TODO: video (object)
-# TODO: videonote (object)
-# TODO: voice (object)
-# TODO: paidmediainfo (object)
+
+
+class PhotoSize(BaseModel):
+    """This object represents one size of a photo or a file / sticker
+    thumbnail.
+
+    See https://core.telegram.org/bots/api#photosize
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    width: int
+    """Photo width"""
+
+    height: int
+    """Photo height"""
+
+    file_size: int | None = None
+    """File size in bytes"""
+
+
+class Animation(BaseModel):
+    """This object represents an animation file (GIF or H.264/MPEG-4 AVC
+    video without sound).
+
+    See https://core.telegram.org/bots/api#animation
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    width: int
+    """Video width as defined by the sender"""
+
+    height: int
+    """Video height as defined by the sender"""
+
+    duration: int
+    """Duration of the video in seconds as defined by the sender"""
+
+    thumbnail: PhotoSize | None = None
+    """Animation thumbnail as defined by the sender"""
+
+    file_name: str | None = None
+    """Original animation filename as defined by the sender"""
+
+    mime_type: str | None = None
+    """MIME type of the file as defined by the sender"""
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+
+class Audio(BaseModel):
+    """This object represents an audio file to be treated as music by the
+    Telegram clients.
+
+    See https://core.telegram.org/bots/api#audio
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    duration: int
+    """Duration of the audio in seconds as defined by the sender"""
+
+    performer: str | None = None
+    """Performer of the audio as defined by the sender or by audio tags"""
+
+    title: str | None = None
+    """Title of the audio as defined by the sender or by audio tags"""
+
+    file_name: str | None = None
+    """Original filename as defined by the sender"""
+
+    mime_type: str | None = None
+    """MIME type of the file as defined by the sender"""
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+    thumbnail: PhotoSize | None = None
+    """Thumbnail of the album cover to which the music file belongs"""
+
+
+class Document(BaseModel):
+    """This object represents a general file (as opposed to photos, voice
+    messages and audio files).
+
+    See https://core.telegram.org/bots/api#document
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    thumbnail: PhotoSize | None = None
+    """Document thumbnail as defined by the sender"""
+
+    file_name: str | None = None
+    """Original filename as defined by the sender"""
+
+    mime_type: str | None = None
+    """MIME type of the file as defined by the sender"""
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+
+class LivePhoto(BaseModel):
+    """This object represents a live photo.
+
+    See https://core.telegram.org/bots/api#livephoto
+    """
+
+    file_id: str
+    """Identifier for the video file which can be used to download or reuse
+    the file
+    """
+
+    file_unique_id: str
+    """Unique identifier for the video file which is supposed to be the
+    same over time and for different bots. Can't be used to download or
+    reuse the file.
+    """
+
+    width: int
+    """Video width as defined by the sender"""
+
+    height: int
+    """Video height as defined by the sender"""
+
+    duration: int
+    """Duration of the video in seconds as defined by the sender"""
+
+    photo: list[PhotoSize] | None = None
+    """Available sizes of the corresponding static photo"""
+
+    mime_type: str | None = None
+    """MIME type of the file as defined by the sender"""
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+
+class Story(BaseModel):
+    """This object represents a story.
+
+    See https://core.telegram.org/bots/api#story
+    """
+
+    chat: Chat
+    """Chat that posted the story"""
+
+    id: int
+    """Unique identifier for the story in the chat"""
+
+
+class VideoQuality(BaseModel):
+    """This object represents a video file of a specific quality.
+
+    See https://core.telegram.org/bots/api#videoquality
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    width: int
+    """Video width"""
+
+    height: int
+    """Video height"""
+
+    codec: str
+    """Codec that was used to encode the video, for example, “h264”,
+    “h265”, or “av01”
+    """
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+
+class Video(BaseModel):
+    """This object represents a video file.
+
+    See https://core.telegram.org/bots/api#video
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    width: int
+    """Video width as defined by the sender"""
+
+    height: int
+    """Video height as defined by the sender"""
+
+    duration: int
+    """Duration of the video in seconds as defined by the sender"""
+
+    thumbnail: PhotoSize | None = None
+    """Video thumbnail"""
+
+    cover: list[PhotoSize] | None = None
+    """Available sizes of the cover of the video in the message"""
+
+    start_timestamp: int | None = None
+    """Timestamp in seconds from which the video will play in the message"""
+
+    qualities: list[VideoQuality] | None = None
+    """List of available qualities of the video"""
+
+    file_name: str | None = None
+    """Original filename as defined by the sender"""
+
+    mime_type: str | None = None
+    """MIME type of the file as defined by the sender"""
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+
+class VideoNote(BaseModel):
+    """This object represents a video message (available in Telegram apps
+    as of v.4.0).
+
+    See https://core.telegram.org/bots/api#videonote
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    length: int
+    """Video width and height (diameter of the video message) as defined by
+    the sender
+    """
+
+    duration: int
+    """Duration of the video in seconds as defined by the sender"""
+
+    thumbnail: PhotoSize | None = None
+    """Video thumbnail"""
+
+    file_size: int | None = None
+    """File size in bytes"""
+
+
+class Voice(BaseModel):
+    """This object represents a voice note.
+
+    See https://core.telegram.org/bots/api#voice
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    duration: int
+    """Duration of the audio in seconds as defined by the sender"""
+
+    mime_type: str | None = None
+    """MIME type of the file as defined by the sender"""
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+
+class PaidMediaInfo(BaseModel):
+    """Describes the paid media added to a message.
+
+    See https://core.telegram.org/bots/api#paidmediainfo
+    """
+
+    star_count: int
+    """The number of Telegram Stars that must be paid to buy access to the
+    media
+    """
+
+    paid_media: list[PaidMedia]
+    """Information about the paid media"""
 # TODO: paidmedia (discriminated union)
 # TODO: paidmedialivephoto (discriminated object)
 # TODO: paidmediaphoto (discriminated object)
 # TODO: paidmediapreview (discriminated object)
 # TODO: paidmediavideo (discriminated object)
-# TODO: contact (object)
-# TODO: dice (object)
-# TODO: link (object)
-# TODO: pollmedia (object)
+
+
+class Contact(BaseModel):
+    """This object represents a phone contact.
+
+    See https://core.telegram.org/bots/api#contact
+    """
+
+    phone_number: str
+    """Contact's phone number"""
+
+    first_name: str
+    """Contact's first name"""
+
+    last_name: str | None = None
+    """Contact's last name"""
+
+    user_id: int | None = None
+    """Contact's user identifier in Telegram. This number may have more
+    than 32 significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a 64-bit integer or double-precision float type
+    are safe for storing this identifier.
+    """
+
+    vcard: str | None = None
+    """Additional data about the contact in the form of a vCard"""
+
+
+class Dice(BaseModel):
+    """This object represents an animated emoji that displays a random
+    value.
+
+    See https://core.telegram.org/bots/api#dice
+    """
+
+    emoji: str
+    """Emoji on which the dice throw animation is based"""
+
+    value: int
+    """Value of the dice, 1-6 for “🎲”, “🎯” and “🎳” base emoji, 1-5 for “🏀”
+    and “⚽” base emoji, 1-64 for “🎰” base emoji
+    """
+
+
+class Link(BaseModel):
+    """Represents an HTTP link.
+
+    See https://core.telegram.org/bots/api#link
+    """
+
+    url: str
+    """URL of the link"""
+
+
+class PollMedia(BaseModel):
+    """At most one of the optional fields can be present in any given
+    object.
+
+    See https://core.telegram.org/bots/api#pollmedia
+    """
+
+    animation: Animation | None = None
+    """Media is an animation, information about the animation"""
+
+    audio: Audio | None = None
+    """Media is an audio file, information about the file; currently, can't
+    be received in a poll option
+    """
+
+    document: Document | None = None
+    """Media is a general file, information about the file; currently,
+    can't be received in a poll option
+    """
+
+    link: Link | None = None
+    """The HTTP link attached to the poll option"""
+
+    live_photo: LivePhoto | None = None
+    """Media is a live photo, information about the live photo"""
+
+    location: Location | None = None
+    """Media is a shared location, information about the location"""
+
+    photo: list[PhotoSize] | None = None
+    """Media is a photo, available sizes of the photo"""
+
+    sticker: Sticker | None = None
+    """Media is a sticker, information about the sticker; currently, for
+    poll options only
+    """
+
+    venue: Venue | None = None
+    """Media is a venue, information about the venue"""
+
+    video: Video | None = None
+    """Media is a video, information about the video"""
 # TODO: inputpollmedia (discriminated union)
 # TODO: inputpolloptionmedia (discriminated union)
-# TODO: polloption (object)
-# TODO: inputpolloption (object)
-# TODO: pollanswer (object)
-# TODO: poll (object)
-# TODO: checklisttask (object)
-# TODO: checklist (object)
-# TODO: inputchecklisttask (object)
-# TODO: inputchecklist (object)
-# TODO: location (object)
-# TODO: venue (object)
-# TODO: webappdata (object)
-# TODO: proximityalerttriggered (object)
-# TODO: messageautodeletetimerchanged (object)
-# TODO: managedbotcreated (object)
-# TODO: managedbotupdated (object)
-# TODO: botsubscriptionupdated (object)
-# TODO: polloptionadded (object)
-# TODO: polloptiondeleted (object)
-# TODO: chatboostadded (object)
+
+
+class PollOption(BaseModel):
+    """This object contains information about one answer option in a poll.
+
+    See https://core.telegram.org/bots/api#polloption
+    """
+
+    persistent_id: str
+    """Unique identifier of the option, persistent on option addition and
+    deletion
+    """
+
+    text: str
+    """Option text, 1-100 characters"""
+
+    voter_count: int
+    """Number of users who voted for this option; may be 0 if unknown"""
+
+    text_entities: list[MessageEntity] | None = None
+    """Special entities that appear in the option text. Currently, only
+    custom emoji entities are allowed in poll option texts
+    """
+
+    media: PollMedia | None = None
+    """Media added to the poll option"""
+
+    added_by_user: User | None = None
+    """User who added the option; omitted if the option wasn't added by a
+    user after poll creation
+    """
+
+    added_by_chat: Chat | None = None
+    """Chat that added the option; omitted if the option wasn't added by a
+    chat after poll creation
+    """
+
+    addition_date: int | None = None
+    """Point in time (Unix timestamp) when the option was added; omitted if
+    the option existed in the original poll
+    """
+
+
+class InputPollOption(BaseModel):
+    """This object contains information about one answer option in a poll
+    to be sent.
+
+    See https://core.telegram.org/bots/api#inputpolloption
+    """
+
+    text: str
+    """Option text, 1-100 characters"""
+
+    text_parse_mode: str | None = None
+    """Mode for parsing entities in the text. See formatting options for
+    more details. Currently, only custom emoji entities are allowed.
+    """
+
+    text_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the poll
+    option text. It can be specified instead of text_parse_mode.
+    """
+
+    media: InputPollOptionMedia | None = None
+    """Media added to the poll option"""
+
+
+class PollAnswer(BaseModel):
+    """This object represents an answer of a user in a non-anonymous poll.
+
+    See https://core.telegram.org/bots/api#pollanswer
+    """
+
+    poll_id: str
+    """Unique poll identifier"""
+
+    option_ids: list[int]
+    """0-based identifiers of chosen answer options. May be empty if the
+    vote was retracted.
+    """
+
+    option_persistent_ids: list[str]
+    """Persistent identifiers of the chosen answer options. May be empty if
+    the vote was retracted.
+    """
+
+    voter_chat: Chat | None = None
+    """The chat that changed the answer to the poll, if the voter is
+    anonymous
+    """
+
+    user: User | None = None
+    """The user that changed the answer to the poll, if the voter isn't
+    anonymous
+    """
+
+
+class Poll(BaseModel):
+    """This object contains information about a poll.
+
+    See https://core.telegram.org/bots/api#poll
+    """
+
+    id: str
+    """Unique poll identifier"""
+
+    question: str
+    """Poll question, 1-300 characters"""
+
+    options: list[PollOption]
+    """List of poll options"""
+
+    total_voter_count: int
+    """Total number of users that voted in the poll"""
+
+    is_closed: bool
+    """True, if the poll is closed"""
+
+    is_anonymous: bool
+    """True, if the poll is anonymous"""
+
+    type: str
+    """Poll type, currently can be “regular” or “quiz”"""
+
+    allows_multiple_answers: bool
+    """True, if the poll allows multiple answers"""
+
+    allows_revoting: bool
+    """True, if the poll allows to change the chosen answer options"""
+
+    members_only: bool
+    """True if voting is limited to users who have been members of the chat
+    where the poll was originally sent for more than 24 hours
+    """
+
+    question_entities: list[MessageEntity] | None = None
+    """Special entities that appear in the question. Currently, only custom
+    emoji entities are allowed in poll questions
+    """
+
+    country_codes: list[str] | None = None
+    """A list of two-letter ISO 3166-1 alpha-2 country codes indicating the
+    countries from which users can vote in the poll. The country code
+    “FT” is used for users with anonymous numbers. If omitted, then
+    users from any country can participate in the poll.
+    """
+
+    correct_option_ids: list[int] | None = None
+    """Array of 0-based identifiers of the correct answer options.
+    Available only for polls in quiz mode which are closed or were sent
+    (not forwarded) by the bot or to the private chat with the bot.
+    """
+
+    explanation: str | None = None
+    """Text that is shown when a user chooses an incorrect answer or taps
+    on the lamp icon in a quiz-style poll, 0-200 characters
+    """
+
+    explanation_entities: list[MessageEntity] | None = None
+    """Special entities like usernames, URLs, bot commands, etc. that
+    appear in the explanation
+    """
+
+    explanation_media: PollMedia | None = None
+    """Media added to the quiz explanation"""
+
+    open_period: int | None = None
+    """Amount of time in seconds the poll will be active after creation"""
+
+    close_date: int | None = None
+    """Point in time (Unix timestamp) when the poll will be automatically
+    closed
+    """
+
+    description: str | None = None
+    """Description of the poll; for polls inside the Message object only"""
+
+    description_entities: list[MessageEntity] | None = None
+    """Special entities like usernames, URLs, bot commands, etc. that
+    appear in the description
+    """
+
+    media: PollMedia | None = None
+    """Media added to the poll description; for polls inside the Message
+    object only
+    """
+
+
+class ChecklistTask(BaseModel):
+    """Describes a task in a checklist.
+
+    See https://core.telegram.org/bots/api#checklisttask
+    """
+
+    id: int
+    """Unique identifier of the task"""
+
+    text: str
+    """Text of the task"""
+
+    text_entities: list[MessageEntity] | None = None
+    """Special entities that appear in the task text"""
+
+    completed_by_user: User | None = None
+    """User that completed the task; omitted if the task wasn't completed
+    by a user
+    """
+
+    completed_by_chat: Chat | None = None
+    """Chat that completed the task; omitted if the task wasn't completed
+    by a chat
+    """
+
+    completion_date: int | None = None
+    """Point in time (Unix timestamp) when the task was completed; 0 if the
+    task wasn't completed
+    """
+
+
+class Checklist(BaseModel):
+    """Describes a checklist.
+
+    See https://core.telegram.org/bots/api#checklist
+    """
+
+    title: str
+    """Title of the checklist"""
+
+    tasks: list[ChecklistTask]
+    """List of tasks in the checklist"""
+
+    title_entities: list[MessageEntity] | None = None
+    """Special entities that appear in the checklist title"""
+
+    others_can_add_tasks: bool | None = None
+    """True, if users other than the creator of the list can add tasks to
+    the list
+    """
+
+    others_can_mark_tasks_as_done: bool | None = None
+    """True, if users other than the creator of the list can mark tasks as
+    done or not done
+    """
+
+
+class InputChecklistTask(BaseModel):
+    """Describes a task to add to a checklist.
+
+    See https://core.telegram.org/bots/api#inputchecklisttask
+    """
+
+    id: int
+    """Unique identifier of the task; must be positive and unique among all
+    task identifiers currently present in the checklist
+    """
+
+    text: str
+    """Text of the task; 1-100 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the text. See formatting options for
+    more details.
+    """
+
+    text_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the text, which can be
+    specified instead of parse_mode. Currently, only bold, italic,
+    underline, strikethrough, spoiler, custom_emoji, and date_time
+    entities are allowed.
+    """
+
+
+class InputChecklist(BaseModel):
+    """Describes a checklist to create.
+
+    See https://core.telegram.org/bots/api#inputchecklist
+    """
+
+    title: str
+    """Title of the checklist; 1-255 characters after entities parsing"""
+
+    tasks: list[InputChecklistTask]
+    """List of 1-30 tasks in the checklist"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the title. See formatting options for
+    more details.
+    """
+
+    title_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the title, which can be
+    specified instead of parse_mode. Currently, only bold, italic,
+    underline, strikethrough, spoiler, custom_emoji, and date_time
+    entities are allowed.
+    """
+
+    others_can_add_tasks: bool | None = None
+    """Pass True if other users can add tasks to the checklist"""
+
+    others_can_mark_tasks_as_done: bool | None = None
+    """Pass True if other users can mark tasks as done or not done in the
+    checklist
+    """
+
+
+class Location(BaseModel):
+    """This object represents a point on the map.
+
+    See https://core.telegram.org/bots/api#location
+    """
+
+    latitude: float
+    """Latitude as defined by the sender"""
+
+    longitude: float
+    """Longitude as defined by the sender"""
+
+    horizontal_accuracy: float | None = None
+    """The radius of uncertainty for the location, measured in meters;
+    0-1500
+    """
+
+    live_period: int | None = None
+    """Time relative to the message sending date, during which the location
+    can be updated; in seconds. For active live locations only.
+    """
+
+    heading: int | None = None
+    """The direction in which user is moving, in degrees; 1-360. For active
+    live locations only.
+    """
+
+    proximity_alert_radius: int | None = None
+    """The maximum distance for proximity alerts about approaching another
+    chat member, in meters. For sent live locations only.
+    """
+
+
+class Venue(BaseModel):
+    """This object represents a venue.
+
+    See https://core.telegram.org/bots/api#venue
+    """
+
+    location: Location
+    """Venue location. Can't be a live location."""
+
+    title: str
+    """Name of the venue"""
+
+    address: str
+    """Address of the venue"""
+
+    foursquare_id: str | None = None
+    """Foursquare identifier of the venue"""
+
+    foursquare_type: str | None = None
+    """Foursquare type of the venue. (For example,
+    “arts_entertainment/default”, “arts_entertainment/aquarium” or
+    “food/icecream”.)
+    """
+
+    google_place_id: str | None = None
+    """Google Places identifier of the venue"""
+
+    google_place_type: str | None = None
+    """Google Places type of the venue. (See supported types.)"""
+
+
+class WebAppData(BaseModel):
+    """Describes data sent from a Web App to the bot.
+
+    See https://core.telegram.org/bots/api#webappdata
+    """
+
+    data: str
+    """The data. Be aware that a bad client can send arbitrary data in this
+    field.
+    """
+
+    button_text: str
+    """Text of the web_app keyboard button from which the Web App was
+    opened. Be aware that a bad client can send arbitrary data in this
+    field.
+    """
+
+
+class ProximityAlertTriggered(BaseModel):
+    """This object represents the content of a service message, sent
+    whenever a user in the chat triggers a proximity alert set by
+    another user.
+
+    See https://core.telegram.org/bots/api#proximityalerttriggered
+    """
+
+    traveler: User
+    """User that triggered the alert"""
+
+    watcher: User
+    """User that set the alert"""
+
+    distance: int
+    """The distance between the users"""
+
+
+class MessageAutoDeleteTimerChanged(BaseModel):
+    """This object represents a service message about a change in
+    auto-delete timer settings.
+
+    See https://core.telegram.org/bots/api#messageautodeletetimerchanged
+    """
+
+    message_auto_delete_time: int
+    """New auto-delete time for messages in the chat; in seconds"""
+
+
+class ManagedBotCreated(BaseModel):
+    """This object contains information about the bot that was created to
+    be managed by the current bot.
+
+    See https://core.telegram.org/bots/api#managedbotcreated
+    """
+
+    bot: User
+    """Information about the bot. The bot's token can be fetched using the
+    method getManagedBotToken.
+    """
+
+
+class ManagedBotUpdated(BaseModel):
+    """This object contains information about the creation, token update,
+    or owner update of a bot that is managed by the current bot.
+
+    See https://core.telegram.org/bots/api#managedbotupdated
+    """
+
+    user: User
+    """User that created the bot"""
+
+    bot: User
+    """Information about the bot. Token of the bot can be fetched using the
+    method getManagedBotToken.
+    """
+
+
+class BotSubscriptionUpdated(BaseModel):
+    """This object contains information about changes to a user payment
+    subscription toward the current bot.
+
+    See https://core.telegram.org/bots/api#botsubscriptionupdated
+    """
+
+    user: User
+    """User who subscribed for payments toward the bot"""
+
+    invoice_payload: str
+    """Bot-specified invoice payload"""
+
+    state: str
+    """The new state of the subscription. Currently, it can be one of
+    “canceled” if the user canceled the subscription, “active” if the
+    user re-enabled a previously canceled subscription, or “failed” if
+    payment for the subscription failed.
+    """
+
+
+class PollOptionAdded(BaseModel):
+    """Describes a service message about an option added to a poll.
+
+    See https://core.telegram.org/bots/api#polloptionadded
+    """
+
+    option_persistent_id: str
+    """Unique identifier of the added option"""
+
+    option_text: str
+    """Option text"""
+
+    poll_message: MaybeInaccessibleMessage | None = None
+    """Message containing the poll to which the option was added, if known.
+    Note that the Message object in this field will not contain the
+    reply_to_message field even if it itself is a reply.
+    """
+
+    option_text_entities: list[MessageEntity] | None = None
+    """Special entities that appear in the option_text"""
+
+
+class PollOptionDeleted(BaseModel):
+    """Describes a service message about an option deleted from a poll.
+
+    See https://core.telegram.org/bots/api#polloptiondeleted
+    """
+
+    option_persistent_id: str
+    """Unique identifier of the deleted option"""
+
+    option_text: str
+    """Option text"""
+
+    poll_message: MaybeInaccessibleMessage | None = None
+    """Message containing the poll from which the option was deleted, if
+    known. Note that the Message object in this field will not contain
+    the reply_to_message field even if it itself is a reply.
+    """
+
+    option_text_entities: list[MessageEntity] | None = None
+    """Special entities that appear in the option_text"""
+
+
+class ChatBoostAdded(BaseModel):
+    """This object represents a service message about a user boosting a
+    chat.
+
+    See https://core.telegram.org/bots/api#chatboostadded
+    """
+
+    boost_count: int
+    """Number of boosts added by the user"""
 # TODO: backgroundfill (discriminated union)
 # TODO: backgroundfillsolid (discriminated object)
 # TODO: backgroundfillgradient (discriminated object)
@@ -75,64 +2349,1566 @@
 # TODO: backgroundtypewallpaper (discriminated object)
 # TODO: backgroundtypepattern (discriminated object)
 # TODO: backgroundtypechattheme (discriminated object)
-# TODO: chatbackground (object)
-# TODO: checklisttasksdone (object)
-# TODO: checklisttasksadded (object)
-# TODO: communitychatadded (object)
-# TODO: communitychatremoved (object)
-# TODO: forumtopiccreated (object)
-# TODO: forumtopicclosed (object)
-# TODO: forumtopicedited (object)
-# TODO: forumtopicreopened (object)
-# TODO: generalforumtopichidden (object)
-# TODO: generalforumtopicunhidden (object)
-# TODO: shareduser (object)
-# TODO: usersshared (object)
-# TODO: chatshared (object)
-# TODO: writeaccessallowed (object)
-# TODO: videochatscheduled (object)
-# TODO: videochatstarted (object)
-# TODO: videochatended (object)
-# TODO: videochatparticipantsinvited (object)
-# TODO: paidmessagepricechanged (object)
-# TODO: directmessagepricechanged (object)
-# TODO: suggestedpostapproved (object)
-# TODO: suggestedpostapprovalfailed (object)
-# TODO: suggestedpostdeclined (object)
-# TODO: suggestedpostpaid (object)
-# TODO: suggestedpostrefunded (object)
-# TODO: giveawaycreated (object)
-# TODO: giveaway (object)
-# TODO: giveawaywinners (object)
-# TODO: giveawaycompleted (object)
-# TODO: linkpreviewoptions (object)
-# TODO: suggestedpostprice (object)
-# TODO: suggestedpostinfo (object)
-# TODO: suggestedpostparameters (object)
-# TODO: directmessagestopic (object)
-# TODO: userprofilephotos (object)
-# TODO: userprofileaudios (object)
-# TODO: file (object)
-# TODO: webappinfo (object)
-# TODO: replykeyboardmarkup (object)
-# TODO: keyboardbutton (object)
-# TODO: keyboardbuttonrequestusers (object)
-# TODO: keyboardbuttonrequestchat (object)
-# TODO: keyboardbuttonrequestmanagedbot (object)
-# TODO: keyboardbuttonpolltype (object)
-# TODO: replykeyboardremove (object)
-# TODO: inlinekeyboardmarkup (object)
-# TODO: inlinekeyboardbutton (object)
-# TODO: loginurl (object)
-# TODO: switchinlinequerychosenchat (object)
-# TODO: copytextbutton (object)
-# TODO: callbackquery (object)
-# TODO: forcereply (object)
-# TODO: community (object)
-# TODO: chatphoto (object)
-# TODO: chatinvitelink (object)
-# TODO: chatadministratorrights (object)
-# TODO: chatmemberupdated (object)
+
+
+class ChatBackground(BaseModel):
+    """This object represents a chat background.
+
+    See https://core.telegram.org/bots/api#chatbackground
+    """
+
+    type: BackgroundType
+    """Type of the background"""
+
+
+class ChecklistTasksDone(BaseModel):
+    """Describes a service message about checklist tasks marked as done or
+    not done.
+
+    See https://core.telegram.org/bots/api#checklisttasksdone
+    """
+
+    checklist_message: Message | None = None
+    """Message containing the checklist whose tasks were marked as done or
+    not done. Note that the Message object in this field will not
+    contain the reply_to_message field even if it itself is a reply.
+    """
+
+    marked_as_done_task_ids: list[int] | None = None
+    """Identifiers of the tasks that were marked as done"""
+
+    marked_as_not_done_task_ids: list[int] | None = None
+    """Identifiers of the tasks that were marked as not done"""
+
+
+class ChecklistTasksAdded(BaseModel):
+    """Describes a service message about tasks added to a checklist.
+
+    See https://core.telegram.org/bots/api#checklisttasksadded
+    """
+
+    tasks: list[ChecklistTask]
+    """List of tasks added to the checklist"""
+
+    checklist_message: Message | None = None
+    """Message containing the checklist to which the tasks were added. Note
+    that the Message object in this field will not contain the
+    reply_to_message field even if it itself is a reply.
+    """
+
+
+class CommunityChatAdded(BaseModel):
+    """Describes a service message about a chat being added to a community.
+
+    See https://core.telegram.org/bots/api#communitychatadded
+    """
+
+    community: Community
+    """The new community to which the chat belongs"""
+
+
+class CommunityChatRemoved(BaseModel):
+    """Describes a service message about a chat being removed from a
+    community. Currently holds no information.
+
+    See https://core.telegram.org/bots/api#communitychatremoved
+    """
+
+
+class ForumTopicCreated(BaseModel):
+    """This object represents a service message about a new forum topic
+    created in the chat.
+
+    See https://core.telegram.org/bots/api#forumtopiccreated
+    """
+
+    name: str
+    """Name of the topic"""
+
+    icon_color: int
+    """Color of the topic icon in RGB format"""
+
+    icon_custom_emoji_id: str | None = None
+    """Unique identifier of the custom emoji shown as the topic icon"""
+
+    is_name_implicit: bool | None = None
+    """True, if the name of the topic wasn't specified explicitly by its
+    creator and likely needs to be changed by the bot
+    """
+
+
+class ForumTopicClosed(BaseModel):
+    """This object represents a service message about a forum topic closed
+    in the chat. Currently holds no information.
+
+    See https://core.telegram.org/bots/api#forumtopicclosed
+    """
+
+
+class ForumTopicEdited(BaseModel):
+    """This object represents a service message about an edited forum
+    topic.
+
+    See https://core.telegram.org/bots/api#forumtopicedited
+    """
+
+    name: str | None = None
+    """New name of the topic, if it was edited"""
+
+    icon_custom_emoji_id: str | None = None
+    """New identifier of the custom emoji shown as the topic icon, if it
+    was edited; an empty string if the icon was removed
+    """
+
+
+class ForumTopicReopened(BaseModel):
+    """This object represents a service message about a forum topic
+    reopened in the chat. Currently holds no information.
+
+    See https://core.telegram.org/bots/api#forumtopicreopened
+    """
+
+
+class GeneralForumTopicHidden(BaseModel):
+    """This object represents a service message about General forum topic
+    hidden in the chat. Currently holds no information.
+
+    See https://core.telegram.org/bots/api#generalforumtopichidden
+    """
+
+
+class GeneralForumTopicUnhidden(BaseModel):
+    """This object represents a service message about General forum topic
+    unhidden in the chat. Currently holds no information.
+
+    See https://core.telegram.org/bots/api#generalforumtopicunhidden
+    """
+
+
+class SharedUser(BaseModel):
+    """This object contains information about a user that was shared with
+    the bot using a KeyboardButtonRequestUsers button.
+
+    See https://core.telegram.org/bots/api#shareduser
+    """
+
+    user_id: int
+    """Identifier of the shared user. This number may have more than 32
+    significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so 64-bit integers or double-precision float types
+    are safe for storing these identifiers. The bot may not have access
+    to the user and could be unable to use this identifier, unless the
+    user is already known to the bot by some other means.
+    """
+
+    first_name: str | None = None
+    """First name of the user, if the name was requested by the bot"""
+
+    last_name: str | None = None
+    """Last name of the user, if the name was requested by the bot"""
+
+    username: str | None = None
+    """Username of the user, if the username was requested by the bot"""
+
+    photo: list[PhotoSize] | None = None
+    """Available sizes of the chat photo, if the photo was requested by the
+    bot
+    """
+
+
+class UsersShared(BaseModel):
+    """This object contains information about the users whose identifiers
+    were shared with the bot using a KeyboardButtonRequestUsers button.
+
+    See https://core.telegram.org/bots/api#usersshared
+    """
+
+    request_id: int
+    """Identifier of the request"""
+
+    users: list[SharedUser]
+    """Information about users shared with the bot"""
+
+
+class ChatShared(BaseModel):
+    """This object contains information about a chat that was shared with
+    the bot using a KeyboardButtonRequestChat button.
+
+    See https://core.telegram.org/bots/api#chatshared
+    """
+
+    request_id: int
+    """Identifier of the request"""
+
+    chat_id: int
+    """Identifier of the shared chat. This number may have more than 32
+    significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a 64-bit integer or double-precision float type
+    are safe for storing this identifier. The bot may not have access to
+    the chat and could be unable to use this identifier, unless the chat
+    is already known to the bot by some other means.
+    """
+
+    title: str | None = None
+    """Title of the chat, if the title was requested by the bot"""
+
+    username: str | None = None
+    """Username of the chat, if the username was requested by the bot and
+    available
+    """
+
+    photo: list[PhotoSize] | None = None
+    """Available sizes of the chat photo, if the photo was requested by the
+    bot
+    """
+
+
+class WriteAccessAllowed(BaseModel):
+    """This object represents a service message about a user allowing a bot
+    to write messages after adding it to the attachment menu, launching
+    a Web App from a link, or accepting an explicit request from a Web
+    App sent by the method requestWriteAccess.
+
+    See https://core.telegram.org/bots/api#writeaccessallowed
+    """
+
+    from_request: bool | None = None
+    """True, if the access was granted after the user accepted an explicit
+    request from a Web App sent by the method requestWriteAccess
+    """
+
+    web_app_name: str | None = None
+    """Name of the Web App, if the access was granted when the Web App was
+    launched from a link
+    """
+
+    from_attachment_menu: bool | None = None
+    """True, if the access was granted when the bot was added to the
+    attachment or side menu
+    """
+
+
+class VideoChatScheduled(BaseModel):
+    """This object represents a service message about a video chat
+    scheduled in the chat.
+
+    See https://core.telegram.org/bots/api#videochatscheduled
+    """
+
+    start_date: int
+    """Point in time (Unix timestamp) when the video chat is supposed to be
+    started by a chat administrator
+    """
+
+
+class VideoChatStarted(BaseModel):
+    """This object represents a service message about a video chat started
+    in the chat. Currently holds no information.
+
+    See https://core.telegram.org/bots/api#videochatstarted
+    """
+
+
+class VideoChatEnded(BaseModel):
+    """This object represents a service message about a video chat ended in
+    the chat.
+
+    See https://core.telegram.org/bots/api#videochatended
+    """
+
+    duration: int
+    """Video chat duration in seconds"""
+
+
+class VideoChatParticipantsInvited(BaseModel):
+    """This object represents a service message about new members invited
+    to a video chat.
+
+    See https://core.telegram.org/bots/api#videochatparticipantsinvited
+    """
+
+    users: list[User]
+    """New members that were invited to the video chat"""
+
+
+class PaidMessagePriceChanged(BaseModel):
+    """Describes a service message about a change in the price of paid
+    messages within a chat.
+
+    See https://core.telegram.org/bots/api#paidmessagepricechanged
+    """
+
+    paid_message_star_count: int
+    """The new number of Telegram Stars that must be paid by
+    non-administrator users of the supergroup chat for each sent message
+    """
+
+
+class DirectMessagePriceChanged(BaseModel):
+    """Describes a service message about a change in the price of direct
+    messages sent to a channel chat.
+
+    See https://core.telegram.org/bots/api#directmessagepricechanged
+    """
+
+    are_direct_messages_enabled: bool
+    """True, if direct messages are enabled for the channel chat; False
+    otherwise
+    """
+
+    direct_message_star_count: int | None = None
+    """The new number of Telegram Stars that must be paid by users for each
+    direct message sent to the channel. Does not apply to users who have
+    been exempted by administrators. Defaults to 0.
+    """
+
+
+class SuggestedPostApproved(BaseModel):
+    """Describes a service message about the approval of a suggested post.
+
+    See https://core.telegram.org/bots/api#suggestedpostapproved
+    """
+
+    send_date: int
+    """Date when the post will be published"""
+
+    suggested_post_message: Message | None = None
+    """Message containing the suggested post. Note that the Message object
+    in this field will not contain the reply_to_message field even if it
+    itself is a reply.
+    """
+
+    price: SuggestedPostPrice | None = None
+    """Amount paid for the post"""
+
+
+class SuggestedPostApprovalFailed(BaseModel):
+    """Describes a service message about the failed approval of a suggested
+    post. Currently, only caused by insufficient user funds at the time
+    of approval.
+
+    See https://core.telegram.org/bots/api#suggestedpostapprovalfailed
+    """
+
+    price: SuggestedPostPrice
+    """Expected price of the post"""
+
+    suggested_post_message: Message | None = None
+    """Message containing the suggested post whose approval has failed.
+    Note that the Message object in this field will not contain the
+    reply_to_message field even if it itself is a reply.
+    """
+
+
+class SuggestedPostDeclined(BaseModel):
+    """Describes a service message about the rejection of a suggested post.
+
+    See https://core.telegram.org/bots/api#suggestedpostdeclined
+    """
+
+    suggested_post_message: Message | None = None
+    """Message containing the suggested post. Note that the Message object
+    in this field will not contain the reply_to_message field even if it
+    itself is a reply.
+    """
+
+    comment: str | None = None
+    """Comment with which the post was declined"""
+
+
+class SuggestedPostPaid(BaseModel):
+    """Describes a service message about a successful payment for a
+    suggested post.
+
+    See https://core.telegram.org/bots/api#suggestedpostpaid
+    """
+
+    currency: str
+    """Currency in which the payment was made. Currently, one of “XTR” for
+    Telegram Stars or “TON” for TON grams.
+    """
+
+    suggested_post_message: Message | None = None
+    """Message containing the suggested post. Note that the Message object
+    in this field will not contain the reply_to_message field even if it
+    itself is a reply.
+    """
+
+    amount: int | None = None
+    """The amount of the currency that was received by the channel in
+    nanograms; for payments in TON grams only
+    """
+
+    star_amount: StarAmount | None = None
+    """The amount of Telegram Stars that was received by the channel; for
+    payments in Telegram Stars only
+    """
+
+
+class SuggestedPostRefunded(BaseModel):
+    """Describes a service message about a payment refund for a suggested
+    post.
+
+    See https://core.telegram.org/bots/api#suggestedpostrefunded
+    """
+
+    reason: str
+    """Reason for the refund. Currently, one of “post_deleted” if the post
+    was deleted within 24 hours of being posted or removed from
+    scheduled messages without being posted, or “payment_refunded” if
+    the payer refunded their payment.
+    """
+
+    suggested_post_message: Message | None = None
+    """Message containing the suggested post. Note that the Message object
+    in this field will not contain the reply_to_message field even if it
+    itself is a reply.
+    """
+
+
+class GiveawayCreated(BaseModel):
+    """This object represents a service message about the creation of a
+    scheduled giveaway.
+
+    See https://core.telegram.org/bots/api#giveawaycreated
+    """
+
+    prize_star_count: int | None = None
+    """The number of Telegram Stars to be split between giveaway winners;
+    for Telegram Star giveaways only
+    """
+
+
+class Giveaway(BaseModel):
+    """This object represents a message about a scheduled giveaway.
+
+    See https://core.telegram.org/bots/api#giveaway
+    """
+
+    chats: list[Chat]
+    """The list of chats which the user must join to participate in the
+    giveaway
+    """
+
+    winners_selection_date: int
+    """Point in time (Unix timestamp) when winners of the giveaway will be
+    selected
+    """
+
+    winner_count: int
+    """The number of users which are supposed to be selected as winners of
+    the giveaway
+    """
+
+    only_new_members: bool | None = None
+    """True, if only users who join the chats after the giveaway started
+    should be eligible to win
+    """
+
+    has_public_winners: bool | None = None
+    """True, if the list of giveaway winners will be visible to everyone"""
+
+    prize_description: str | None = None
+    """Description of additional giveaway prize"""
+
+    country_codes: list[str] | None = None
+    """A list of two-letter ISO 3166-1 alpha-2 country codes indicating the
+    countries from which eligible users for the giveaway must come. If
+    empty, then all users can participate in the giveaway. Users with a
+    phone number that was bought on Fragment can always participate in
+    giveaways.
+    """
+
+    prize_star_count: int | None = None
+    """The number of Telegram Stars to be split between giveaway winners;
+    for Telegram Star giveaways only
+    """
+
+    premium_subscription_month_count: int | None = None
+    """The number of months the Telegram Premium subscription won from the
+    giveaway will be active for; for Telegram Premium giveaways only
+    """
+
+
+class GiveawayWinners(BaseModel):
+    """This object represents a message about the completion of a giveaway
+    with public winners.
+
+    See https://core.telegram.org/bots/api#giveawaywinners
+    """
+
+    chat: Chat
+    """The chat that created the giveaway"""
+
+    giveaway_message_id: int
+    """Identifier of the message with the giveaway in the chat"""
+
+    winners_selection_date: int
+    """Point in time (Unix timestamp) when winners of the giveaway were
+    selected
+    """
+
+    winner_count: int
+    """Total number of winners in the giveaway"""
+
+    winners: list[User]
+    """List of up to 100 winners of the giveaway"""
+
+    additional_chat_count: int | None = None
+    """The number of other chats the user had to join in order to be
+    eligible for the giveaway
+    """
+
+    prize_star_count: int | None = None
+    """The number of Telegram Stars that were split between giveaway
+    winners; for Telegram Star giveaways only
+    """
+
+    premium_subscription_month_count: int | None = None
+    """The number of months the Telegram Premium subscription won from the
+    giveaway will be active for; for Telegram Premium giveaways only
+    """
+
+    unclaimed_prize_count: int | None = None
+    """Number of undistributed prizes"""
+
+    only_new_members: bool | None = None
+    """True, if only users who had joined the chats after the giveaway
+    started were eligible to win
+    """
+
+    was_refunded: bool | None = None
+    """True, if the giveaway was canceled because the payment for it was
+    refunded
+    """
+
+    prize_description: str | None = None
+    """Description of additional giveaway prize"""
+
+
+class GiveawayCompleted(BaseModel):
+    """This object represents a service message about the completion of a
+    giveaway without public winners.
+
+    See https://core.telegram.org/bots/api#giveawaycompleted
+    """
+
+    winner_count: int
+    """Number of winners in the giveaway"""
+
+    unclaimed_prize_count: int | None = None
+    """Number of undistributed prizes"""
+
+    giveaway_message: Message | None = None
+    """Message with the giveaway that was completed, if it wasn't deleted"""
+
+    is_star_giveaway: bool | None = None
+    """True, if the giveaway is a Telegram Star giveaway. Otherwise,
+    currently, the giveaway is a Telegram Premium giveaway.
+    """
+
+
+class LinkPreviewOptions(BaseModel):
+    """Describes the options used for link preview generation.
+
+    See https://core.telegram.org/bots/api#linkpreviewoptions
+    """
+
+    is_disabled: bool | None = None
+    """True, if the link preview is disabled"""
+
+    url: str | None = None
+    """URL to use for the link preview. If empty, then the first URL found
+    in the message text will be used.
+    """
+
+    prefer_small_media: bool | None = None
+    """True, if the media in the link preview is supposed to be shrunk;
+    ignored if the URL isn't explicitly specified or media size change
+    isn't supported for the preview
+    """
+
+    prefer_large_media: bool | None = None
+    """True, if the media in the link preview is supposed to be enlarged;
+    ignored if the URL isn't explicitly specified or media size change
+    isn't supported for the preview
+    """
+
+    show_above_text: bool | None = None
+    """True, if the link preview must be shown above the message text;
+    otherwise, the link preview will be shown below the message text
+    """
+
+
+class SuggestedPostPrice(BaseModel):
+    """Describes the price of a suggested post.
+
+    See https://core.telegram.org/bots/api#suggestedpostprice
+    """
+
+    currency: str
+    """Currency in which the post will be paid. Currently, must be one of
+    “XTR” for Telegram Stars or “TON” for TON grams.
+    """
+
+    amount: int
+    """The amount of the currency that will be paid for the post in the
+    smallest units of the currency, i.e. Telegram Stars or nanograms.
+    Currently, price in Telegram Stars must be between 5 and 100000, and
+    price in nanograms must be between 10000000 and 10000000000000.
+    """
+
+
+class SuggestedPostInfo(BaseModel):
+    """Contains information about a suggested post.
+
+    See https://core.telegram.org/bots/api#suggestedpostinfo
+    """
+
+    state: str
+    """State of the suggested post. Currently, it can be one of “pending”,
+    “approved”, “declined”.
+    """
+
+    price: SuggestedPostPrice | None = None
+    """Proposed price of the post. If the field is omitted, then the post
+    is unpaid.
+    """
+
+    send_date: int | None = None
+    """Proposed send date of the post. If the field is omitted, then the
+    post can be published at any time within 30 days at the sole
+    discretion of the user or administrator who approves it.
+    """
+
+
+class SuggestedPostParameters(BaseModel):
+    """Contains parameters of a post that is being suggested by the bot.
+
+    See https://core.telegram.org/bots/api#suggestedpostparameters
+    """
+
+    price: SuggestedPostPrice | None = None
+    """Proposed price for the post. If the field is omitted, then the post
+    is unpaid.
+    """
+
+    send_date: int | None = None
+    """Proposed send date of the post. If specified, then the date must be
+    between 300 second and 2678400 seconds (30 days) in the future. If
+    the field is omitted, then the post can be published at any time
+    within 30 days at the sole discretion of the user who approves it.
+    """
+
+
+class DirectMessagesTopic(BaseModel):
+    """Describes a topic of a direct messages chat.
+
+    See https://core.telegram.org/bots/api#directmessagestopic
+    """
+
+    topic_id: int
+    """Unique identifier of the topic. This number may have more than 32
+    significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a 64-bit integer or double-precision float type
+    are safe for storing this identifier.
+    """
+
+    user: User | None = None
+    """Information about the user that created the topic. Currently, it is
+    always present.
+    """
+
+
+class UserProfilePhotos(BaseModel):
+    """This object represent a user's profile pictures.
+
+    See https://core.telegram.org/bots/api#userprofilephotos
+    """
+
+    total_count: int
+    """Total number of profile pictures the target user has"""
+
+    photos: list[list[PhotoSize]]
+    """Requested profile pictures (in up to 4 sizes each)"""
+
+
+class UserProfileAudios(BaseModel):
+    """This object represents the audios displayed on a user's profile.
+
+    See https://core.telegram.org/bots/api#userprofileaudios
+    """
+
+    total_count: int
+    """Total number of profile audios for the target user"""
+
+    audios: list[Audio]
+    """Requested profile audios"""
+
+
+class File(BaseModel):
+    """This object represents a file ready to be downloaded. The file can
+    be downloaded via the link
+    https://api.telegram.org/file/bot<token>/<file_path>. It is
+    guaranteed that the link will be valid for at least 1 hour. When the
+    link expires, a new one can be requested by calling getFile.
+
+    The maximum file size to download is 20 MB
+
+    See https://core.telegram.org/bots/api#file
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    file_size: int | None = None
+    """File size in bytes. It can be bigger than 2^31 and some programming
+    languages may have difficulty/silent defects in interpreting it. But
+    it has at most 52 significant bits, so a signed 64-bit integer or
+    double-precision float type are safe for storing this value.
+    """
+
+    file_path: str | None = None
+    """File path. Use https://api.telegram.org/file/bot<token>/<file_path>
+    to get the file.
+    """
+
+
+class WebAppInfo(BaseModel):
+    """Describes a Web App.
+
+    See https://core.telegram.org/bots/api#webappinfo
+    """
+
+    url: str
+    """An HTTPS URL of a Web App to be opened with additional data as
+    specified in Initializing Web Apps
+    """
+
+
+class ReplyKeyboardMarkup(BaseModel):
+    """This object represents a custom keyboard with reply options (see
+    Introduction to bots for details and examples). Not supported in
+    channels and for messages sent on behalf of a business account.
+
+    See https://core.telegram.org/bots/api#replykeyboardmarkup
+    """
+
+    keyboard: list[list[KeyboardButton]]
+    """Array of button rows, each represented by an Array of KeyboardButton
+    objects
+    """
+
+    is_persistent: bool | None = None
+    """Requests clients to always show the keyboard when the regular
+    keyboard is hidden. Defaults to False, in which case the custom
+    keyboard can be hidden and opened with a keyboard icon.
+    """
+
+    resize_keyboard: bool | None = None
+    """Requests clients to resize the keyboard vertically for optimal fit
+    (e.g., make the keyboard smaller if there are just two rows of
+    buttons). Defaults to False, in which case the custom keyboard is
+    always of the same height as the app's standard keyboard.
+    """
+
+    one_time_keyboard: bool | None = None
+    """Requests clients to hide the keyboard as soon as it's been used. The
+    keyboard will still be available, but clients will automatically
+    display the usual letter-keyboard in the chat - the user can press a
+    special button in the input field to see the custom keyboard again.
+    Defaults to False.
+    """
+
+    input_field_placeholder: str | None = None
+    """The placeholder to be shown in the input field when the keyboard is
+    active; 1-64 characters
+    """
+
+    selective: bool | None = None
+    """Use this parameter if you want to show the keyboard to specific
+    users only. Targets: 1) users that are @mentioned in the text of the
+    Message object; 2) if the bot's message is a reply to a message in
+    the same chat and forum topic, sender of the original message.
+
+    Example: A user requests to change the bot's language, bot replies
+    to the request with a keyboard to select the new language. Other
+    users in the group don't see the keyboard.
+    """
+
+
+class KeyboardButton(BaseModel):
+    """This object represents one button of the reply keyboard. At most one
+    of the fields other than text, icon_custom_emoji_id, and style must
+    be used to specify the type of the button. For simple text buttons,
+    String can be used instead of this object to specify the button
+    text.
+
+    See https://core.telegram.org/bots/api#keyboardbutton
+    """
+
+    text: str
+    """Text of the button. If none of the fields other than text,
+    icon_custom_emoji_id, and style are used, it will be sent as a
+    message when the button is pressed.
+    """
+
+    icon_custom_emoji_id: str | None = None
+    """Unique identifier of the custom emoji shown before the text of the
+    button. Can only be used by bots that purchased additional usernames
+    on Fragment or in the messages directly sent by the bot to private,
+    group and supergroup chats if the owner of the bot has a Telegram
+    Premium subscription.
+    """
+
+    style: str | None = None
+    """Style of the button. Must be one of “danger” (red), “success”
+    (green) or “primary” (blue). If omitted, then an app-specific style
+    is used.
+    """
+
+    request_users: KeyboardButtonRequestUsers | None = None
+    """If specified, pressing the button will open a list of suitable
+    users. Identifiers of selected users will be sent to the bot in a
+    “users_shared” service message. Available in private chats only.
+    """
+
+    request_chat: KeyboardButtonRequestChat | None = None
+    """If specified, pressing the button will open a list of suitable
+    chats. Tapping on a chat will send its identifier to the bot in a
+    “chat_shared” service message. Available in private chats only.
+    """
+
+    request_managed_bot: KeyboardButtonRequestManagedBot | None = None
+    """If specified, pressing the button will ask the user to create and
+    share a bot that will be managed by the current bot. Available for
+    bots that enabled management of other bots in the @BotFather Mini
+    App. Available in private chats only.
+    """
+
+    request_contact: bool | None = None
+    """If True, the user's phone number will be sent as a contact when the
+    button is pressed. Available in private chats only.
+    """
+
+    request_location: bool | None = None
+    """If True, the user's current location will be sent when the button is
+    pressed. Available in private chats only.
+    """
+
+    request_poll: KeyboardButtonPollType | None = None
+    """If specified, the user will be asked to create a poll and send it to
+    the bot when the button is pressed. Available in private chats only.
+    """
+
+    web_app: WebAppInfo | None = None
+    """If specified, the described Web App will be launched when the button
+    is pressed. The Web App will be able to send a “web_app_data”
+    service message. Available in private chats only.
+    """
+
+
+class KeyboardButtonRequestUsers(BaseModel):
+    """This object defines the criteria used to request suitable users.
+    Information about the selected users will be shared with the bot
+    when the corresponding button is pressed. More about requesting
+    users »
+
+    See https://core.telegram.org/bots/api#keyboardbuttonrequestusers
+    """
+
+    request_id: int
+    """Signed 32-bit identifier of the request that will be received back
+    in the UsersShared object. Must be unique within the message.
+    """
+
+    user_is_bot: bool | None = None
+    """Pass True to request bots, pass False to request regular users. If
+    not specified, no additional restrictions are applied.
+    """
+
+    user_is_premium: bool | None = None
+    """Pass True to request premium users, pass False to request
+    non-premium users. If not specified, no additional restrictions are
+    applied.
+    """
+
+    max_quantity: int | None = None
+    """The maximum number of users to be selected; 1-10. Defaults to 1."""
+
+    request_name: bool | None = None
+    """Pass True to request the users' first and last names"""
+
+    request_username: bool | None = None
+    """Pass True to request the users' usernames"""
+
+    request_photo: bool | None = None
+    """Pass True to request the users' photos"""
+
+
+class KeyboardButtonRequestChat(BaseModel):
+    """This object defines the criteria used to request a suitable chat.
+    Information about the selected chat will be shared with the bot when
+    the corresponding button is pressed. The bot will be granted
+    requested rights in the chat if appropriate. More about requesting
+    chats ».
+
+    See https://core.telegram.org/bots/api#keyboardbuttonrequestchat
+    """
+
+    request_id: int
+    """Signed 32-bit identifier of the request, which will be received back
+    in the ChatShared object. Must be unique within the message.
+    """
+
+    chat_is_channel: bool
+    """Pass True to request a channel chat, pass False to request a group
+    or a supergroup chat
+    """
+
+    chat_is_forum: bool | None = None
+    """Pass True to request a forum supergroup, pass False to request a
+    non-forum chat. If not specified, no additional restrictions are
+    applied.
+    """
+
+    chat_has_username: bool | None = None
+    """Pass True to request a supergroup or a channel with a username, pass
+    False to request a chat without a username. If not specified, no
+    additional restrictions are applied.
+    """
+
+    chat_is_created: bool | None = None
+    """Pass True to request a chat owned by the user. Otherwise, no
+    additional restrictions are applied.
+    """
+
+    user_administrator_rights: ChatAdministratorRights | None = None
+    """A JSON-serialized object listing the required administrator rights
+    of the user in the chat. The rights must be a superset of
+    bot_administrator_rights. If not specified, no additional
+    restrictions are applied.
+    """
+
+    bot_administrator_rights: ChatAdministratorRights | None = None
+    """A JSON-serialized object listing the required administrator rights
+    of the bot in the chat. The rights must be a subset of
+    user_administrator_rights. If not specified, no additional
+    restrictions are applied.
+    """
+
+    bot_is_member: bool | None = None
+    """Pass True to request a chat with the bot as a member. Otherwise, no
+    additional restrictions are applied.
+    """
+
+    request_title: bool | None = None
+    """Pass True to request the chat's title"""
+
+    request_username: bool | None = None
+    """Pass True to request the chat's username"""
+
+    request_photo: bool | None = None
+    """Pass True to request the chat's photo"""
+
+
+class KeyboardButtonRequestManagedBot(BaseModel):
+    """This object defines the parameters for the creation of a managed
+    bot. Information about the created bot will be shared with the bot
+    using the update managed_bot and a Message with the field
+    managed_bot_created.
+
+    See
+    https://core.telegram.org/bots/api#keyboardbuttonrequestmanagedbot
+    """
+
+    request_id: int
+    """Signed 32-bit identifier of the request. Must be unique within the
+    message.
+    """
+
+    suggested_name: str | None = None
+    """Suggested name for the bot"""
+
+    suggested_username: str | None = None
+    """Suggested username for the bot"""
+
+
+class KeyboardButtonPollType(BaseModel):
+    """This object represents type of a poll, which is allowed to be
+    created and sent when the corresponding button is pressed.
+
+    See https://core.telegram.org/bots/api#keyboardbuttonpolltype
+    """
+
+    type: str | None = None
+    """If quiz is passed, the user will be allowed to create only polls in
+    the quiz mode. If regular is passed, only regular polls will be
+    allowed. Otherwise, the user will be allowed to create a poll of any
+    type.
+    """
+
+
+class ReplyKeyboardRemove(BaseModel):
+    """Upon receiving a message with this object, Telegram clients will
+    remove the current custom keyboard and display the default
+    letter-keyboard. By default, custom keyboards are displayed until a
+    new keyboard is sent by a bot. An exception is made for one-time
+    keyboards that are hidden immediately after the user presses a
+    button (see ReplyKeyboardMarkup). Not supported in channels and for
+    messages sent on behalf of a business account.
+
+    See https://core.telegram.org/bots/api#replykeyboardremove
+    """
+
+    remove_keyboard: bool
+    """Requests clients to remove the custom keyboard (user will not be
+    able to summon this keyboard; if you want to hide the keyboard from
+    sight but keep it accessible, use one_time_keyboard in
+    ReplyKeyboardMarkup)
+    """
+
+    selective: bool | None = None
+    """Use this parameter if you want to remove the keyboard for specific
+    users only. Targets: 1) users that are @mentioned in the text of the
+    Message object; 2) if the bot's message is a reply to a message in
+    the same chat and forum topic, sender of the original message.
+
+    Example: A user votes in a poll, bot returns confirmation message in
+    reply to the vote and removes the keyboard for that user, while
+    still showing the keyboard with poll options to users who haven't
+    voted yet.
+    """
+
+
+class InlineKeyboardMarkup(BaseModel):
+    """This object represents an inline keyboard that appears right next to
+    the message it belongs to.
+
+    See https://core.telegram.org/bots/api#inlinekeyboardmarkup
+    """
+
+    inline_keyboard: list[list[InlineKeyboardButton]]
+    """Array of button rows, each represented by an Array of
+    InlineKeyboardButton objects
+    """
+
+
+class InlineKeyboardButton(BaseModel):
+    """This object represents one button of an inline keyboard. Exactly one
+    of the fields other than text, icon_custom_emoji_id, and style must
+    be used to specify the type of the button.
+
+    See https://core.telegram.org/bots/api#inlinekeyboardbutton
+    """
+
+    text: str
+    """Label text on the button"""
+
+    icon_custom_emoji_id: str | None = None
+    """Unique identifier of the custom emoji shown before the text of the
+    button. Can only be used by bots that purchased additional usernames
+    on Fragment or in the messages directly sent by the bot to private,
+    group and supergroup chats if the owner of the bot has a Telegram
+    Premium subscription.
+    """
+
+    style: str | None = None
+    """Style of the button. Must be one of “danger” (red), “success”
+    (green) or “primary” (blue). If omitted, then an app-specific style
+    is used.
+    """
+
+    url: str | None = None
+    """HTTP or tg:// URL to be opened when the button is pressed. Links
+    tg://user?id=<user_id> can be used to mention a user by their
+    identifier without using a username, if this is allowed by their
+    privacy settings.
+    """
+
+    callback_data: str | None = None
+    """Data to be sent in a callback query to the bot when the button is
+    pressed, 1-64 bytes
+    """
+
+    web_app: WebAppInfo | None = None
+    """Description of the Web App that will be launched when the user
+    presses the button. The Web App will be able to send an arbitrary
+    message on behalf of the user using the method answerWebAppQuery.
+    Available only in private chats between a user and the bot. Not
+    supported for messages sent on behalf of a business account.
+    """
+
+    login_url: LoginURL | None = None
+    """An HTTPS URL used to automatically authorize the user. Can be used
+    as a replacement for the Telegram Login Widget.
+    """
+
+    switch_inline_query: str | None = None
+    """If set, pressing the button will prompt the user to select one of
+    their chats, open that chat and insert the bot's username and the
+    specified inline query in the input field. May be empty, in which
+    case just the bot's username will be inserted. Not supported for
+    messages sent in channel direct messages chats and on behalf of a
+    business account.
+    """
+
+    switch_inline_query_current_chat: str | None = None
+    """If set, pressing the button will insert the bot's username and the
+    specified inline query in the current chat's input field. May be
+    empty, in which case only the bot's username will be inserted.
+
+    This offers a quick way for the user to open your bot in inline mode
+    in the same chat - good for selecting something from multiple
+    options. Not supported in channels and for messages sent in channel
+    direct messages chats and on behalf of a business account.
+    """
+
+    switch_inline_query_chosen_chat: SwitchInlineQueryChosenChat | None = None
+    """If set, pressing the button will prompt the user to select one of
+    their chats of the specified type, open that chat and insert the
+    bot's username and the specified inline query in the input field.
+    Not supported for messages sent in channel direct messages chats and
+    on behalf of a business account.
+    """
+
+    copy_text: CopyTextButton | None = None
+    """Description of the button that copies the specified text to the
+    clipboard
+    """
+
+    callback_game: CallbackGame | None = None
+    """Description of the game that will be launched when the user presses
+    the button.
+
+    NOTE: This type of button must always be the first button in the
+    first row.
+    """
+
+    pay: bool | None = None
+    """Specify True, to send a Pay button. Substrings “⭐” and “XTR” in the
+    buttons's text will be replaced with a Telegram Star icon.
+
+    NOTE: This type of button must always be the first button in the
+    first row and can only be used in invoice messages.
+    """
+
+
+class LoginURL(BaseModel):
+    """This object represents a parameter of the inline keyboard button
+    used to automatically authorize a user. Serves as a great
+    replacement for the Telegram Login Widget when the user is coming
+    from Telegram. All the user needs to do is tap/click a button and
+    confirm that they want to log in:
+
+    Telegram apps support these buttons as of version 5.7.
+
+    Sample bot: @discussbot
+
+    See https://core.telegram.org/bots/api#loginurl
+    """
+
+    url: str
+    """An HTTPS URL to be opened with user authorization data added to the
+    query string when the button is pressed. If the user refuses to
+    provide authorization data, the original URL without information
+    about the user will be opened. The data added is the same as
+    described in Receiving authorization data.
+
+    NOTE: You must always check the hash of the received data to verify
+    the authentication and the integrity of the data as described in
+    Checking authorization.
+    """
+
+    forward_text: str | None = None
+    """New text of the button in forwarded messages"""
+
+    bot_username: str | None = None
+    """Username of a bot, which will be used for user authorization. See
+    Setting up a bot for more details. If not specified, the current
+    bot's username will be assumed. The url's domain must be the same as
+    the domain linked with the bot. See Linking your domain to the bot
+    for more details.
+    """
+
+    request_write_access: bool | None = None
+    """Pass True to request the permission for your bot to send messages to
+    the user
+    """
+
+
+class SwitchInlineQueryChosenChat(BaseModel):
+    """This object represents an inline button that switches the current
+    user to inline mode in a chosen chat, with an optional default
+    inline query.
+
+    See https://core.telegram.org/bots/api#switchinlinequerychosenchat
+    """
+
+    query: str | None = None
+    """The default inline query to be inserted in the input field. If left
+    empty, only the bot's username will be inserted.
+    """
+
+    allow_user_chats: bool | None = None
+    """True, if private chats with users can be chosen"""
+
+    allow_bot_chats: bool | None = None
+    """True, if private chats with bots can be chosen"""
+
+    allow_group_chats: bool | None = None
+    """True, if group and supergroup chats can be chosen"""
+
+    allow_channel_chats: bool | None = None
+    """True, if channel chats can be chosen"""
+
+
+class CopyTextButton(BaseModel):
+    """This object represents an inline keyboard button that copies
+    specified text to the clipboard.
+
+    See https://core.telegram.org/bots/api#copytextbutton
+    """
+
+    text: str
+    """The text to be copied to the clipboard; 1-256 characters"""
+
+
+class CallbackQuery(BaseModel):
+    """This object represents an incoming callback query from a callback
+    button in an inline keyboard. If the button that originated the
+    query was attached to a message sent by the bot, the field message
+    will be present. If the button was attached to a message sent via
+    the bot (in inline mode), the field inline_message_id will be
+    present. Exactly one of the fields data or game_short_name will be
+    present.
+
+    NOTE: After the user presses a callback button, Telegram clients
+    will display a progress bar until you call answerCallbackQuery. It
+    is, therefore, necessary to react by calling answerCallbackQuery
+    even if no notification to the user is needed (e.g., without
+    specifying any of the optional parameters).
+
+    See https://core.telegram.org/bots/api#callbackquery
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    """Unique identifier for this query"""
+
+    from_: User = Field(alias="from")
+    """Sender"""
+
+    chat_instance: str
+    """Global identifier, uniquely corresponding to the chat to which the
+    message with the callback button was sent. Useful for high scores in
+    games.
+    """
+
+    message: MaybeInaccessibleMessage | None = None
+    """Message sent by the bot with the callback button that originated the
+    query
+    """
+
+    inline_message_id: str | None = None
+    """Identifier of the message sent via the bot in inline mode, that
+    originated the query
+    """
+
+    data: str | None = None
+    """Data associated with the callback button. Be aware that the message
+    originated the query can contain no callback buttons with this data.
+    """
+
+    game_short_name: str | None = None
+    """Short name of a Game to be returned, serves as the unique identifier
+    for the game
+    """
+
+
+class ForceReply(BaseModel):
+    """Upon receiving a message with this object, Telegram clients will
+    display a reply interface to the user (act as if the user has
+    selected the bot's message and tapped 'Reply'). This can be
+    extremely useful if you want to create user-friendly step-by-step
+    interfaces without having to sacrifice privacy mode. Not supported
+    in channels and for messages sent on behalf of a user account.
+
+    Example: A poll bot for groups runs in privacy mode (only receives
+    commands, replies to its messages and mentions). There could be two
+    ways to create a new poll:
+
+    - Explain the user how to send a command with parameters (e.g.
+      /newpoll question answer1 answer2). May be appealing for hardcore
+      users but lacks modern day polish.
+    - Guide the user through a step-by-step process. 'Please send me
+      your question', 'Cool, now let's add the first answer option',
+      'Great. Keep adding answer options, then send /done when you're
+      ready'.
+
+    The last option is definitely more attractive. And if you use
+    ForceReply in your bot's questions, it will receive the user's
+    answers even if it only receives replies, commands and mentions -
+    without any extra work for the user.
+
+    See https://core.telegram.org/bots/api#forcereply
+    """
+
+    force_reply: bool
+    """Shows reply interface to the user, as if they manually selected the
+    bot's message and tapped 'Reply'
+    """
+
+    input_field_placeholder: str | None = None
+    """The placeholder to be shown in the input field when the reply is
+    active; 1-64 characters
+    """
+
+    selective: bool | None = None
+    """Use this parameter if you want to force reply from specific users
+    only. Targets: 1) users that are @mentioned in the text of the
+    Message object; 2) if the bot's message is a reply to a message in
+    the same chat and forum topic, sender of the original message.
+    """
+
+
+class Community(BaseModel):
+    """Represents a community (a group of chats).
+
+    See https://core.telegram.org/bots/api#community
+    """
+
+    id: int
+    """Unique identifier for this community. This number may have more than
+    32 significant bits and some programming languages may have
+    difficulty/silent defects in interpreting it. But it has at most 52
+    significant bits, so a signed 64-bit integer or double-precision
+    float type are safe for storing this identifier.
+    """
+
+    name: str
+    """Name of the community"""
+
+
+class ChatPhoto(BaseModel):
+    """This object represents a chat photo.
+
+    See https://core.telegram.org/bots/api#chatphoto
+    """
+
+    small_file_id: str
+    """File identifier of small (160x160) chat photo. This file_id can be
+    used only for photo download and only for as long as the photo is
+    not changed.
+    """
+
+    small_file_unique_id: str
+    """Unique file identifier of small (160x160) chat photo, which is
+    supposed to be the same over time and for different bots. Can't be
+    used to download or reuse the file.
+    """
+
+    big_file_id: str
+    """File identifier of big (640x640) chat photo. This file_id can be
+    used only for photo download and only for as long as the photo is
+    not changed.
+    """
+
+    big_file_unique_id: str
+    """Unique file identifier of big (640x640) chat photo, which is
+    supposed to be the same over time and for different bots. Can't be
+    used to download or reuse the file.
+    """
+
+
+class ChatInviteLink(BaseModel):
+    """Represents an invite link for a chat.
+
+    See https://core.telegram.org/bots/api#chatinvitelink
+    """
+
+    invite_link: str
+    """The invite link. If the link was created by another chat
+    administrator, then the second part of the link will be replaced
+    with “…”.
+    """
+
+    creator: User
+    """Creator of the link"""
+
+    creates_join_request: bool
+    """True, if users joining the chat via the link need to be approved by
+    chat administrators
+    """
+
+    is_primary: bool
+    """True, if the link is primary"""
+
+    is_revoked: bool
+    """True, if the link is revoked"""
+
+    name: str | None = None
+    """Invite link name"""
+
+    expire_date: int | None = None
+    """Point in time (Unix timestamp) when the link will expire or has been
+    expired
+    """
+
+    member_limit: int | None = None
+    """The maximum number of users that can be members of the chat
+    simultaneously after joining the chat via this invite link; 1-99999
+    """
+
+    pending_join_request_count: int | None = None
+    """Number of pending join requests created using this link"""
+
+    subscription_period: int | None = None
+    """The number of seconds the subscription will be active for before the
+    next payment
+    """
+
+    subscription_price: int | None = None
+    """The amount of Telegram Stars a user must pay initially and after
+    each subsequent subscription period to be a member of the chat using
+    the link
+    """
+
+
+class ChatAdministratorRights(BaseModel):
+    """Represents the rights of an administrator in a chat.
+
+    See https://core.telegram.org/bots/api#chatadministratorrights
+    """
+
+    is_anonymous: bool
+    """True, if the user's presence in the chat is hidden"""
+
+    can_manage_chat: bool
+    """True, if the administrator can access the chat event log, get boost
+    list, see hidden supergroup and channel members, report spam
+    messages, ignore slow mode, and send messages to the chat without
+    paying Telegram Stars. Implied by any other administrator privilege.
+    """
+
+    can_delete_messages: bool
+    """True, if the administrator can delete messages of other users"""
+
+    can_manage_video_chats: bool
+    """True, if the administrator can manage video chats"""
+
+    can_restrict_members: bool
+    """True, if the administrator can restrict, ban or unban chat members,
+    or access supergroup statistics
+    """
+
+    can_promote_members: bool
+    """True, if the administrator can add new administrators with a subset
+    of their own privileges or demote administrators that they have
+    promoted, directly or indirectly (promoted by administrators that
+    were appointed by the user)
+    """
+
+    can_change_info: bool
+    """True, if the user is allowed to change the chat title, photo and
+    other settings
+    """
+
+    can_invite_users: bool
+    """True, if the user is allowed to invite new users to the chat"""
+
+    can_post_stories: bool
+    """True, if the administrator can post stories to the chat"""
+
+    can_edit_stories: bool
+    """True, if the administrator can edit stories posted by other users,
+    post stories to the chat page, pin chat stories, and access the
+    chat's story archive
+    """
+
+    can_delete_stories: bool
+    """True, if the administrator can delete stories posted by other users"""
+
+    can_post_messages: bool | None = None
+    """True, if the administrator can post messages in the channel, approve
+    suggested posts, or access channel statistics; for channels only
+    """
+
+    can_edit_messages: bool | None = None
+    """True, if the administrator can edit messages of other users and can
+    pin messages; for channels only
+    """
+
+    can_pin_messages: bool | None = None
+    """True, if the user is allowed to pin messages; for groups and
+    supergroups only
+    """
+
+    can_manage_topics: bool | None = None
+    """True, if the user is allowed to create, rename, close, and reopen
+    forum topics; for supergroups only
+    """
+
+    can_manage_direct_messages: bool | None = None
+    """True, if the administrator can manage direct messages of the channel
+    and decline suggested posts; for channels only
+    """
+
+    can_manage_tags: bool | None = None
+    """True, if the administrator can edit the tags of regular members; for
+    groups and supergroups only. If omitted, defaults to the value of
+    can_pin_messages.
+    """
+
+
+class ChatMemberUpdated(BaseModel):
+    """This object represents changes in the status of a chat member.
+
+    See https://core.telegram.org/bots/api#chatmemberupdated
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    chat: Chat
+    """Chat the user belongs to"""
+
+    from_: User = Field(alias="from")
+    """Performer of the action, which resulted in the change"""
+
+    date: int
+    """Date the change was done in Unix time"""
+
+    old_chat_member: ChatMember
+    """Previous information about the chat member"""
+
+    new_chat_member: ChatMember
+    """New information about the chat member"""
+
+    invite_link: ChatInviteLink | None = None
+    """Chat invite link, which was used by the user to join the chat; for
+    joining by invite link events only
+    """
+
+    via_join_request: bool | None = None
+    """True, if the user joined the chat after sending a direct join
+    request without using an invite link and being approved by an
+    administrator
+    """
+
+    via_chat_folder_invite_link: bool | None = None
+    """True, if the user joined the chat via a chat folder invite link"""
 # TODO: chatmember (discriminated union)
 # TODO: chatmemberowner (discriminated object)
 # TODO: chatmemberadministrator (discriminated object)
@@ -140,51 +3916,855 @@
 # TODO: chatmemberrestricted (discriminated object)
 # TODO: chatmemberleft (discriminated object)
 # TODO: chatmemberbanned (discriminated object)
-# TODO: chatjoinrequest (object)
-# TODO: chatpermissions (object)
-# TODO: birthdate (object)
-# TODO: businessintro (object)
-# TODO: businesslocation (object)
-# TODO: businessopeninghoursinterval (object)
-# TODO: businessopeninghours (object)
-# TODO: userrating (object)
-# TODO: storyareaposition (object)
-# TODO: locationaddress (object)
+
+
+class ChatJoinRequest(BaseModel):
+    """Represents a join request sent to a chat.
+
+    See https://core.telegram.org/bots/api#chatjoinrequest
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    chat: Chat
+    """Chat to which the request was sent"""
+
+    from_: User = Field(alias="from")
+    """User that sent the join request"""
+
+    user_chat_id: int
+    """Identifier of a private chat with the user who sent the join
+    request. This number may have more than 32 significant bits and some
+    programming languages may have difficulty/silent defects in
+    interpreting it. But it has at most 52 significant bits, so a 64-bit
+    integer or double-precision float type are safe for storing this
+    identifier. The bot can use this identifier for 5 minutes to send
+    messages until the join request is processed, assuming no other
+    administrator contacted the user.
+    """
+
+    date: int
+    """Date the request was sent in Unix time"""
+
+    bio: str | None = None
+    """Bio of the user"""
+
+    invite_link: ChatInviteLink | None = None
+    """Chat invite link that was used by the user to send the join request"""
+
+    query_id: str | None = None
+    """Identifier of the join request query; for bots assigned to process
+    join requests only. If present, then the bot must call
+    sendChatJoinRequestWebApp or directly call
+    answerChatJoinRequestQuery within 10 seconds.
+    """
+
+
+class ChatPermissions(BaseModel):
+    """Describes actions that a non-administrator user is allowed to take
+    in a chat.
+
+    See https://core.telegram.org/bots/api#chatpermissions
+    """
+
+    can_send_messages: bool | None = None
+    """True, if the user is allowed to send text messages, rich messages,
+    contacts, giveaways, giveaway winners, invoices, locations and
+    venues
+    """
+
+    can_send_audios: bool | None = None
+    """True, if the user is allowed to send audios"""
+
+    can_send_documents: bool | None = None
+    """True, if the user is allowed to send documents"""
+
+    can_send_photos: bool | None = None
+    """True, if the user is allowed to send photos"""
+
+    can_send_videos: bool | None = None
+    """True, if the user is allowed to send videos"""
+
+    can_send_video_notes: bool | None = None
+    """True, if the user is allowed to send video notes"""
+
+    can_send_voice_notes: bool | None = None
+    """True, if the user is allowed to send voice notes"""
+
+    can_send_polls: bool | None = None
+    """True, if the user is allowed to send polls and checklists"""
+
+    can_send_other_messages: bool | None = None
+    """True, if the user is allowed to send animations, games, stickers and
+    use inline bots
+    """
+
+    can_add_web_page_previews: bool | None = None
+    """True, if the user is allowed to add web page previews to their
+    messages
+    """
+
+    can_react_to_messages: bool | None = None
+    """True, if the user is allowed to react to messages. If omitted,
+    defaults to the value of can_send_messages.
+    """
+
+    can_edit_tag: bool | None = None
+    """True, if the user is allowed to edit their own tag. If omitted,
+    defaults to the value of can_pin_messages.
+    """
+
+    can_change_info: bool | None = None
+    """True, if the user is allowed to change the chat title, photo and
+    other settings. Ignored in public supergroups.
+    """
+
+    can_invite_users: bool | None = None
+    """True, if the user is allowed to invite new users to the chat"""
+
+    can_pin_messages: bool | None = None
+    """True, if the user is allowed to pin messages. Ignored in public
+    supergroups.
+    """
+
+    can_manage_topics: bool | None = None
+    """True, if the user is allowed to create forum topics. If omitted,
+    defaults to the value of can_pin_messages.
+    """
+
+
+class Birthdate(BaseModel):
+    """Describes the birthdate of a user.
+
+    See https://core.telegram.org/bots/api#birthdate
+    """
+
+    day: int
+    """Day of the user's birth; 1-31"""
+
+    month: int
+    """Month of the user's birth; 1-12"""
+
+    year: int | None = None
+    """Year of the user's birth"""
+
+
+class BusinessIntro(BaseModel):
+    """Contains information about the start page settings of a Telegram
+    Business account.
+
+    See https://core.telegram.org/bots/api#businessintro
+    """
+
+    title: str | None = None
+    """Title text of the business intro"""
+
+    message: str | None = None
+    """Message text of the business intro"""
+
+    sticker: Sticker | None = None
+    """Sticker of the business intro"""
+
+
+class BusinessLocation(BaseModel):
+    """Contains information about the location of a Telegram Business
+    account.
+
+    See https://core.telegram.org/bots/api#businesslocation
+    """
+
+    address: str
+    """Address of the business"""
+
+    location: Location | None = None
+    """Location of the business"""
+
+
+class BusinessOpeningHoursInterval(BaseModel):
+    """Describes an interval of time during which a business is open.
+
+    See https://core.telegram.org/bots/api#businessopeninghoursinterval
+    """
+
+    opening_minute: int
+    """The minute's sequence number in a week, starting on Monday, marking
+    the start of the time interval during which the business is open; 0
+    - 7 * 24 * 60
+    """
+
+    closing_minute: int
+    """The minute's sequence number in a week, starting on Monday, marking
+    the end of the time interval during which the business is open; 0 -
+    8 * 24 * 60
+    """
+
+
+class BusinessOpeningHours(BaseModel):
+    """Describes the opening hours of a business.
+
+    See https://core.telegram.org/bots/api#businessopeninghours
+    """
+
+    time_zone_name: str
+    """Unique name of the time zone for which the opening hours are defined"""
+
+    opening_hours: list[BusinessOpeningHoursInterval]
+    """List of time intervals describing business opening hours"""
+
+
+class UserRating(BaseModel):
+    """This object describes the rating of a user based on their Telegram
+    Star spendings.
+
+    See https://core.telegram.org/bots/api#userrating
+    """
+
+    level: int
+    """Current level of the user, indicating their reliability when
+    purchasing digital goods and services. A higher level suggests a
+    more trustworthy customer; a negative level is likely reason for
+    concern.
+    """
+
+    rating: int
+    """Numerical value of the user's rating; the higher the rating, the
+    better
+    """
+
+    current_level_rating: int
+    """The rating value required to get the current level"""
+
+    next_level_rating: int | None = None
+    """The rating value required to get to the next level; omitted if the
+    maximum level was reached
+    """
+
+
+class StoryAreaPosition(BaseModel):
+    """Describes the position of a clickable area within a story.
+
+    See https://core.telegram.org/bots/api#storyareaposition
+    """
+
+    x_percentage: float
+    """The abscissa of the area's center, as a percentage of the media
+    width
+    """
+
+    y_percentage: float
+    """The ordinate of the area's center, as a percentage of the media
+    height
+    """
+
+    width_percentage: float
+    """The width of the area's rectangle, as a percentage of the media
+    width
+    """
+
+    height_percentage: float
+    """The height of the area's rectangle, as a percentage of the media
+    height
+    """
+
+    rotation_angle: float
+    """The clockwise rotation angle of the rectangle, in degrees; 0-360"""
+
+    corner_radius_percentage: float
+    """The radius of the rectangle corner rounding, as a percentage of the
+    media width
+    """
+
+
+class LocationAddress(BaseModel):
+    """Describes the physical address of a location.
+
+    See https://core.telegram.org/bots/api#locationaddress
+    """
+
+    country_code: str
+    """The two-letter ISO 3166-1 alpha-2 country code of the country where
+    the location is located
+    """
+
+    state: str | None = None
+    """State of the location"""
+
+    city: str | None = None
+    """City of the location"""
+
+    street: str | None = None
+    """Street address of the location"""
 # TODO: storyareatype (discriminated union)
 # TODO: storyareatypelocation (discriminated object)
 # TODO: storyareatypesuggestedreaction (discriminated object)
 # TODO: storyareatypelink (discriminated object)
 # TODO: storyareatypeweather (discriminated object)
 # TODO: storyareatypeuniquegift (discriminated object)
-# TODO: storyarea (object)
-# TODO: chatlocation (object)
+
+
+class StoryArea(BaseModel):
+    """Describes a clickable area on a story media.
+
+    See https://core.telegram.org/bots/api#storyarea
+    """
+
+    position: StoryAreaPosition
+    """Position of the area"""
+
+    type: StoryAreaType
+    """Type of the area"""
+
+
+class ChatLocation(BaseModel):
+    """Represents a location to which a chat is connected.
+
+    See https://core.telegram.org/bots/api#chatlocation
+    """
+
+    location: Location
+    """The location to which the supergroup is connected. Can't be a live
+    location.
+    """
+
+    address: str
+    """Location address; 1-64 characters, as defined by the chat owner"""
 # TODO: reactiontype (discriminated union)
 # TODO: reactiontypeemoji (discriminated object)
 # TODO: reactiontypecustomemoji (discriminated object)
 # TODO: reactiontypepaid (discriminated object)
-# TODO: reactioncount (object)
-# TODO: messagereactionupdated (object)
-# TODO: messagereactioncountupdated (object)
-# TODO: forumtopic (object)
-# TODO: giftbackground (object)
-# TODO: gift (object)
-# TODO: gifts (object)
-# TODO: uniquegiftmodel (object)
-# TODO: uniquegiftsymbol (object)
-# TODO: uniquegiftbackdropcolors (object)
-# TODO: uniquegiftbackdrop (object)
-# TODO: uniquegiftcolors (object)
-# TODO: uniquegift (object)
-# TODO: giftinfo (object)
-# TODO: uniquegiftinfo (object)
+
+
+class ReactionCount(BaseModel):
+    """Represents a reaction added to a message along with the number of
+    times it was added.
+
+    See https://core.telegram.org/bots/api#reactioncount
+    """
+
+    type: ReactionType
+    """Type of the reaction"""
+
+    total_count: int
+    """Number of times the reaction was added"""
+
+
+class MessageReactionUpdated(BaseModel):
+    """This object represents a change of a reaction on a message performed
+    by a user.
+
+    See https://core.telegram.org/bots/api#messagereactionupdated
+    """
+
+    chat: Chat
+    """The chat containing the message the user reacted to"""
+
+    message_id: int
+    """Unique identifier of the message inside the chat"""
+
+    date: int
+    """Date of the change in Unix time"""
+
+    old_reaction: list[ReactionType]
+    """Previous list of reaction types that were set by the user"""
+
+    new_reaction: list[ReactionType]
+    """New list of reaction types that have been set by the user"""
+
+    user: User | None = None
+    """The user that changed the reaction, if the user isn't anonymous"""
+
+    actor_chat: Chat | None = None
+    """The chat on behalf of which the reaction was changed, if the user is
+    anonymous
+    """
+
+
+class MessageReactionCountUpdated(BaseModel):
+    """This object represents reaction changes on a message with anonymous
+    reactions.
+
+    See https://core.telegram.org/bots/api#messagereactioncountupdated
+    """
+
+    chat: Chat
+    """The chat containing the message"""
+
+    message_id: int
+    """Unique message identifier inside the chat"""
+
+    date: int
+    """Date of the change in Unix time"""
+
+    reactions: list[ReactionCount]
+    """List of reactions that are present on the message"""
+
+
+class ForumTopic(BaseModel):
+    """This object represents a forum topic.
+
+    See https://core.telegram.org/bots/api#forumtopic
+    """
+
+    message_thread_id: int
+    """Unique identifier of the forum topic"""
+
+    name: str
+    """Name of the topic"""
+
+    icon_color: int
+    """Color of the topic icon in RGB format"""
+
+    icon_custom_emoji_id: str | None = None
+    """Unique identifier of the custom emoji shown as the topic icon"""
+
+    is_name_implicit: bool | None = None
+    """True, if the name of the topic wasn't specified explicitly by its
+    creator and likely needs to be changed by the bot
+    """
+
+
+class GiftBackground(BaseModel):
+    """This object describes the background of a gift.
+
+    See https://core.telegram.org/bots/api#giftbackground
+    """
+
+    center_color: int
+    """Center color of the background in RGB format"""
+
+    edge_color: int
+    """Edge color of the background in RGB format"""
+
+    text_color: int
+    """Text color of the background in RGB format"""
+
+
+class Gift(BaseModel):
+    """This object represents a gift that can be sent by the bot.
+
+    See https://core.telegram.org/bots/api#gift
+    """
+
+    id: str
+    """Unique identifier of the gift"""
+
+    sticker: Sticker
+    """The sticker that represents the gift"""
+
+    star_count: int
+    """The number of Telegram Stars that must be paid to send the sticker"""
+
+    upgrade_star_count: int | None = None
+    """The number of Telegram Stars that must be paid to upgrade the gift
+    to a unique one
+    """
+
+    is_premium: bool | None = None
+    """True, if the gift can only be purchased by Telegram Premium
+    subscribers
+    """
+
+    has_colors: bool | None = None
+    """True, if the gift can be used (after being upgraded) to customize a
+    user's appearance
+    """
+
+    total_count: int | None = None
+    """The total number of gifts of this type that can be sent by all
+    users; for limited gifts only
+    """
+
+    remaining_count: int | None = None
+    """The number of remaining gifts of this type that can be sent by all
+    users; for limited gifts only
+    """
+
+    personal_total_count: int | None = None
+    """The total number of gifts of this type that can be sent by the bot;
+    for limited gifts only
+    """
+
+    personal_remaining_count: int | None = None
+    """The number of remaining gifts of this type that can be sent by the
+    bot; for limited gifts only
+    """
+
+    background: GiftBackground | None = None
+    """Background of the gift"""
+
+    unique_gift_variant_count: int | None = None
+    """The total number of different unique gifts that can be obtained by
+    upgrading the gift
+    """
+
+    publisher_chat: Chat | None = None
+    """Information about the chat that published the gift"""
+
+
+class Gifts(BaseModel):
+    """This object represent a list of gifts.
+
+    See https://core.telegram.org/bots/api#gifts
+    """
+
+    gifts: list[Gift]
+    """The list of gifts"""
+
+
+class UniqueGiftModel(BaseModel):
+    """This object describes the model of a unique gift.
+
+    See https://core.telegram.org/bots/api#uniquegiftmodel
+    """
+
+    name: str
+    """Name of the model"""
+
+    sticker: Sticker
+    """The sticker that represents the unique gift"""
+
+    rarity_per_mille: int
+    """The number of unique gifts that receive this model for every 1000
+    gift upgrades. Always 0 for crafted gifts.
+    """
+
+    rarity: str | None = None
+    """Rarity of the model if it is a crafted model. Currently, can be
+    “uncommon”, “rare”, “epic”, or “legendary”.
+    """
+
+
+class UniqueGiftSymbol(BaseModel):
+    """This object describes the symbol shown on the pattern of a unique
+    gift.
+
+    See https://core.telegram.org/bots/api#uniquegiftsymbol
+    """
+
+    name: str
+    """Name of the symbol"""
+
+    sticker: Sticker
+    """The sticker that represents the unique gift"""
+
+    rarity_per_mille: int
+    """The number of unique gifts that receive this model for every 1000
+    gifts upgraded
+    """
+
+
+class UniqueGiftBackdropColors(BaseModel):
+    """This object describes the colors of the backdrop of a unique gift.
+
+    See https://core.telegram.org/bots/api#uniquegiftbackdropcolors
+    """
+
+    center_color: int
+    """The color in the center of the backdrop in RGB format"""
+
+    edge_color: int
+    """The color on the edges of the backdrop in RGB format"""
+
+    symbol_color: int
+    """The color to be applied to the symbol in RGB format"""
+
+    text_color: int
+    """The color for the text on the backdrop in RGB format"""
+
+
+class UniqueGiftBackdrop(BaseModel):
+    """This object describes the backdrop of a unique gift.
+
+    See https://core.telegram.org/bots/api#uniquegiftbackdrop
+    """
+
+    name: str
+    """Name of the backdrop"""
+
+    colors: UniqueGiftBackdropColors
+    """Colors of the backdrop"""
+
+    rarity_per_mille: int
+    """The number of unique gifts that receive this backdrop for every 1000
+    gifts upgraded
+    """
+
+
+class UniqueGiftColors(BaseModel):
+    """This object contains information about the color scheme for a user's
+    name, message replies and link previews based on a unique gift.
+
+    See https://core.telegram.org/bots/api#uniquegiftcolors
+    """
+
+    model_custom_emoji_id: str
+    """Custom emoji identifier of the unique gift's model"""
+
+    symbol_custom_emoji_id: str
+    """Custom emoji identifier of the unique gift's symbol"""
+
+    light_theme_main_color: int
+    """Main color used in light themes; RGB format"""
+
+    light_theme_other_colors: list[int]
+    """List of 1-3 additional colors used in light themes; RGB format"""
+
+    dark_theme_main_color: int
+    """Main color used in dark themes; RGB format"""
+
+    dark_theme_other_colors: list[int]
+    """List of 1-3 additional colors used in dark themes; RGB format"""
+
+
+class UniqueGift(BaseModel):
+    """This object describes a unique gift that was upgraded from a regular
+    gift.
+
+    See https://core.telegram.org/bots/api#uniquegift
+    """
+
+    gift_id: str
+    """Identifier of the regular gift from which the gift was upgraded"""
+
+    base_name: str
+    """Human-readable name of the regular gift from which this unique gift
+    was upgraded
+    """
+
+    name: str
+    """Unique name of the gift. This name can be used in
+    https://t.me/nft/... links and story areas.
+    """
+
+    number: int
+    """Unique number of the upgraded gift among gifts upgraded from the
+    same regular gift
+    """
+
+    model: UniqueGiftModel
+    """Model of the gift"""
+
+    symbol: UniqueGiftSymbol
+    """Symbol of the gift"""
+
+    backdrop: UniqueGiftBackdrop
+    """Backdrop of the gift"""
+
+    is_premium: bool | None = None
+    """True, if the original regular gift was exclusively purchaseable by
+    Telegram Premium subscribers
+    """
+
+    is_burned: bool | None = None
+    """True, if the gift was used to craft another gift and isn't available
+    anymore
+    """
+
+    is_from_blockchain: bool | None = None
+    """True, if the gift is assigned from the TON blockchain and can't be
+    resold or transferred in Telegram
+    """
+
+    colors: UniqueGiftColors | None = None
+    """The color scheme that can be used by the gift's owner for the chat's
+    name, replies to messages and link previews; for business account
+    gifts and gifts that are currently on sale only
+    """
+
+    publisher_chat: Chat | None = None
+    """Information about the chat that published the gift"""
+
+
+class GiftInfo(BaseModel):
+    """Describes a service message about a regular gift that was sent or
+    received.
+
+    See https://core.telegram.org/bots/api#giftinfo
+    """
+
+    gift: Gift
+    """Information about the gift"""
+
+    owned_gift_id: str | None = None
+    """Unique identifier of the received gift for the bot; only present for
+    gifts received on behalf of business accounts
+    """
+
+    convert_star_count: int | None = None
+    """Number of Telegram Stars that can be claimed by the receiver by
+    converting the gift; omitted if conversion to Telegram Stars is
+    impossible
+    """
+
+    prepaid_upgrade_star_count: int | None = None
+    """Number of Telegram Stars that were prepaid for the ability to
+    upgrade the gift
+    """
+
+    is_upgrade_separate: bool | None = None
+    """True, if the gift's upgrade was purchased after the gift was sent"""
+
+    can_be_upgraded: bool | None = None
+    """True, if the gift can be upgraded to a unique gift"""
+
+    text: str | None = None
+    """Text of the message that was added to the gift"""
+
+    entities: list[MessageEntity] | None = None
+    """Special entities that appear in the text"""
+
+    is_private: bool | None = None
+    """True, if the sender and gift text are shown only to the gift
+    receiver; otherwise, everyone will be able to see them
+    """
+
+    unique_gift_number: int | None = None
+    """Unique number reserved for this gift when upgraded. See the number
+    field in UniqueGift.
+    """
+
+
+class UniqueGiftInfo(BaseModel):
+    """Describes a service message about a unique gift that was sent or
+    received.
+
+    See https://core.telegram.org/bots/api#uniquegiftinfo
+    """
+
+    gift: UniqueGift
+    """Information about the gift"""
+
+    origin: str
+    """Origin of the gift. Currently, either “upgrade” for gifts upgraded
+    from regular gifts, “transfer” for gifts transferred from other
+    users or channels, “resale” for gifts bought from other users,
+    “gifted_upgrade” for upgrades purchased after the gift was sent, or
+    “offer” for gifts bought or sold through gift purchase offers.
+    """
+
+    last_resale_currency: str | None = None
+    """For gifts bought from other users, the currency in which the payment
+    for the gift was done. Currently, one of “XTR” for Telegram Stars or
+    “TON” for TON grams.
+    """
+
+    last_resale_amount: int | None = None
+    """For gifts bought from other users, the price paid for the gift in
+    either Telegram Stars or nanograms
+    """
+
+    owned_gift_id: str | None = None
+    """Unique identifier of the received gift for the bot; only present for
+    gifts received on behalf of business accounts
+    """
+
+    transfer_star_count: int | None = None
+    """Number of Telegram Stars that must be paid to transfer the gift;
+    omitted if the bot cannot transfer the gift
+    """
+
+    next_transfer_date: int | None = None
+    """Point in time (Unix timestamp) when the gift can be transferred. If
+    it is in the past, then the gift can be transferred now.
+    """
 # TODO: ownedgift (discriminated union)
 # TODO: ownedgiftregular (discriminated object)
 # TODO: ownedgiftunique (discriminated object)
-# TODO: ownedgifts (object)
-# TODO: botaccesssettings (object)
-# TODO: acceptedgifttypes (object)
-# TODO: staramount (object)
-# TODO: botcommand (object)
+
+
+class OwnedGifts(BaseModel):
+    """Contains the list of gifts received and owned by a user or a chat.
+
+    See https://core.telegram.org/bots/api#ownedgifts
+    """
+
+    total_count: int
+    """The total number of gifts owned by the user or the chat"""
+
+    gifts: list[OwnedGift]
+    """The list of gifts"""
+
+    next_offset: str | None = None
+    """Offset for the next request. If empty, then there are no more
+    results.
+    """
+
+
+class BotAccessSettings(BaseModel):
+    """This object describes the access settings of a bot.
+
+    See https://core.telegram.org/bots/api#botaccesssettings
+    """
+
+    is_access_restricted: bool
+    """True, if only selected users can access the bot. The bot's owner can
+    always access it.
+    """
+
+    added_users: list[User] | None = None
+    """The list of other users who have access to the bot if the access is
+    restricted
+    """
+
+
+class AcceptedGiftTypes(BaseModel):
+    """This object describes the types of gifts that can be gifted to a
+    user or a chat.
+
+    See https://core.telegram.org/bots/api#acceptedgifttypes
+    """
+
+    unlimited_gifts: bool
+    """True, if unlimited regular gifts are accepted"""
+
+    limited_gifts: bool
+    """True, if limited regular gifts are accepted"""
+
+    unique_gifts: bool
+    """True, if unique gifts or gifts that can be upgraded to unique for
+    free are accepted
+    """
+
+    premium_subscription: bool
+    """True, if a Telegram Premium subscription is accepted"""
+
+    gifts_from_channels: bool
+    """True, if transfers of unique gifts from channels are accepted"""
+
+
+class StarAmount(BaseModel):
+    """Describes an amount of Telegram Stars.
+
+    See https://core.telegram.org/bots/api#staramount
+    """
+
+    amount: int
+    """Integer amount of Telegram Stars, rounded to 0; can be negative"""
+
+    nanostar_amount: int | None = None
+    """The number of 1/1000000000 shares of Telegram Stars; from -999999999
+    to 999999999; can be negative if and only if amount is non-positive
+    """
+
+
+class BotCommand(BaseModel):
+    """This object represents a bot command.
+
+    See https://core.telegram.org/bots/api#botcommand
+    """
+
+    command: str
+    """Text of the command; 1-32 characters. Can contain only lowercase
+    English letters, digits and underscores.
+    """
+
+    description: str
+    """Description of the command; 1-256 characters"""
+
+    is_ephemeral: bool | None = None
+    """True, if the command sends an ephemeral message, which can be seen
+    only by the sender of the message and the bot
+    """
 # TODO: botcommandscope (discriminated union)
 # TODO: botcommandscopedefault (discriminated object)
 # TODO: botcommandscopeallprivatechats (discriminated object)
@@ -193,9 +4773,36 @@
 # TODO: botcommandscopechat (discriminated object)
 # TODO: botcommandscopechatadministrators (discriminated object)
 # TODO: botcommandscopechatmember (discriminated object)
-# TODO: botname (object)
-# TODO: botdescription (object)
-# TODO: botshortdescription (object)
+
+
+class BotName(BaseModel):
+    """This object represents the bot's name.
+
+    See https://core.telegram.org/bots/api#botname
+    """
+
+    name: str
+    """The bot's name"""
+
+
+class BotDescription(BaseModel):
+    """This object represents the bot's description.
+
+    See https://core.telegram.org/bots/api#botdescription
+    """
+
+    description: str
+    """The bot's description"""
+
+
+class BotShortDescription(BaseModel):
+    """This object represents the bot's short description.
+
+    See https://core.telegram.org/bots/api#botshortdescription
+    """
+
+    short_description: str
+    """The bot's short description"""
 # TODO: menubutton (discriminated union)
 # TODO: menubuttoncommands (discriminated object)
 # TODO: menubuttonwebapp (discriminated object)
@@ -204,20 +4811,278 @@
 # TODO: chatboostsourcepremium (discriminated object)
 # TODO: chatboostsourcegiftcode (discriminated object)
 # TODO: chatboostsourcegiveaway (discriminated object)
-# TODO: chatboost (object)
-# TODO: chatboostupdated (object)
-# TODO: chatboostremoved (object)
-# TODO: chatownerleft (object)
-# TODO: chatownerchanged (object)
-# TODO: userchatboosts (object)
-# TODO: businessbotrights (object)
-# TODO: businessconnection (object)
-# TODO: businessmessagesdeleted (object)
-# TODO: sentwebappmessage (object)
-# TODO: sentguestmessage (object)
-# TODO: preparedinlinemessage (object)
-# TODO: preparedkeyboardbutton (object)
-# TODO: responseparameters (object)
+
+
+class ChatBoost(BaseModel):
+    """This object contains information about a chat boost.
+
+    See https://core.telegram.org/bots/api#chatboost
+    """
+
+    boost_id: str
+    """Unique identifier of the boost"""
+
+    add_date: int
+    """Point in time (Unix timestamp) when the chat was boosted"""
+
+    expiration_date: int
+    """Point in time (Unix timestamp) when the boost will automatically
+    expire, unless the booster's Telegram Premium subscription is
+    prolonged
+    """
+
+    source: ChatBoostSource
+    """Source of the added boost"""
+
+
+class ChatBoostUpdated(BaseModel):
+    """This object represents a boost added to a chat or changed.
+
+    See https://core.telegram.org/bots/api#chatboostupdated
+    """
+
+    chat: Chat
+    """Chat which was boosted"""
+
+    boost: ChatBoost
+    """Information about the chat boost"""
+
+
+class ChatBoostRemoved(BaseModel):
+    """This object represents a boost removed from a chat.
+
+    See https://core.telegram.org/bots/api#chatboostremoved
+    """
+
+    chat: Chat
+    """Chat which was boosted"""
+
+    boost_id: str
+    """Unique identifier of the boost"""
+
+    remove_date: int
+    """Point in time (Unix timestamp) when the boost was removed"""
+
+    source: ChatBoostSource
+    """Source of the removed boost"""
+
+
+class ChatOwnerLeft(BaseModel):
+    """Describes a service message about the chat owner leaving the chat.
+
+    See https://core.telegram.org/bots/api#chatownerleft
+    """
+
+    new_owner: User | None = None
+    """The user who will become the new owner of the chat if the previous
+    owner does not return to the chat
+    """
+
+
+class ChatOwnerChanged(BaseModel):
+    """Describes a service message about an ownership change in the chat.
+
+    See https://core.telegram.org/bots/api#chatownerchanged
+    """
+
+    new_owner: User
+    """The new owner of the chat"""
+
+
+class UserChatBoosts(BaseModel):
+    """This object represents a list of boosts added to a chat by a user.
+
+    See https://core.telegram.org/bots/api#userchatboosts
+    """
+
+    boosts: list[ChatBoost]
+    """The list of boosts added to the chat by the user"""
+
+
+class BusinessBotRights(BaseModel):
+    """Represents the rights of a business bot.
+
+    See https://core.telegram.org/bots/api#businessbotrights
+    """
+
+    can_reply: bool | None = None
+    """True, if the bot can send and edit messages in the private chats
+    that had incoming messages in the last 24 hours
+    """
+
+    can_read_messages: bool | None = None
+    """True, if the bot can mark incoming private messages as read"""
+
+    can_delete_sent_messages: bool | None = None
+    """True, if the bot can delete messages sent by the bot"""
+
+    can_delete_all_messages: bool | None = None
+    """True, if the bot can delete all private messages in managed chats"""
+
+    can_edit_name: bool | None = None
+    """True, if the bot can edit the first and last name of the business
+    account
+    """
+
+    can_edit_bio: bool | None = None
+    """True, if the bot can edit the bio of the business account"""
+
+    can_edit_profile_photo: bool | None = None
+    """True, if the bot can edit the profile photo of the business account"""
+
+    can_edit_username: bool | None = None
+    """True, if the bot can edit the username of the business account"""
+
+    can_change_gift_settings: bool | None = None
+    """True, if the bot can change the privacy settings pertaining to gifts
+    for the business account
+    """
+
+    can_view_gifts_and_stars: bool | None = None
+    """True, if the bot can view gifts and the amount of Telegram Stars
+    owned by the business account
+    """
+
+    can_convert_gifts_to_stars: bool | None = None
+    """True, if the bot can convert regular gifts owned by the business
+    account to Telegram Stars
+    """
+
+    can_transfer_and_upgrade_gifts: bool | None = None
+    """True, if the bot can transfer and upgrade gifts owned by the
+    business account
+    """
+
+    can_transfer_stars: bool | None = None
+    """True, if the bot can transfer Telegram Stars received by the
+    business account to its own account, or use them to upgrade and
+    transfer gifts
+    """
+
+    can_manage_stories: bool | None = None
+    """True, if the bot can post, edit and delete stories on behalf of the
+    business account
+    """
+
+
+class BusinessConnection(BaseModel):
+    """Describes the connection of the bot with a business account.
+
+    See https://core.telegram.org/bots/api#businessconnection
+    """
+
+    id: str
+    """Unique identifier of the business connection"""
+
+    user: User
+    """Business account user that created the business connection"""
+
+    user_chat_id: int
+    """Identifier of a private chat with the user who created the business
+    connection. This number may have more than 32 significant bits and
+    some programming languages may have difficulty/silent defects in
+    interpreting it. But it has at most 52 significant bits, so a 64-bit
+    integer or double-precision float type are safe for storing this
+    identifier.
+    """
+
+    date: int
+    """Date the connection was established in Unix time"""
+
+    is_enabled: bool
+    """True, if the connection is active"""
+
+    rights: BusinessBotRights | None = None
+    """Rights of the business bot"""
+
+
+class BusinessMessagesDeleted(BaseModel):
+    """This object is received when messages are deleted from a connected
+    business account.
+
+    See https://core.telegram.org/bots/api#businessmessagesdeleted
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    chat: Chat
+    """Information about a chat in the business account. The bot may not
+    have access to the chat or the corresponding user.
+    """
+
+    message_ids: list[int]
+    """The list of identifiers of deleted messages in the chat of the
+    business account
+    """
+
+
+class SentWebAppMessage(BaseModel):
+    """Describes an inline message sent by a Web App on behalf of a user.
+
+    See https://core.telegram.org/bots/api#sentwebappmessage
+    """
+
+    inline_message_id: str | None = None
+    """Identifier of the sent inline message. Available only if there is an
+    inline keyboard attached to the message.
+    """
+
+
+class SentGuestMessage(BaseModel):
+    """Describes an inline message sent by a guest bot.
+
+    See https://core.telegram.org/bots/api#sentguestmessage
+    """
+
+    inline_message_id: str
+    """Identifier of the sent inline message"""
+
+
+class PreparedInlineMessage(BaseModel):
+    """Describes an inline message to be sent by a user of a Mini App.
+
+    See https://core.telegram.org/bots/api#preparedinlinemessage
+    """
+
+    id: str
+    """Unique identifier of the prepared message"""
+
+    expiration_date: int
+    """Expiration date of the prepared message, in Unix time. Expired
+    prepared messages can no longer be used.
+    """
+
+
+class PreparedKeyboardButton(BaseModel):
+    """Describes a keyboard button to be used by a user of a Mini App.
+
+    See https://core.telegram.org/bots/api#preparedkeyboardbutton
+    """
+
+    id: str
+    """Unique identifier of the keyboard button"""
+
+
+class ResponseParameters(BaseModel):
+    """Describes why a request was unsuccessful.
+
+    See https://core.telegram.org/bots/api#responseparameters
+    """
+
+    migrate_to_chat_id: int | None = None
+    """The group has been migrated to a supergroup with the specified
+    identifier. This number may have more than 32 significant bits and
+    some programming languages may have difficulty/silent defects in
+    interpreting it. But it has at most 52 significant bits, so a signed
+    64-bit integer or double-precision float type are safe for storing
+    this identifier.
+    """
+
+    retry_after: int | None = None
+    """In case of exceeding flood control, the number of seconds left to
+    wait before the request can be repeated
+    """
 # TODO: inputmedia (discriminated union)
 # TODO: inputmediaanimation (discriminated object)
 # TODO: inputmediaaudio (discriminated object)
@@ -390,10 +5255,157 @@
 # TODO: deleteephemeralmessage (method)
 # TODO: deletemessagereaction (method)
 # TODO: deleteallmessagereactions (method)
-# TODO: sticker (object)
-# TODO: stickerset (object)
-# TODO: maskposition (object)
-# TODO: inputsticker (object)
+
+
+class Sticker(BaseModel):
+    """This object represents a sticker.
+
+    See https://core.telegram.org/bots/api#sticker
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    type: str
+    """Type of the sticker, currently one of “regular”, “mask”,
+    “custom_emoji”. The type of the sticker is independent from its
+    format, which is determined by the fields is_animated and is_video.
+    """
+
+    width: int
+    """Sticker width"""
+
+    height: int
+    """Sticker height"""
+
+    is_animated: bool
+    """True, if the sticker is animated"""
+
+    is_video: bool
+    """True, if the sticker is a video sticker"""
+
+    thumbnail: PhotoSize | None = None
+    """Sticker thumbnail in the .WEBP or .JPG format"""
+
+    emoji: str | None = None
+    """Emoji associated with the sticker"""
+
+    set_name: str | None = None
+    """Name of the sticker set to which the sticker belongs"""
+
+    premium_animation: File | None = None
+    """For premium regular stickers, premium animation for the sticker"""
+
+    mask_position: MaskPosition | None = None
+    """For mask stickers, the position where the mask should be placed"""
+
+    custom_emoji_id: str | None = None
+    """For custom emoji stickers, unique identifier of the custom emoji"""
+
+    needs_repainting: bool | None = None
+    """True, if the sticker must be repainted to a text color in messages,
+    the color of the Telegram Premium badge in emoji status, white color
+    on chat photos, or another appropriate color in other places
+    """
+
+    file_size: int | None = None
+    """File size in bytes"""
+
+
+class StickerSet(BaseModel):
+    """This object represents a sticker set.
+
+    See https://core.telegram.org/bots/api#stickerset
+    """
+
+    name: str
+    """Sticker set name"""
+
+    title: str
+    """Sticker set title"""
+
+    sticker_type: str
+    """Type of stickers in the set, currently one of “regular”, “mask”,
+    “custom_emoji”
+    """
+
+    stickers: list[Sticker]
+    """List of all set stickers"""
+
+    thumbnail: PhotoSize | None = None
+    """Sticker set thumbnail in the .WEBP, .TGS, or .WEBM format"""
+
+
+class MaskPosition(BaseModel):
+    """This object describes the position on faces where a mask should be
+    placed by default.
+
+    See https://core.telegram.org/bots/api#maskposition
+    """
+
+    point: str
+    """The part of the face relative to which the mask should be placed.
+    One of “forehead”, “eyes”, “mouth”, or “chin”.
+    """
+
+    x_shift: float
+    """Shift by X-axis measured in widths of the mask scaled to the face
+    size, from left to right. For example, choosing -1.0 will place mask
+    just to the left of the default mask position.
+    """
+
+    y_shift: float
+    """Shift by Y-axis measured in heights of the mask scaled to the face
+    size, from top to bottom. For example, 1.0 will place the mask just
+    below the default mask position.
+    """
+
+    scale: float
+    """Mask scaling coefficient. For example, 2.0 means double size."""
+
+
+class InputSticker(BaseModel):
+    """This object describes a sticker to be added to a sticker set.
+
+    See https://core.telegram.org/bots/api#inputsticker
+    """
+
+    sticker: InputFile
+    """The added sticker. Pass a file_id as a String to send a file that
+    already exists on the Telegram servers, pass an HTTP URL as a String
+    for Telegram to get a file from the Internet, or pass
+    “attach://<file_attach_name>” to upload a new file using
+    multipart/form-data under <file_attach_name> name. Animated and
+    video stickers can't be uploaded via HTTP URL. More information on
+    Sending Files »
+    """
+
+    format: str
+    """Format of the added sticker, must be one of “static” for a .WEBP or
+    .PNG image, “animated” for a .TGS animation, “video” for a .WEBM
+    video
+    """
+
+    emoji_list: list[str]
+    """List of 1-20 emoji associated with the sticker"""
+
+    mask_position: MaskPosition | None = None
+    """Position where the mask should be placed on faces. For “mask”
+    stickers only.
+    """
+
+    keywords: list[str] | None = None
+    """List of 0-20 search keywords for the sticker with total length of up
+    to 64 characters. For “regular” and “custom_emoji” stickers only.
+    """
 # TODO: sendsticker (method)
 # TODO: getstickerset (method)
 # TODO: getcustomemojistickers (method)
@@ -410,9 +5422,74 @@
 # TODO: setstickersetthumbnail (method)
 # TODO: setcustomemojistickersetthumbnail (method)
 # TODO: deletestickerset (method)
-# TODO: richmessage (object)
-# TODO: inputrichmessage (object)
-# TODO: inputrichmessagemedia (object)
+
+
+class RichMessage(BaseModel):
+    """Rich formatted message.
+
+    See https://core.telegram.org/bots/api#richmessage
+    """
+
+    blocks: list[RichBlock]
+    """Content of the message"""
+
+    is_rtl: bool | None = None
+    """True, if the rich message must be shown right-to-left"""
+
+
+class InputRichMessage(BaseModel):
+    """Describes a rich message to be sent. Exactly one of the fields html,
+    markdown, or blocks must be used.
+
+    See https://core.telegram.org/bots/api#inputrichmessage
+    """
+
+    blocks: list[InputRichBlock] | None = None
+    """Content of the rich message to send described as a list of blocks"""
+
+    html: str | None = None
+    """Content of the rich message to send described using HTML formatting.
+    See rich message formatting options for more details. Use media
+    field to specify the media used in the message.
+    """
+
+    markdown: str | None = None
+    """Content of the rich message to send described using Markdown
+    formatting. See rich message formatting options for more details.
+    Use media field to specify the media used in the message.
+    """
+
+    media: list[InputRichMessageMedia] | None = None
+    """List of media that are specified in the markdown or html fields
+    using tg://photo?id=, tg://video?id=, and tg://audio?id= links
+    """
+
+    is_rtl: bool | None = None
+    """Pass True if the rich message must be shown right-to-left"""
+
+    skip_entity_detection: bool | None = None
+    """Pass True to skip automatic detection of entities (e.g., URLs, email
+    addresses, username mentions, hashtags, cashtags, bot commands, or
+    phone numbers) in the text
+    """
+
+
+class InputRichMessageMedia(BaseModel):
+    """Describes a media element embedded in an outgoing rich message.
+
+    See https://core.telegram.org/bots/api#inputrichmessagemedia
+    """
+
+    id: str
+    """Unique identifier of the media used in a tg://photo?id=,
+    tg://video?id=, or tg://audio?id= link. 1-64 characters, only A-Z,
+    a-z, 0-9, _ and - are allowed.
+    """
+
+    media: InputRichMedia
+    """The media to be sent. Everything except the media itself and its
+    properties is ignored.
+    """
 # TODO: sendrichmessage (method)
 # TODO: sendrichmessagedraft (method)
 # TODO: richtext (union)
@@ -441,9 +5518,77 @@
 # TODO: richtextanchorlink (discriminated object)
 # TODO: richtextreference (discriminated object)
 # TODO: richtextreferencelink (discriminated object)
-# TODO: richblockcaption (object)
-# TODO: richblocktablecell (object)
-# TODO: richblocklistitem (object)
+
+
+class RichBlockCaption(BaseModel):
+    """Caption of a rich formatted block.
+
+    See https://core.telegram.org/bots/api#richblockcaption
+    """
+
+    text: RichText
+    """Block caption"""
+
+    credit: RichText | None = None
+    """Block credit which corresponds to the HTML tag <cite>"""
+
+
+class RichBlockTableCell(BaseModel):
+    """Cell in a table.
+
+    See https://core.telegram.org/bots/api#richblocktablecell
+    """
+
+    align: str
+    """Horizontal cell content alignment. Currently, must be one of “left”,
+    “center”, or “right”.
+    """
+
+    valign: str
+    """Vertical cell content alignment. Currently, must be one of “top”,
+    “middle”, or “bottom”.
+    """
+
+    text: RichText | None = None
+    """Text in the cell. If omitted, then the cell is invisible."""
+
+    is_header: bool | None = None
+    """True, if the cell is a header cell"""
+
+    colspan: int | None = None
+    """The number of columns the cell spans if it is bigger than 1"""
+
+    rowspan: int | None = None
+    """The number of rows the cell spans if it is bigger than 1"""
+
+
+class RichBlockListItem(BaseModel):
+    """An item of a list.
+
+    See https://core.telegram.org/bots/api#richblocklistitem
+    """
+
+    label: str
+    """Label of the item"""
+
+    blocks: list[RichBlock]
+    """The content of the item"""
+
+    has_checkbox: bool | None = None
+    """True, if the item has a checkbox"""
+
+    is_checked: bool | None = None
+    """True, if the item has a checked checkbox"""
+
+    value: int | None = None
+    """For ordered lists, the numeric value of the item label"""
+
+    type: str | None = None
+    """For ordered lists, the type of the item label; must be one of “a”
+    for lowercase letters, “A” for uppercase letters, “i” for lowercase
+    Roman numerals, “I” for uppercase Roman numerals, or “1” for decimal
+    numbers
+    """
 # TODO: richblock (discriminated union)
 # TODO: richblockparagraph (discriminated object)
 # TODO: richblocksectionheading (discriminated object)
@@ -466,7 +5611,32 @@
 # TODO: richblockvideo (discriminated object)
 # TODO: richblockvoicenote (discriminated object)
 # TODO: richblockthinking (discriminated object)
-# TODO: inputrichblocklistitem (object)
+
+
+class InputRichBlockListItem(BaseModel):
+    """An item of a list to be sent.
+
+    See https://core.telegram.org/bots/api#inputrichblocklistitem
+    """
+
+    blocks: list[InputRichBlock]
+    """The content of the item"""
+
+    has_checkbox: bool | None = None
+    """Pass True if the item has a checkbox"""
+
+    is_checked: bool | None = None
+    """Pass True if the item has a checked checkbox"""
+
+    value: int | None = None
+    """For ordered lists, the numeric value of the item label"""
+
+    type: str | None = None
+    """For ordered lists, the type of the item label; must be one of “a”
+    for lowercase letters, “A” for uppercase letters, “i” for lowercase
+    Roman numerals, “I” for uppercase Roman numerals, or “1” for decimal
+    numbers
+    """
 # TODO: inputrichblock (discriminated union)
 # TODO: inputrichblockparagraph (discriminated object)
 # TODO: inputrichblocksectionheading (discriminated object)
@@ -489,9 +5659,74 @@
 # TODO: inputrichblockvideo (discriminated object)
 # TODO: inputrichblockvoicenote (discriminated object)
 # TODO: inputrichblockthinking (discriminated object)
-# TODO: inlinequery (object)
+
+
+class InlineQuery(BaseModel):
+    """This object represents an incoming inline query. When the user sends
+    an empty query, your bot could return some default or trending
+    results.
+
+    See https://core.telegram.org/bots/api#inlinequery
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    """Unique identifier for this query"""
+
+    from_: User = Field(alias="from")
+    """Sender"""
+
+    query: str
+    """Text of the query (up to 256 characters)"""
+
+    offset: str
+    """Offset of the results to be returned, can be controlled by the bot"""
+
+    chat_type: str | None = None
+    """Type of the chat from which the inline query was sent. Can be either
+    “sender” for a private chat with the inline query sender, “private”,
+    “group”, “supergroup”, or “channel”. The chat type should be always
+    known for requests sent from official clients and most third-party
+    clients, unless the request was sent from a secret chat.
+    """
+
+    location: Location | None = None
+    """Sender location, only for bots that request user location"""
 # TODO: answerinlinequery (method)
-# TODO: inlinequeryresultsbutton (object)
+
+
+class InlineQueryResultsButton(BaseModel):
+    """This object represents a button to be shown above inline query
+    results. You must use exactly one of the optional fields.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultsbutton
+    """
+
+    text: str
+    """Label text on the button"""
+
+    web_app: WebAppInfo | None = None
+    """Description of the Web App that will be launched when the user
+    presses the button. The Web App will be able to switch back to the
+    inline mode using the method switchInlineQuery inside the Web App.
+    """
+
+    start_parameter: str | None = None
+    """Deep-linking parameter for the /start message sent to the bot when a
+    user presses the button. 1-64 characters, only A-Z, a-z, 0-9, _ and
+    - are allowed.
+
+    Example: An inline bot that sends YouTube videos can ask the user to
+    connect the bot to their YouTube account to adapt search results
+    accordingly. To do this, it displays a 'Connect your YouTube
+    account' button above the results, or even before showing any. The
+    user presses the button, switches to a private chat with the bot
+    and, in doing so, passes a start parameter that instructs the bot to
+    return an OAuth link. Once done, the bot can offer a switch_inline
+    button so that the user can easily return to the chat where they
+    wanted to use the bot's inline capabilities.
+    """
 # TODO: inlinequeryresult (union)
 # TODO: inlinequeryresultarticle (discriminated object)
 # TODO: inlinequeryresultphoto (discriminated object)
@@ -514,13 +5749,272 @@
 # TODO: inlinequeryresultcachedvoice (discriminated object)
 # TODO: inlinequeryresultcachedaudio (discriminated object)
 # TODO: inputmessagecontent (union)
-# TODO: inputtextmessagecontent (object)
-# TODO: inputrichmessagecontent (object)
-# TODO: inputlocationmessagecontent (object)
-# TODO: inputvenuemessagecontent (object)
-# TODO: inputcontactmessagecontent (object)
-# TODO: inputinvoicemessagecontent (object)
-# TODO: choseninlineresult (object)
+
+
+class InputTextMessageContent(BaseModel):
+    """Represents the content of a text message to be sent as the result of
+    an inline query.
+
+    See https://core.telegram.org/bots/api#inputtextmessagecontent
+    """
+
+    message_text: str
+    """Text of the message to be sent, 1-4096 characters"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message text. See formatting
+    options for more details.
+    """
+
+    entities: list[MessageEntity] | None = None
+    """List of special entities that appear in message text, which can be
+    specified instead of parse_mode
+    """
+
+    link_preview_options: LinkPreviewOptions | None = None
+    """Link preview generation options for the message"""
+
+
+class InputRichMessageContent(BaseModel):
+    """Represents the content of a rich message to be sent as the result of
+    an inline query.
+
+    See https://core.telegram.org/bots/api#inputrichmessagecontent
+    """
+
+    rich_message: InputRichMessage
+    """The message to be sent"""
+
+
+class InputLocationMessageContent(BaseModel):
+    """Represents the content of a location message to be sent as the
+    result of an inline query.
+
+    See https://core.telegram.org/bots/api#inputlocationmessagecontent
+    """
+
+    latitude: float
+    """Latitude of the location in degrees"""
+
+    longitude: float
+    """Longitude of the location in degrees"""
+
+    horizontal_accuracy: float | None = None
+    """The radius of uncertainty for the location, measured in meters;
+    0-1500
+    """
+
+    live_period: int | None = None
+    """Period in seconds during which the location can be updated, must be
+    between 60 and 86400, or 0x7FFFFFFF for live locations that can be
+    edited indefinitely
+    """
+
+    heading: int | None = None
+    """For live locations, a direction in which the user is moving, in
+    degrees. Must be between 1 and 360 if specified.
+    """
+
+    proximity_alert_radius: int | None = None
+    """For live locations, a maximum distance for proximity alerts about
+    approaching another chat member, in meters. Must be between 1 and
+    100000 if specified.
+    """
+
+
+class InputVenueMessageContent(BaseModel):
+    """Represents the content of a venue message to be sent as the result
+    of an inline query.
+
+    See https://core.telegram.org/bots/api#inputvenuemessagecontent
+    """
+
+    latitude: float
+    """Latitude of the venue in degrees"""
+
+    longitude: float
+    """Longitude of the venue in degrees"""
+
+    title: str
+    """Name of the venue"""
+
+    address: str
+    """Address of the venue"""
+
+    foursquare_id: str | None = None
+    """Foursquare identifier of the venue, if known"""
+
+    foursquare_type: str | None = None
+    """Foursquare type of the venue, if known. (For example,
+    “arts_entertainment/default”, “arts_entertainment/aquarium” or
+    “food/icecream”.)
+    """
+
+    google_place_id: str | None = None
+    """Google Places identifier of the venue"""
+
+    google_place_type: str | None = None
+    """Google Places type of the venue. (See supported types.)"""
+
+
+class InputContactMessageContent(BaseModel):
+    """Represents the content of a contact message to be sent as the result
+    of an inline query.
+
+    See https://core.telegram.org/bots/api#inputcontactmessagecontent
+    """
+
+    phone_number: str
+    """Contact's phone number"""
+
+    first_name: str
+    """Contact's first name"""
+
+    last_name: str | None = None
+    """Contact's last name"""
+
+    vcard: str | None = None
+    """Additional data about the contact in the form of a vCard, 0-2048
+    bytes
+    """
+
+
+class InputInvoiceMessageContent(BaseModel):
+    """Represents the content of an invoice message to be sent as the
+    result of an inline query.
+
+    See https://core.telegram.org/bots/api#inputinvoicemessagecontent
+    """
+
+    title: str
+    """Product name, 1-32 characters"""
+
+    description: str
+    """Product description, 1-255 characters"""
+
+    payload: str
+    """Bot-defined invoice payload, 1-128 bytes. This will not be displayed
+    to the user, use it for your internal processes.
+    """
+
+    currency: str
+    """Three-letter ISO 4217 currency code, see more on currencies. Pass
+    “XTR” for payments in Telegram Stars.
+    """
+
+    prices: list[LabeledPrice]
+    """Price breakdown, a JSON-serialized list of components (e.g. product
+    price, tax, discount, delivery cost, delivery tax, bonus, etc.).
+    Must contain exactly one item for payments in Telegram Stars.
+    """
+
+    provider_token: str | None = None
+    """Payment provider token, obtained via @BotFather. Pass an empty
+    string for payments in Telegram Stars.
+    """
+
+    max_tip_amount: int | None = None
+    """The maximum accepted amount for tips in the smallest units of the
+    currency (integer, not float/double). For example, for a maximum tip
+    of US$ 1.45 pass max_tip_amount = 145. See the exp parameter in
+    currencies.json, it shows the number of digits past the decimal
+    point for each currency (2 for the majority of currencies). Defaults
+    to 0. Not supported for payments in Telegram Stars.
+    """
+
+    suggested_tip_amounts: list[int] | None = None
+    """A JSON-serialized Array of suggested amounts of tip in the smallest
+    units of the currency (integer, not float/double). At most 4
+    suggested tip amounts can be specified. The suggested tip amounts
+    must be positive, passed in a strictly increased order and must not
+    exceed max_tip_amount.
+    """
+
+    provider_data: str | None = None
+    """A JSON-serialized object for data about the invoice, which will be
+    shared with the payment provider. A detailed description of the
+    required fields should be provided by the payment provider.
+    """
+
+    photo_url: str | None = None
+    """URL of the product photo for the invoice. Can be a photo of the
+    goods or a marketing image for a service.
+    """
+
+    photo_size: int | None = None
+    """Photo size in bytes"""
+
+    photo_width: int | None = None
+    """Photo width"""
+
+    photo_height: int | None = None
+    """Photo height"""
+
+    need_name: bool | None = None
+    """Pass True if you require the user's full name to complete the order.
+    Ignored for payments in Telegram Stars.
+    """
+
+    need_phone_number: bool | None = None
+    """Pass True if you require the user's phone number to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    need_email: bool | None = None
+    """Pass True if you require the user's email address to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    need_shipping_address: bool | None = None
+    """Pass True if you require the user's shipping address to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    send_phone_number_to_provider: bool | None = None
+    """Pass True if the user's phone number should be sent to the provider.
+    Ignored for payments in Telegram Stars.
+    """
+
+    send_email_to_provider: bool | None = None
+    """Pass True if the user's email address should be sent to the
+    provider. Ignored for payments in Telegram Stars.
+    """
+
+    is_flexible: bool | None = None
+    """Pass True if the final price depends on the shipping method. Ignored
+    for payments in Telegram Stars.
+    """
+
+
+class ChosenInlineResult(BaseModel):
+    """Represents a result of an inline query that was chosen by the user
+    and sent to their chat partner.
+
+    Note: It is necessary to enable inline feedback via @BotFather in
+    order to receive these objects in updates.
+
+    See https://core.telegram.org/bots/api#choseninlineresult
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    result_id: str
+    """The unique identifier for the result that was chosen"""
+
+    from_: User = Field(alias="from")
+    """The user that chose the result"""
+
+    query: str
+    """The query that was used to obtain the result"""
+
+    location: Location | None = None
+    """Sender location, only for bots that require user location"""
+
+    inline_message_id: str | None = None
+    """Identifier of the sent inline message. Available only if there is an
+    inline keyboard attached to the message. Will be also received in
+    callback queries and can be used to edit the message.
+    """
 # TODO: sendinvoice (method)
 # TODO: createinvoicelink (method)
 # TODO: answershippingquery (method)
@@ -529,21 +6023,304 @@
 # TODO: getstartransactions (method)
 # TODO: refundstarpayment (method)
 # TODO: edituserstarsubscription (method)
-# TODO: labeledprice (object)
-# TODO: invoice (object)
-# TODO: shippingaddress (object)
-# TODO: orderinfo (object)
-# TODO: shippingoption (object)
-# TODO: successfulpayment (object)
-# TODO: refundedpayment (object)
-# TODO: shippingquery (object)
-# TODO: precheckoutquery (object)
-# TODO: paidmediapurchased (object)
+
+
+class LabeledPrice(BaseModel):
+    """This object represents a portion of the price for goods or services.
+
+    See https://core.telegram.org/bots/api#labeledprice
+    """
+
+    label: str
+    """Portion label"""
+
+    amount: int
+    """Price of the product in the smallest units of the currency (integer,
+    not float/double). For example, for a price of US$ 1.45 pass amount
+    = 145. See the exp parameter in currencies.json, it shows the number
+    of digits past the decimal point for each currency (2 for the
+    majority of currencies).
+    """
+
+
+class Invoice(BaseModel):
+    """This object contains basic information about an invoice.
+
+    See https://core.telegram.org/bots/api#invoice
+    """
+
+    title: str
+    """Product name"""
+
+    description: str
+    """Product description"""
+
+    start_parameter: str
+    """Unique bot deep-linking parameter that can be used to generate this
+    invoice
+    """
+
+    currency: str
+    """Three-letter ISO 4217 currency code, or “XTR” for payments in
+    Telegram Stars
+    """
+
+    total_amount: int
+    """Total price in the smallest units of the currency (integer, not
+    float/double). For example, for a price of US$ 1.45 pass amount =
+    145. See the exp parameter in currencies.json, it shows the number
+    of digits past the decimal point for each currency (2 for the
+    majority of currencies).
+    """
+
+
+class ShippingAddress(BaseModel):
+    """This object represents a shipping address.
+
+    See https://core.telegram.org/bots/api#shippingaddress
+    """
+
+    country_code: str
+    """Two-letter ISO 3166-1 alpha-2 country code"""
+
+    state: str
+    """State, if applicable"""
+
+    city: str
+    """City"""
+
+    street_line1: str
+    """First line for the address"""
+
+    street_line2: str
+    """Second line for the address"""
+
+    post_code: str
+    """Address post code"""
+
+
+class OrderInfo(BaseModel):
+    """This object represents information about an order.
+
+    See https://core.telegram.org/bots/api#orderinfo
+    """
+
+    name: str | None = None
+    """User name"""
+
+    phone_number: str | None = None
+    """User's phone number"""
+
+    email: str | None = None
+    """User email"""
+
+    shipping_address: ShippingAddress | None = None
+    """User shipping address"""
+
+
+class ShippingOption(BaseModel):
+    """This object represents one shipping option.
+
+    See https://core.telegram.org/bots/api#shippingoption
+    """
+
+    id: str
+    """Shipping option identifier"""
+
+    title: str
+    """Option title"""
+
+    prices: list[LabeledPrice]
+    """List of price portions"""
+
+
+class SuccessfulPayment(BaseModel):
+    """This object contains basic information about a successful payment.
+    Note that if the buyer initiates a chargeback with the relevant
+    payment provider following this transaction, the funds may be
+    debited from your balance. This is outside of Telegram's control.
+
+    See https://core.telegram.org/bots/api#successfulpayment
+    """
+
+    currency: str
+    """Three-letter ISO 4217 currency code, or “XTR” for payments in
+    Telegram Stars
+    """
+
+    total_amount: int
+    """Total price in the smallest units of the currency (integer, not
+    float/double). For example, for a price of US$ 1.45 pass amount =
+    145. See the exp parameter in currencies.json, it shows the number
+    of digits past the decimal point for each currency (2 for the
+    majority of currencies).
+    """
+
+    invoice_payload: str
+    """Bot-specified invoice payload"""
+
+    telegram_payment_charge_id: str
+    """Telegram payment identifier"""
+
+    provider_payment_charge_id: str
+    """Provider payment identifier"""
+
+    subscription_expiration_date: int | None = None
+    """Expiration date of the subscription, in Unix time; for recurring
+    payments only
+    """
+
+    is_recurring: bool | None = None
+    """True, if the payment is a recurring payment for a subscription"""
+
+    is_first_recurring: bool | None = None
+    """True, if the payment is the first payment for a subscription"""
+
+    shipping_option_id: str | None = None
+    """Identifier of the shipping option chosen by the user"""
+
+    order_info: OrderInfo | None = None
+    """Order information provided by the user"""
+
+
+class RefundedPayment(BaseModel):
+    """This object contains basic information about a refunded payment.
+
+    See https://core.telegram.org/bots/api#refundedpayment
+    """
+
+    currency: str
+    """Three-letter ISO 4217 currency code, or “XTR” for payments in
+    Telegram Stars. Currently, always “XTR”.
+    """
+
+    total_amount: int
+    """Total refunded price in the smallest units of the currency (integer,
+    not float/double). For example, for a price of US$ 1.45,
+    total_amount = 145. See the exp parameter in currencies.json, it
+    shows the number of digits past the decimal point for each currency
+    (2 for the majority of currencies).
+    """
+
+    invoice_payload: str
+    """Bot-specified invoice payload"""
+
+    telegram_payment_charge_id: str
+    """Telegram payment identifier"""
+
+    provider_payment_charge_id: str | None = None
+    """Provider payment identifier"""
+
+
+class ShippingQuery(BaseModel):
+    """This object contains information about an incoming shipping query.
+
+    See https://core.telegram.org/bots/api#shippingquery
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    """Unique query identifier"""
+
+    from_: User = Field(alias="from")
+    """User who sent the query"""
+
+    invoice_payload: str
+    """Bot-specified invoice payload"""
+
+    shipping_address: ShippingAddress
+    """User specified shipping address"""
+
+
+class PreCheckoutQuery(BaseModel):
+    """This object contains information about an incoming pre-checkout
+    query.
+
+    See https://core.telegram.org/bots/api#precheckoutquery
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    """Unique query identifier"""
+
+    from_: User = Field(alias="from")
+    """User who sent the query"""
+
+    currency: str
+    """Three-letter ISO 4217 currency code, or “XTR” for payments in
+    Telegram Stars
+    """
+
+    total_amount: int
+    """Total price in the smallest units of the currency (integer, not
+    float/double). For example, for a price of US$ 1.45 pass amount =
+    145. See the exp parameter in currencies.json, it shows the number
+    of digits past the decimal point for each currency (2 for the
+    majority of currencies).
+    """
+
+    invoice_payload: str
+    """Bot-specified invoice payload"""
+
+    shipping_option_id: str | None = None
+    """Identifier of the shipping option chosen by the user"""
+
+    order_info: OrderInfo | None = None
+    """Order information provided by the user"""
+
+
+class PaidMediaPurchased(BaseModel):
+    """This object contains information about a paid media purchase.
+
+    See https://core.telegram.org/bots/api#paidmediapurchased
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    from_: User = Field(alias="from")
+    """User who purchased the media"""
+
+    paid_media_payload: str
+    """Bot-specified paid media payload"""
 # TODO: revenuewithdrawalstate (discriminated union)
 # TODO: revenuewithdrawalstatepending (discriminated object)
 # TODO: revenuewithdrawalstatesucceeded (discriminated object)
 # TODO: revenuewithdrawalstatefailed (discriminated object)
-# TODO: affiliateinfo (object)
+
+
+class AffiliateInfo(BaseModel):
+    """Contains information about the affiliate that received a commission
+    via this transaction.
+
+    See https://core.telegram.org/bots/api#affiliateinfo
+    """
+
+    commission_per_mille: int
+    """The number of Telegram Stars received by the affiliate for each 1000
+    Telegram Stars received by the bot from referred users
+    """
+
+    amount: int
+    """Integer amount of Telegram Stars received by the affiliate from the
+    transaction, rounded to 0; can be negative for refunds
+    """
+
+    affiliate_user: User | None = None
+    """The bot or the user that received an affiliate commission if it was
+    received by a bot or a user
+    """
+
+    affiliate_chat: Chat | None = None
+    """The chat that received an affiliate commission if it was received by
+    a chat
+    """
+
+    nanostar_amount: int | None = None
+    """The number of 1/1000000000 shares of Telegram Stars received by the
+    affiliate; from -999999999 to 999999999; can be negative for refunds
+    """
 # TODO: transactionpartner (discriminated union)
 # TODO: transactionpartneruser (discriminated object)
 # TODO: transactionpartnerchat (discriminated object)
@@ -552,12 +6329,196 @@
 # TODO: transactionpartnertelegramads (discriminated object)
 # TODO: transactionpartnertelegramapi (discriminated object)
 # TODO: transactionpartnerother (discriminated object)
-# TODO: startransaction (object)
-# TODO: startransactions (object)
-# TODO: passportdata (object)
-# TODO: passportfile (object)
-# TODO: encryptedpassportelement (object)
-# TODO: encryptedcredentials (object)
+
+
+class StarTransaction(BaseModel):
+    """Describes a Telegram Star transaction. Note that if the buyer
+    initiates a chargeback with the payment provider from whom they
+    acquired Stars (e.g., Apple, Google) following this transaction, the
+    refunded Stars will be deducted from the bot's balance. This is
+    outside of Telegram's control.
+
+    See https://core.telegram.org/bots/api#startransaction
+    """
+
+    id: str
+    """Unique identifier of the transaction. Coincides with the identifier
+    of the original transaction for refund transactions. Coincides with
+    SuccessfulPayment.telegram_payment_charge_id for successful incoming
+    payments from users.
+    """
+
+    amount: int
+    """Integer amount of Telegram Stars transferred by the transaction"""
+
+    date: int
+    """Date the transaction was created in Unix time"""
+
+    nanostar_amount: int | None = None
+    """The number of 1/1000000000 shares of Telegram Stars transferred by
+    the transaction; from 0 to 999999999
+    """
+
+    source: TransactionPartner | None = None
+    """Source of an incoming transaction (e.g., a user purchasing goods or
+    services, Fragment refunding a failed withdrawal). Only for incoming
+    transactions.
+    """
+
+    receiver: TransactionPartner | None = None
+    """Receiver of an outgoing transaction (e.g., a user for a purchase
+    refund, Fragment for a withdrawal). Only for outgoing transactions.
+    """
+
+
+class StarTransactions(BaseModel):
+    """Contains a list of Telegram Star transactions.
+
+    See https://core.telegram.org/bots/api#startransactions
+    """
+
+    transactions: list[StarTransaction]
+    """The list of transactions"""
+
+
+class PassportData(BaseModel):
+    """Describes Telegram Passport data shared with the bot by the user.
+
+    See https://core.telegram.org/bots/api#passportdata
+    """
+
+    data: list[EncryptedPassportElement]
+    """Array with information about documents and other Telegram Passport
+    elements that was shared with the bot
+    """
+
+    credentials: EncryptedCredentials
+    """Encrypted credentials required to decrypt the data"""
+
+
+class PassportFile(BaseModel):
+    """This object represents a file uploaded to Telegram Passport.
+    Currently all Telegram Passport files are in JPEG format when
+    decrypted and don't exceed 10MB.
+
+    See https://core.telegram.org/bots/api#passportfile
+    """
+
+    file_id: str
+    """Identifier for this file, which can be used to download or reuse the
+    file
+    """
+
+    file_unique_id: str
+    """Unique identifier for this file, which is supposed to be the same
+    over time and for different bots. Can't be used to download or reuse
+    the file.
+    """
+
+    file_size: int
+    """File size in bytes"""
+
+    file_date: int
+    """Unix time when the file was uploaded"""
+
+
+class EncryptedPassportElement(BaseModel):
+    """Describes documents or other Telegram Passport elements shared with
+    the bot by the user.
+
+    See https://core.telegram.org/bots/api#encryptedpassportelement
+    """
+
+    type: str
+    """Element type. One of “personal_details”, “passport”,
+    “driver_license”, “identity_card”, “internal_passport”, “address”,
+    “utility_bill”, “bank_statement”, “rental_agreement”,
+    “passport_registration”, “temporary_registration”, “phone_number”,
+    “email”.
+    """
+
+    hash: str
+    """Base64-encoded element hash for using in
+    PassportElementErrorUnspecified
+    """
+
+    data: str | None = None
+    """Base64-encoded encrypted Telegram Passport element data provided by
+    the user; available only for “personal_details”, “passport”,
+    “driver_license”, “identity_card”, “internal_passport” and “address”
+    types. Can be decrypted and verified using the accompanying
+    EncryptedCredentials.
+    """
+
+    phone_number: str | None = None
+    """User's verified phone number; available only for “phone_number” type"""
+
+    email: str | None = None
+    """User's verified email address; available only for “email” type"""
+
+    files: list[PassportFile] | None = None
+    """Array of encrypted files with documents provided by the user;
+    available only for “utility_bill”, “bank_statement”,
+    “rental_agreement”, “passport_registration” and
+    “temporary_registration” types. Files can be decrypted and verified
+    using the accompanying EncryptedCredentials.
+    """
+
+    front_side: PassportFile | None = None
+    """Encrypted file with the front side of the document, provided by the
+    user; available only for “passport”, “driver_license”,
+    “identity_card” and “internal_passport”. The file can be decrypted
+    and verified using the accompanying EncryptedCredentials.
+    """
+
+    reverse_side: PassportFile | None = None
+    """Encrypted file with the reverse side of the document, provided by
+    the user; available only for “driver_license” and “identity_card”.
+    The file can be decrypted and verified using the accompanying
+    EncryptedCredentials.
+    """
+
+    selfie: PassportFile | None = None
+    """Encrypted file with the selfie of the user holding a document,
+    provided by the user; available if requested for “passport”,
+    “driver_license”, “identity_card” and “internal_passport”. The file
+    can be decrypted and verified using the accompanying
+    EncryptedCredentials.
+    """
+
+    translation: list[PassportFile] | None = None
+    """Array of encrypted files with translated versions of documents
+    provided by the user; available if requested for “passport”,
+    “driver_license”, “identity_card”, “internal_passport”,
+    “utility_bill”, “bank_statement”, “rental_agreement”,
+    “passport_registration” and “temporary_registration” types. Files
+    can be decrypted and verified using the accompanying
+    EncryptedCredentials.
+    """
+
+
+class EncryptedCredentials(BaseModel):
+    """Describes data required for decrypting and authenticating
+    EncryptedPassportElement. See the Telegram Passport Documentation
+    for a complete description of the data decryption and authentication
+    processes.
+
+    See https://core.telegram.org/bots/api#encryptedcredentials
+    """
+
+    data: str
+    """Base64-encoded encrypted JSON-serialized data with unique user's
+    payload, data hashes and secrets required for
+    EncryptedPassportElement decryption and authentication
+    """
+
+    hash: str
+    """Base64-encoded data hash for data authentication"""
+
+    secret: str
+    """Base64-encoded secret, encrypted with the bot's public RSA key,
+    required for data decryption
+    """
 # TODO: setpassportdataerrors (method)
 # TODO: passportelementerror (discriminated union)
 # TODO: passportelementerrordatafield (discriminated object)
@@ -570,11 +6531,66 @@
 # TODO: passportelementerrortranslationfiles (discriminated object)
 # TODO: passportelementerrorunspecified (discriminated object)
 # TODO: sendgame (method)
-# TODO: game (object)
-# TODO: callbackgame (object)
+
+
+class Game(BaseModel):
+    """This object represents a game. Use BotFather to create and edit
+    games, their short names will act as unique identifiers.
+
+    See https://core.telegram.org/bots/api#game
+    """
+
+    title: str
+    """Title of the game"""
+
+    description: str
+    """Description of the game"""
+
+    photo: list[PhotoSize]
+    """Photo that will be displayed in the game message in chats"""
+
+    text: str | None = None
+    """Brief description of the game or high scores included in the game
+    message. Can be automatically edited to include current high scores
+    for the game when the bot calls setGameScore, or manually edited
+    using editMessageText. 0-4096 characters.
+    """
+
+    text_entities: list[MessageEntity] | None = None
+    """Special entities that appear in text, such as usernames, URLs, bot
+    commands, etc.
+    """
+
+    animation: Animation | None = None
+    """Animation that will be displayed in the game message in chats.
+    Upload via BotFather.
+    """
+
+
+class CallbackGame(BaseModel):
+    """A placeholder, currently holds no information. Use BotFather to set
+    up your game.
+
+    See https://core.telegram.org/bots/api#callbackgame
+    """
 # TODO: setgamescore (method)
 # TODO: getgamehighscores (method)
-# TODO: gamehighscore (object)
+
+
+class GameHighScore(BaseModel):
+    """This object represents one row of the high scores table for a game.
+
+    See https://core.telegram.org/bots/api#gamehighscore
+    """
+
+    position: int
+    """Position in high score table for the game"""
+
+    user: User
+    """User"""
+
+    score: int
+    """Score"""
 # TODO: chatid (union)
 # TODO: id (alias)
 # TODO: username (alias)
@@ -583,7 +6599,12 @@
 # TODO: inputrichmedia (discriminated union)
 # TODO: inputfile (union)
 # TODO: fileid (alias)
-# TODO: upload (object)
+
+
+class Upload(BaseModel):
+    """Upload represents a file sent with the request, carrying the bytes
+    to send and the name to send them under.
+    """
 # TODO: maybemessage (union)
 # TODO: true (alias)
 # TODO: richtextplain (alias)

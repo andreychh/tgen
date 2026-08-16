@@ -29,7 +29,7 @@ type Declaration interface {
 func NewDeclaration(record ir.Definition) Declaration {
 	switch record := record.(type) {
 	case ir.Object:
-		return NewStub(record.Ref, "object")
+		return NewObject(record)
 	case ir.DiscriminatedObject:
 		return NewStub(record.Ref, "discriminated object")
 	case ir.Union:

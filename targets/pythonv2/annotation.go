@@ -46,11 +46,11 @@ func (a Annotation) name() string {
 	case typebound.Primitive:
 		return builtin(atom.Kind())
 	case typebound.Object:
-		return NewName(atom.Name()).Value()
+		return NewClassName(atom.Name()).Value()
 	case typebound.Union:
-		return NewName(atom.Name()).Value()
+		return NewClassName(atom.Name()).Value()
 	case typebound.Alias:
-		return NewName(atom.Name()).Value()
+		return NewClassName(atom.Name()).Value()
 	}
 	panic(fmt.Sprintf("pythonv2: unknown atom %T", a.typ.Atom()))
 }
