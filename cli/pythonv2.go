@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewPythonV2Command returns the "pyv2" subcommand, which runs the nanopass
+// NewPythonV2Command returns the "pythonv2" subcommand, which runs the nanopass
 // pipeline where "python" still runs the legacy chain. It stands beside
 // "python" until the target behind it renders every kind the page names, and
 // takes that name over when it does.
@@ -26,7 +26,7 @@ import (
 // TODO #259: Render Python from the nanopass pipeline instead of model/spec.
 func NewPythonV2Command(m meta.Meta) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "pyv2",
+		Use:   "pythonv2",
 		Short: "Generate Python client code from the nanopass pipeline",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pythonV2Action(cmd, args, m)
