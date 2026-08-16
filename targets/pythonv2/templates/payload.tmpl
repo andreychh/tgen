@@ -1,0 +1,25 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	The templates below write the body of the payload method, one per way a
+	method assembles its request. Each renders against the whole method rather
+	than against the payload alone, since what a body needs is spread over both.
+*/}}
+
+{{- define "payload_empty"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        return _EmptyPayload()
+{{- end}}
+
+{{- /*
+	payload_json dumps the model whole. An optional parameter nobody filled in
+	is left out rather than sent as null, which is what the API reads as "leave
+	this alone", and the keys are the ones the documentation names — the same
+	dump would otherwise write the name a field carrying a reserved key declares
+	rather than the key itself.
+*/}}
+{{- define "payload_json"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+{{- end}}

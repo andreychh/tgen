@@ -1,0 +1,30 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	The templates below write the body of the call, one per kind of answer. The
+	arguments stand one per line whatever their length, so that a renamed type
+	or endpoint is one line of the diff rather than one line rewritten.
+*/}}
+
+{{- /*
+	return_command reads a method that answers with True on success. The value
+	carries nothing a caller could read, so it is validated and dropped and the
+	call answers with None; a failure never reaches here at all, since the
+	connection raises it.
+*/}}
+{{- define "return_command"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        conn.do(
+            "{{.Wire}}",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+{{- end}}
+
+{{- define "return_value"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        return conn.do(
+            "{{.Wire}}",
+            self._payload(),
+            {{.Return.Adapter}},
+        )
+{{- end}}

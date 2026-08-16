@@ -39,7 +39,10 @@ func NewDeclaration(record ir.Definition) Declaration {
 	case ir.Alias:
 		return NewAlias(record)
 	case ir.Method:
-		return NewStub(record.Ref, "method")
+		if len(record.Files) > 0 {
+			return NewStub(record.Ref, "method reaching a file")
+		}
+		return NewMethod(record)
 	}
 	panic(fmt.Sprintf("pythonv2: unknown definition %T", record))
 }

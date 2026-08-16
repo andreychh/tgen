@@ -11,6 +11,12 @@ import (
 	"github.com/andreychh/tgen/model/typebound"
 )
 
+// none is how Python writes the absence of a value, which one word covers three
+// places: the annotation an optional field admits beside its own type, the value
+// such a field defaults to, and the answer a method reporting success alone
+// gives back.
+const none = "None"
+
 // Annotation represents a Python type annotation rendered from a resolved type
 // and the optionality of whatever carries it.
 type Annotation struct {
@@ -40,7 +46,7 @@ func (a Annotation) Value() string {
 		out = "list[" + out + "]"
 	}
 	if a.opt {
-		return out + " | None"
+		return out + " | " + none
 	}
 	return out
 }

@@ -50,7 +50,7 @@ func (f Field) Assignment() string {
 	alias := f.alias()
 	if alias == "" {
 		if f.inner.Optionality {
-			return "None"
+			return none
 		}
 		return ""
 	}

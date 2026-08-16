@@ -6,9 +6,234 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+import json
+from dataclasses import dataclass
+from typing import IO, Annotated, Any, Literal, Protocol, TypeVar
 
-from pydantic import BaseModel, Field, RootModel
+import httpx
+from pydantic import BaseModel, Field, RootModel, TypeAdapter
+
+
+T = TypeVar("T")
+
+TELEGRAM_API = "https://api.telegram.org"
+"""The public Telegram Bot API base URL."""
+
+
+class Payload(Protocol):
+    """Carries a method call's fields and produces the HTTP request sending
+    them."""
+
+    def request(self, method: str, url: str) -> httpx.Request: ...
+
+
+class Connection(Protocol):
+    """Executes a method and validates what comes back into the adapter's
+    type."""
+
+    def do(self, method: str, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
+
+
+class Error(Exception):
+    """A failure the Telegram Bot API reported."""
+
+    def __init__(
+        self,
+        code: int,
+        description: str,
+        parameters: ResponseParameters | None = None,
+    ) -> None:
+        super().__init__(f"telegram {code}: {description}")
+        self.code = code
+        self.description = description
+        self.parameters = parameters
+
+
+class _Envelope(BaseModel):
+    """The JSON object every response arrives in: exactly one side of it is
+    meaningful — the result when ok, the error fields otherwise."""
+
+    ok: bool
+    result_: Any = Field(default=None, alias="result")
+    error_code: int = 0
+    description: str = "<no description>"
+    parameters: ResponseParameters | None = None
+
+    def result(self) -> Any:
+        """Returns the raw result, raising Error when the envelope reports a
+        failure."""
+        if not self.ok:
+            raise Error(self.error_code, self.description, self.parameters)
+        return self.result_
+
+
+class Destination:
+    """Where a bot's requests go: a base host, the token parameterizing the
+    path, and whether to address the test environment, whose path carries an
+    extra segment after the token. Turns a method name into that method's
+    URL."""
+
+    def __init__(self, base: str, token: str, *, test: bool = False) -> None:
+        self._base = base
+        self._token = token
+        self._test = test
+
+    def url(self, method: str) -> str:
+        """Returns the request URL for method."""
+        if self._test:
+            return f"{self._base}/bot{self._token}/test/{method}"
+        return f"{self._base}/bot{self._token}/{method}"
+
+
+class HTTPConnection:
+    """The production Connection: builds the request from the payload, sends it
+    to the bot's destination, and splits the envelope into a validated result or
+    an Error."""
+
+    def __init__(self, client: httpx.Client, token: str) -> None:
+        self._client = client
+        self._destination = Destination(TELEGRAM_API, token)
+
+    @classmethod
+    def to(cls, client: httpx.Client, destination: Destination) -> HTTPConnection:
+        """Creates an HTTPConnection addressing an explicit Destination, for a
+        self-hosted server or the test environment."""
+        self = object.__new__(cls)
+        self._client = client
+        self._destination = destination
+        return self
+
+    def do(self, method: str, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        """Executes method and returns what it answered with, raising Error when
+        the API reports a failure."""
+        request = payload.request("POST", self._destination.url(method))
+        envelope = _Envelope.model_validate(self._client.send(request).json())
+        return adapter.validate_python(envelope.result())
+
+
+class _EmptyPayload:
+    """The request of a method taking no parameter: no body at all."""
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        return httpx.Request(method, url)
+
+
+class _JSONPayload:
+    """The request of a method reaching no file: its fields are the JSON
+    body."""
+
+    def __init__(self, body: dict[str, Any]) -> None:
+        self._body = body
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        return httpx.Request(method, url, json=self._body)
+
+
+class _FileSink:
+    """Collects the binary parts as the file-typed fields resolve themselves.
+    Mutating is its nature: place and attach write their files into it. It
+    offers two ways in — file, under a key the caller names, and reserve, under
+    a key it generates and hands back."""
+
+    def __init__(self) -> None:
+        self.files: dict[str, tuple[str, IO[bytes]]] = {}
+        self._counter = 0
+
+    def file(self, key: str, name: str, reader: IO[bytes]) -> None:
+        """Writes a file under the key a parameter of the request names."""
+        self.files[key] = (name, reader)
+
+    def reserve(self, name: str, reader: IO[bytes]) -> str:
+        """Writes a file under a key it generates and hands back, for a file no
+        parameter of the request names."""
+        key = f"attachment_{self._counter}"
+        self._counter += 1
+        self.file(key, name, reader)
+        return key
+
+
+class _FormPayload:
+    """The request of a method reaching a file: the fields it sends beside the
+    parts collected from them. A file cannot travel inside JSON, so a field that
+    is not one is written as its own form field and a composite one as JSON
+    text."""
+
+    def __init__(
+        self,
+        body: dict[str, Any],
+        files: dict[str, tuple[str, IO[bytes]]],
+    ) -> None:
+        self._body = body
+        self._files = files
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        if not self._files:
+            return _JSONPayload(self._body).request(method, url)
+        data: dict[str, str] = {}
+        for key, value in self._body.items():
+            if isinstance(value, bool):
+                data[key] = "true" if value else "false"
+            elif isinstance(value, (dict, list)):
+                data[key] = json.dumps(value)
+            else:
+                data[key] = str(value)
+        return httpx.Request(method, url, data=data, files=self._files)
+
+
+type Response = Any
+"""The canned outcome of a FakeConnection call: a value, or an exception to
+raise instead of answering."""
+
+
+@dataclass
+class Call:
+    """Pairs the method a test expects with the Response it answers."""
+
+    method: str
+    response: Response
+
+
+class _CallQueue:
+    """The moving cursor over a fixed sequence of Calls. Advancing is its
+    nature, which is what leaves FakeConnection itself holding nothing that
+    changes."""
+
+    def __init__(self, *calls: Call) -> None:
+        self._calls = list(calls)
+        self._index = 0
+
+    def next(self) -> Call | None:
+        """Returns the next Call, or None once the queue is spent."""
+        if self._index >= len(self._calls):
+            return None
+        call = self._calls[self._index]
+        self._index += 1
+        return call
+
+
+class FakeConnection:
+    """The network-free Connection: replays a fixed sequence of Calls and
+    verifies the method of each. Misuse — a call too many, or a call to the
+    wrong method — raises RuntimeError, so a wrong test fails loudly instead of
+    passing quietly. It mirrors the decoding of HTTPConnection, dumping the
+    canned value and validating it into the adapter, so a union is told apart
+    the same way whichever connection answers."""
+
+    def __init__(self, *calls: Call) -> None:
+        self._queue = _CallQueue(*calls)
+
+    def do(self, method: str, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        """Answers the next canned Response, raising RuntimeError when the call
+        is one the queue does not expect."""
+        call = self._queue.next()
+        if call is None:
+            raise RuntimeError(f"FakeConnection: unexpected call to {method!r}")
+        if call.method != method:
+            raise RuntimeError(f"FakeConnection: expected {call.method!r}, got {method!r}")
+        if isinstance(call.response, Exception):
+            raise call.response
+        raw = TypeAdapter(type(call.response)).dump_python(call.response, mode="json")
+        return adapter.validate_python(raw)
 
 
 class Update(BaseModel):
@@ -151,10 +376,110 @@ class Update(BaseModel):
 
     subscription: BotSubscriptionUpdated | None = None
     """User payment subscription has changed"""
-# TODO: getupdates (method)
-# TODO: setwebhook (method)
-# TODO: deletewebhook (method)
-# TODO: getwebhookinfo (method)
+
+
+class GetUpdatesMethod(BaseModel):
+    """Use this method to receive incoming updates using long polling
+    (wiki). Returns an Array of Update objects.
+
+    Notes
+    1. This method will not work if an outgoing webhook is set up.
+    2. In order to avoid getting duplicate updates, recalculate offset
+    after each server response.
+
+    See https://core.telegram.org/bots/api#getupdates
+    """
+
+    offset: int | None = None
+    """Identifier of the first update to be returned. Must be greater by
+    one than the highest among the identifiers of previously received
+    updates. By default, updates starting with the earliest unconfirmed
+    update are returned. An update is considered confirmed as soon as
+    getUpdates is called with an offset higher than its update_id. The
+    negative offset can be specified to retrieve updates starting from
+    -offset update from the end of the updates queue. All previous
+    updates will be forgotten.
+    """
+
+    limit: int | None = None
+    """Limits the number of updates to be retrieved. Values between 1-100
+    are accepted. Defaults to 100.
+    """
+
+    timeout: int | None = None
+    """Timeout in seconds for long polling. Defaults to 0, i.e. usual short
+    polling. Should be positive, short polling should be used for
+    testing purposes only.
+    """
+
+    allowed_updates: list[str] | None = None
+    """A JSON-serialized list of the update types you want your bot to
+    receive. For example, specify ["message", "edited_channel_post",
+    "callback_query"] to only receive updates of these types. See Update
+    for a complete list of available update types. Specify an empty list
+    to receive all update types except chat_member, message_reaction,
+    and message_reaction_count (default). If not specified, the previous
+    setting will be used.
+
+    Please note that this parameter doesn't affect updates created
+    before the call to getUpdates, so unwanted updates may be received
+    for a short period of time.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[Update]:
+        return conn.do(
+            "getUpdates",
+            self._payload(),
+            TypeAdapter(list[Update]),
+        )
+# TODO: setwebhook (method reaching a file)
+
+
+class DeleteWebhookMethod(BaseModel):
+    """Use this method to remove webhook integration if you decide to
+    switch back to getUpdates. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletewebhook
+    """
+
+    drop_pending_updates: bool | None = None
+    """Pass True to drop all pending updates"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteWebhook",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetWebhookInfoMethod(BaseModel):
+    """Use this method to get current webhook status. Requires no
+    parameters. On success, returns a WebhookInfo object. If the bot is
+    using getUpdates, will return an object with the url field empty.
+
+    See https://core.telegram.org/bots/api#getwebhookinfo
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> WebhookInfo:
+        return conn.do(
+            "getWebhookInfo",
+            self._payload(),
+            TypeAdapter(WebhookInfo),
+        )
 
 
 class WebhookInfo(BaseModel):
@@ -6840,156 +7165,5072 @@ class InputStoryContentVideo(BaseModel):
 
     is_animation: bool | None = None
     """Pass True if the video has no sound"""
-# TODO: getme (method)
-# TODO: logout (method)
-# TODO: close (method)
-# TODO: sendmessage (method)
-# TODO: forwardmessage (method)
-# TODO: forwardmessages (method)
-# TODO: copymessage (method)
-# TODO: copymessages (method)
-# TODO: sendphoto (method)
-# TODO: sendlivephoto (method)
-# TODO: sendaudio (method)
-# TODO: senddocument (method)
-# TODO: sendvideo (method)
-# TODO: sendanimation (method)
-# TODO: sendvoice (method)
-# TODO: sendvideonote (method)
-# TODO: sendpaidmedia (method)
-# TODO: sendmediagroup (method)
-# TODO: sendlocation (method)
-# TODO: sendvenue (method)
-# TODO: sendcontact (method)
-# TODO: sendpoll (method)
-# TODO: sendchecklist (method)
-# TODO: senddice (method)
-# TODO: sendmessagedraft (method)
-# TODO: sendchataction (method)
-# TODO: setmessagereaction (method)
-# TODO: getuserprofilephotos (method)
-# TODO: getuserprofileaudios (method)
-# TODO: setuseremojistatus (method)
-# TODO: getfile (method)
-# TODO: banchatmember (method)
-# TODO: unbanchatmember (method)
-# TODO: restrictchatmember (method)
-# TODO: promotechatmember (method)
-# TODO: setchatadministratorcustomtitle (method)
-# TODO: setchatmembertag (method)
-# TODO: banchatsenderchat (method)
-# TODO: unbanchatsenderchat (method)
-# TODO: setchatpermissions (method)
-# TODO: exportchatinvitelink (method)
-# TODO: createchatinvitelink (method)
-# TODO: editchatinvitelink (method)
-# TODO: createchatsubscriptioninvitelink (method)
-# TODO: editchatsubscriptioninvitelink (method)
-# TODO: revokechatinvitelink (method)
-# TODO: approvechatjoinrequest (method)
-# TODO: declinechatjoinrequest (method)
-# TODO: answerchatjoinrequestquery (method)
-# TODO: sendchatjoinrequestwebapp (method)
-# TODO: setchatphoto (method)
-# TODO: deletechatphoto (method)
-# TODO: setchattitle (method)
-# TODO: setchatdescription (method)
-# TODO: pinchatmessage (method)
-# TODO: unpinchatmessage (method)
-# TODO: unpinallchatmessages (method)
-# TODO: leavechat (method)
-# TODO: getchat (method)
-# TODO: getchatadministrators (method)
-# TODO: getchatmembercount (method)
-# TODO: getchatmember (method)
-# TODO: getuserpersonalchatmessages (method)
-# TODO: setchatstickerset (method)
-# TODO: deletechatstickerset (method)
-# TODO: getforumtopiciconstickers (method)
-# TODO: createforumtopic (method)
-# TODO: editforumtopic (method)
-# TODO: closeforumtopic (method)
-# TODO: reopenforumtopic (method)
-# TODO: deleteforumtopic (method)
-# TODO: unpinallforumtopicmessages (method)
-# TODO: editgeneralforumtopic (method)
-# TODO: closegeneralforumtopic (method)
-# TODO: reopengeneralforumtopic (method)
-# TODO: hidegeneralforumtopic (method)
-# TODO: unhidegeneralforumtopic (method)
-# TODO: unpinallgeneralforumtopicmessages (method)
-# TODO: answercallbackquery (method)
-# TODO: answerguestquery (method)
-# TODO: getuserchatboosts (method)
-# TODO: getbusinessconnection (method)
-# TODO: getmanagedbottoken (method)
-# TODO: replacemanagedbottoken (method)
-# TODO: getmanagedbotaccesssettings (method)
-# TODO: setmanagedbotaccesssettings (method)
-# TODO: setmycommands (method)
-# TODO: deletemycommands (method)
-# TODO: getmycommands (method)
-# TODO: setmyname (method)
-# TODO: getmyname (method)
-# TODO: setmydescription (method)
-# TODO: getmydescription (method)
-# TODO: setmyshortdescription (method)
-# TODO: getmyshortdescription (method)
-# TODO: setmyprofilephoto (method)
-# TODO: removemyprofilephoto (method)
-# TODO: setchatmenubutton (method)
-# TODO: getchatmenubutton (method)
-# TODO: setmydefaultadministratorrights (method)
-# TODO: getmydefaultadministratorrights (method)
-# TODO: getavailablegifts (method)
-# TODO: sendgift (method)
-# TODO: giftpremiumsubscription (method)
-# TODO: verifyuser (method)
-# TODO: verifychat (method)
-# TODO: removeuserverification (method)
-# TODO: removechatverification (method)
-# TODO: readbusinessmessage (method)
-# TODO: deletebusinessmessages (method)
-# TODO: setbusinessaccountname (method)
-# TODO: setbusinessaccountusername (method)
-# TODO: setbusinessaccountbio (method)
-# TODO: setbusinessaccountprofilephoto (method)
-# TODO: removebusinessaccountprofilephoto (method)
-# TODO: setbusinessaccountgiftsettings (method)
-# TODO: getbusinessaccountstarbalance (method)
-# TODO: transferbusinessaccountstars (method)
-# TODO: getbusinessaccountgifts (method)
-# TODO: getusergifts (method)
-# TODO: getchatgifts (method)
-# TODO: convertgifttostars (method)
-# TODO: upgradegift (method)
-# TODO: transfergift (method)
-# TODO: poststory (method)
-# TODO: repoststory (method)
-# TODO: editstory (method)
-# TODO: deletestory (method)
-# TODO: answerwebappquery (method)
-# TODO: savepreparedinlinemessage (method)
-# TODO: savepreparedkeyboardbutton (method)
-# TODO: editmessagetext (method)
-# TODO: editmessagecaption (method)
-# TODO: editmessagemedia (method)
-# TODO: editmessagelivelocation (method)
-# TODO: stopmessagelivelocation (method)
-# TODO: editmessagechecklist (method)
-# TODO: editmessagereplymarkup (method)
-# TODO: stoppoll (method)
-# TODO: editephemeralmessagetext (method)
-# TODO: editephemeralmessagemedia (method)
-# TODO: editephemeralmessagecaption (method)
-# TODO: editephemeralmessagereplymarkup (method)
-# TODO: approvesuggestedpost (method)
-# TODO: declinesuggestedpost (method)
-# TODO: deletemessage (method)
-# TODO: deletemessages (method)
-# TODO: deleteephemeralmessage (method)
-# TODO: deletemessagereaction (method)
-# TODO: deleteallmessagereactions (method)
+
+
+class GetMeMethod(BaseModel):
+    """A simple method for testing your bot's authentication token.
+    Requires no parameters. Returns basic information about the bot in
+    form of a User object.
+
+    See https://core.telegram.org/bots/api#getme
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> User:
+        return conn.do(
+            "getMe",
+            self._payload(),
+            TypeAdapter(User),
+        )
+
+
+class LogOutMethod(BaseModel):
+    """Use this method to log out from the cloud Bot API server before
+    launching the bot locally. You must log out the bot before running
+    it locally, otherwise there is no guarantee that the bot will
+    receive updates. After a successful call, you can immediately log in
+    on a local server, but will not be able to log in back to the cloud
+    Bot API server for 10 minutes. Returns True on success. Requires no
+    parameters.
+
+    See https://core.telegram.org/bots/api#logout
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "logOut",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class CloseMethod(BaseModel):
+    """Use this method to close the bot instance before moving it from one
+    local server to another. You need to delete the webhook before
+    calling this method to ensure that the bot isn't launched again
+    after server restart. The method will return error 429 in the first
+    10 minutes after the bot is launched. Returns True on success.
+    Requires no parameters.
+
+    See https://core.telegram.org/bots/api#close
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "close",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SendMessageMethod(BaseModel):
+    """Use this method to send text messages. On success, the sent Message
+    is returned.
+
+    See https://core.telegram.org/bots/api#sendmessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    text: str
+    """Text of the message to be sent, 1-4096 characters after entities
+    parsing
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message text. See formatting
+    options for more details.
+    """
+
+    entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in message
+    text, which can be specified instead of parse_mode
+    """
+
+    link_preview_options: LinkPreviewOptions | None = None
+    """Link preview generation options for the message"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendMessage",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class ForwardMessageMethod(BaseModel):
+    """Use this method to forward messages of any kind. Service messages
+    and messages with protected content can't be forwarded. On success,
+    the sent Message is returned.
+
+    See https://core.telegram.org/bots/api#forwardmessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    from_chat_id: ChatID
+    """Unique identifier for the chat where the original message was sent
+    (or username of the target bot, supergroup or channel in the format
+    @username)
+    """
+
+    message_id: int
+    """Message identifier in the chat specified in from_chat_id"""
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    forwarded; required if the message is forwarded to a direct messages
+    chat
+    """
+
+    video_start_timestamp: int | None = None
+    """New start timestamp for the forwarded video in the message"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the forwarded message from forwarding and
+    saving
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    only available when forwarding to private chats
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "forwardMessage",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class ForwardMessagesMethod(BaseModel):
+    """Use this method to forward multiple messages of any kind. If some of
+    the specified messages can't be found or forwarded, they are
+    skipped. Service messages and messages with protected content can't
+    be forwarded. Album grouping is kept for forwarded messages. On
+    success, an Array of MessageId of the sent messages is returned.
+
+    See https://core.telegram.org/bots/api#forwardmessages
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    from_chat_id: ChatID
+    """Unique identifier for the chat where the original messages were sent
+    (or username of the target bot, supergroup or channel in the format
+    @username)
+    """
+
+    message_ids: list[int]
+    """A JSON-serialized list of 1-100 identifiers of messages in the chat
+    from_chat_id to forward. The identifiers must be specified in a
+    strictly increasing order.
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the messages will
+    be forwarded; required if the messages are forwarded to a direct
+    messages chat
+    """
+
+    disable_notification: bool | None = None
+    """Sends the messages silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the forwarded messages from forwarding and
+    saving
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[MessageID]:
+        return conn.do(
+            "forwardMessages",
+            self._payload(),
+            TypeAdapter(list[MessageID]),
+        )
+
+
+class CopyMessageMethod(BaseModel):
+    """Use this method to copy messages of any kind. Service messages, paid
+    media messages, giveaway messages, giveaway winners messages, and
+    invoice messages can't be copied. A quiz poll can be copied only if
+    the value of the field correct_option_ids is known to the bot. The
+    method is analogous to the method forwardMessage, but the copied
+    message doesn't have a link to the original message. Returns the
+    MessageId of the sent message on success.
+
+    See https://core.telegram.org/bots/api#copymessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    from_chat_id: ChatID
+    """Unique identifier for the chat where the original message was sent
+    (or username of the target bot, supergroup or channel in the format
+    @username)
+    """
+
+    message_id: int
+    """Message identifier in the chat specified in from_chat_id"""
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    video_start_timestamp: int | None = None
+    """New start timestamp for the copied video in the message"""
+
+    caption: str | None = None
+    """New caption for media, 0-1024 characters after entities parsing. If
+    not specified, the original caption is kept.
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the new caption. See formatting options
+    for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the new
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media.
+    Ignored if a new caption isn't specified.
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    only available when copying to private chats
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MessageID:
+        return conn.do(
+            "copyMessage",
+            self._payload(),
+            TypeAdapter(MessageID),
+        )
+
+
+class CopyMessagesMethod(BaseModel):
+    """Use this method to copy messages of any kind. If some of the
+    specified messages can't be found or copied, they are skipped.
+    Service messages, paid media messages, giveaway messages, giveaway
+    winners messages, and invoice messages can't be copied. A quiz poll
+    can be copied only if the value of the field correct_option_ids is
+    known to the bot. The method is analogous to the method
+    forwardMessages, but the copied messages don't have a link to the
+    original message. Album grouping is kept for copied messages. On
+    success, an Array of MessageId of the sent messages is returned.
+
+    See https://core.telegram.org/bots/api#copymessages
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    from_chat_id: ChatID
+    """Unique identifier for the chat where the original messages were sent
+    (or username of the target bot, supergroup or channel in the format
+    @username)
+    """
+
+    message_ids: list[int]
+    """A JSON-serialized list of 1-100 identifiers of messages in the chat
+    from_chat_id to copy. The identifiers must be specified in a
+    strictly increasing order.
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the messages will
+    be sent; required if the messages are sent to a direct messages chat
+    """
+
+    disable_notification: bool | None = None
+    """Sends the messages silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent messages from forwarding and
+    saving
+    """
+
+    remove_caption: bool | None = None
+    """Pass True to copy the messages without their captions"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[MessageID]:
+        return conn.do(
+            "copyMessages",
+            self._payload(),
+            TypeAdapter(list[MessageID]),
+        )
+# TODO: sendphoto (method reaching a file)
+# TODO: sendlivephoto (method reaching a file)
+# TODO: sendaudio (method reaching a file)
+# TODO: senddocument (method reaching a file)
+# TODO: sendvideo (method reaching a file)
+# TODO: sendanimation (method reaching a file)
+# TODO: sendvoice (method reaching a file)
+# TODO: sendvideonote (method reaching a file)
+# TODO: sendpaidmedia (method reaching a file)
+# TODO: sendmediagroup (method reaching a file)
+
+
+class SendLocationMethod(BaseModel):
+    """Use this method to send point on the map. On success, the sent
+    Message is returned.
+
+    See https://core.telegram.org/bots/api#sendlocation
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    latitude: float
+    """Latitude of the location"""
+
+    longitude: float
+    """Longitude of the location"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    horizontal_accuracy: float | None = None
+    """The radius of uncertainty for the location, measured in meters;
+    0-1500
+    """
+
+    live_period: int | None = None
+    """Period in seconds during which the location will be updated (see
+    Live Locations), must be between 60 and 86400, or 0x7FFFFFFF for
+    live locations that can be edited indefinitely. Must be 0 for
+    ephemeral messages.
+    """
+
+    heading: int | None = None
+    """For live locations, a direction in which the user is moving, in
+    degrees. Must be between 1 and 360 if specified.
+    """
+
+    proximity_alert_radius: int | None = None
+    """For live locations, a maximum distance for proximity alerts about
+    approaching another chat member, in meters. Must be between 1 and
+    100000 if specified.
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendLocation",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendVenueMethod(BaseModel):
+    """Use this method to send information about a venue. On success, the
+    sent Message is returned.
+
+    See https://core.telegram.org/bots/api#sendvenue
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    latitude: float
+    """Latitude of the venue"""
+
+    longitude: float
+    """Longitude of the venue"""
+
+    title: str
+    """Name of the venue"""
+
+    address: str
+    """Address of the venue"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    foursquare_id: str | None = None
+    """Foursquare identifier of the venue"""
+
+    foursquare_type: str | None = None
+    """Foursquare type of the venue, if known. (For example,
+    “arts_entertainment/default”, “arts_entertainment/aquarium” or
+    “food/icecream”.)
+    """
+
+    google_place_id: str | None = None
+    """Google Places identifier of the venue"""
+
+    google_place_type: str | None = None
+    """Google Places type of the venue. (See supported types.)"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendVenue",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendContactMethod(BaseModel):
+    """Use this method to send phone contacts. On success, the sent Message
+    is returned.
+
+    See https://core.telegram.org/bots/api#sendcontact
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    phone_number: str
+    """Contact's phone number"""
+
+    first_name: str
+    """Contact's first name"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    last_name: str | None = None
+    """Contact's last name"""
+
+    vcard: str | None = None
+    """Additional data about the contact in the form of a vCard, 0-2048
+    bytes
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendContact",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+# TODO: sendpoll (method reaching a file)
+
+
+class SendChecklistMethod(BaseModel):
+    """Use this method to send a checklist on behalf of a connected
+    business account. On success, the sent Message is returned.
+
+    See https://core.telegram.org/bots/api#sendchecklist
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot
+    in the format @username
+    """
+
+    checklist: InputChecklist
+    """A JSON-serialized object for the checklist to send"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message"""
+
+    reply_parameters: ReplyParameters | None = None
+    """A JSON-serialized object for description of the message to reply to"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendChecklist",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendDiceMethod(BaseModel):
+    """Use this method to send an animated emoji that will display a random
+    value. On success, the sent Message is returned.
+
+    See https://core.telegram.org/bots/api#senddice
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    emoji: str | None = None
+    """Emoji on which the dice throw animation is based. Currently, must be
+    one of “🎲”, “🎯”, “🏀”, “⚽”, “🎳”, or “🎰”. Dice can have values 1-6 for
+    “🎲”, “🎯” and “🎳”, values 1-5 for “🏀” and “⚽”, and values 1-64 for
+    “🎰”. Defaults to “🎲”.
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendDice",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendMessageDraftMethod(BaseModel):
+    """Use this method to stream a partial message to a user while the
+    message is being generated. Note that the streamed draft is
+    ephemeral and acts as a temporary 30-second preview - once the
+    output is finalized, you must call sendMessage with the complete
+    message to persist it in the user's chat. Returns True on success.
+
+    See https://core.telegram.org/bots/api#sendmessagedraft
+    """
+
+    chat_id: int
+    """Unique identifier for the target private chat"""
+
+    draft_id: int
+    """Unique identifier of the message draft; must be non-zero. Changes to
+    drafts with the same identifier are animated.
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread"""
+
+    text: str | None = None
+    """Text of the message to be sent, 0-4096 characters after entities
+    parsing. Pass an empty text to show a “Thinking…” placeholder.
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message text. See formatting
+    options for more details.
+    """
+
+    entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in message
+    text, which can be specified instead of parse_mode
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "sendMessageDraft",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SendChatActionMethod(BaseModel):
+    """Use this method when you need to tell the user that something is
+    happening on the bot's side. The status is set for 5 seconds or less
+    (when a message arrives from your bot, Telegram clients clear its
+    typing status). Returns True on success.
+
+    Example: The ImageBot needs some time to process a request and
+    upload the image. Instead of sending a text message along the lines
+    of “Retrieving image, please wait…”, the bot may use sendChatAction
+    with action = upload_photo. The user will see a “sending photo”
+    status for the bot.
+
+    We only recommend using this method when a response from the bot
+    will take a noticeable amount of time to arrive.
+
+    See https://core.telegram.org/bots/api#sendchataction
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot
+    or supergroup in the format @username. Channel chats and channel
+    direct messages chats aren't supported.
+    """
+
+    action: str
+    """Type of action to broadcast. Choose one, depending on what the user
+    is about to receive: typing for text messages, upload_photo for
+    photos, record_video or upload_video for videos, record_voice or
+    upload_voice for voice notes, upload_document for general files,
+    choose_sticker for stickers, find_location for location data,
+    record_video_note or upload_video_note for video notes.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    action will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread or topic of a forum;
+    for supergroups and private chats of bots with forum topic mode
+    enabled only
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "sendChatAction",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetMessageReactionMethod(BaseModel):
+    """Use this method to change the chosen reactions on a message. Service
+    messages of some types can't be reacted to. Automatically forwarded
+    messages from a channel to its discussion group have the same
+    available reactions as messages in the channel. Bots can't use paid
+    reactions. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmessagereaction
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    message_id: int
+    """Identifier of the target message. If the message belongs to a media
+    group, the reaction is set to the first non-deleted message in the
+    group instead.
+    """
+
+    reaction: list[ReactionType] | None = None
+    """A JSON-serialized list of reaction types to set on the message.
+    Currently, as non-premium users, bots can set up to one reaction per
+    message. A custom emoji reaction can be used if it is either already
+    present on the message or explicitly allowed by chat administrators.
+    Paid reactions can't be used by bots.
+    """
+
+    is_big: bool | None = None
+    """Pass True to set the reaction with a big animation"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMessageReaction",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetUserProfilePhotosMethod(BaseModel):
+    """Use this method to get a list of profile pictures for a user.
+    Returns a UserProfilePhotos object.
+
+    See https://core.telegram.org/bots/api#getuserprofilephotos
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    offset: int | None = None
+    """Sequential number of the first photo to be returned. By default, all
+    photos are returned.
+    """
+
+    limit: int | None = None
+    """Limits the number of photos to be retrieved. Values between 1-100
+    are accepted. Defaults to 100.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> UserProfilePhotos:
+        return conn.do(
+            "getUserProfilePhotos",
+            self._payload(),
+            TypeAdapter(UserProfilePhotos),
+        )
+
+
+class GetUserProfileAudiosMethod(BaseModel):
+    """Use this method to get a list of profile audios for a user. Returns
+    a UserProfileAudios object.
+
+    See https://core.telegram.org/bots/api#getuserprofileaudios
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    offset: int | None = None
+    """Sequential number of the first audio to be returned. By default, all
+    audios are returned.
+    """
+
+    limit: int | None = None
+    """Limits the number of audios to be retrieved. Values between 1-100
+    are accepted. Defaults to 100.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> UserProfileAudios:
+        return conn.do(
+            "getUserProfileAudios",
+            self._payload(),
+            TypeAdapter(UserProfileAudios),
+        )
+
+
+class SetUserEmojiStatusMethod(BaseModel):
+    """Changes the emoji status for a given user that previously allowed
+    the bot to manage their emoji status via the Mini App method
+    requestEmojiStatusAccess. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setuseremojistatus
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    emoji_status_custom_emoji_id: str | None = None
+    """Custom emoji identifier of the emoji status to set. Pass an empty
+    string to remove the status.
+    """
+
+    emoji_status_expiration_date: int | None = None
+    """Expiration date of the emoji status, if any"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setUserEmojiStatus",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetFileMethod(BaseModel):
+    """Use this method to get basic information about a file and prepare it
+    for downloading. For the moment, bots can download files of up to
+    20MB in size. On success, a File object is returned. The file can
+    then be downloaded via the link
+    https://api.telegram.org/file/bot<token>/<file_path>, where
+    <file_path> is taken from the response. It is guaranteed that the
+    link will be valid for at least 1 hour. When the link expires, a new
+    one can be requested by calling getFile again.
+
+    Note: This function may not preserve the original file name and MIME
+    type. You should save the file's MIME type and name (if available)
+    when the File object is received.
+
+    See https://core.telegram.org/bots/api#getfile
+    """
+
+    file_id: str
+    """File identifier to get information about"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> File:
+        return conn.do(
+            "getFile",
+            self._payload(),
+            TypeAdapter(File),
+        )
+
+
+class BanChatMemberMethod(BaseModel):
+    """Use this method to ban a user in a group, a supergroup or a channel.
+    In the case of supergroups and channels, the user will not be able
+    to return to the chat on their own using invite links, etc., unless
+    unbanned first. The bot must be an administrator in the chat for
+    this to work and must have the appropriate administrator rights.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#banchatmember
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target group or username of the target
+    supergroup or channel in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    until_date: int | None = None
+    """Date when the user will be unbanned; Unix time. If user is banned
+    for more than 366 days or less than 30 seconds from the current time
+    they are considered to be banned forever. Applied for supergroups
+    and channels only.
+    """
+
+    revoke_messages: bool | None = None
+    """Pass True to delete all messages from the chat for the user that is
+    being removed. If False, the user will be able to see messages in
+    the group that were sent before the user was removed. Always True
+    for supergroups and channels.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "banChatMember",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnbanChatMemberMethod(BaseModel):
+    """Use this method to unban a previously banned user in a supergroup or
+    channel. The user will not return to the group or channel
+    automatically, but will be able to join via link, etc. The bot must
+    be an administrator for this to work. By default, this method
+    guarantees that after the call the user is not a member of the chat,
+    but will be able to join it. So if the user is a member of the chat
+    they will also be removed from the chat. If you don't want this, use
+    the parameter only_if_banned. Returns True on success.
+
+    See https://core.telegram.org/bots/api#unbanchatmember
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target group or username of the target
+    supergroup or channel in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    only_if_banned: bool | None = None
+    """Do nothing if the user is not banned"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unbanChatMember",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class RestrictChatMemberMethod(BaseModel):
+    """Use this method to restrict a user in a supergroup. The bot must be
+    an administrator in the supergroup for this to work and must have
+    the appropriate administrator rights. Pass True for all permissions
+    to lift restrictions from a user. Returns True on success.
+
+    See https://core.telegram.org/bots/api#restrictchatmember
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    permissions: ChatPermissions
+    """A JSON-serialized object for new user permissions"""
+
+    use_independent_chat_permissions: bool | None = None
+    """Pass True if chat permissions are set independently. Otherwise, the
+    can_send_other_messages and can_add_web_page_previews permissions
+    will imply the can_send_messages, can_send_audios,
+    can_send_documents, can_send_photos, can_send_videos,
+    can_send_video_notes, and can_send_voice_notes permissions; the
+    can_send_polls permission will imply the can_send_messages
+    permission.
+    """
+
+    until_date: int | None = None
+    """Date when restrictions will be lifted for the user; Unix time. If
+    user is restricted for more than 366 days or less than 30 seconds
+    from the current time, they are considered to be restricted forever.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "restrictChatMember",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class PromoteChatMemberMethod(BaseModel):
+    """Use this method to promote or demote a user in a supergroup or a
+    channel. The bot must be an administrator in the chat for this to
+    work and must have the appropriate administrator rights. Pass False
+    for all boolean parameters to demote a user. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#promotechatmember
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    is_anonymous: bool | None = None
+    """Pass True if the administrator's presence in the chat is hidden"""
+
+    can_manage_chat: bool | None = None
+    """Pass True if the administrator can access the chat event log, get
+    boost list, see hidden supergroup and channel members, report spam
+    messages, ignore slow mode, and send messages to the chat without
+    paying Telegram Stars. Implied by any other administrator privilege.
+    """
+
+    can_delete_messages: bool | None = None
+    """Pass True if the administrator can delete messages of other users"""
+
+    can_manage_video_chats: bool | None = None
+    """Pass True if the administrator can manage video chats"""
+
+    can_restrict_members: bool | None = None
+    """Pass True if the administrator can restrict, ban or unban chat
+    members, or access supergroup statistics. For backward
+    compatibility, defaults to True for promotions of channel
+    administrators.
+    """
+
+    can_promote_members: bool | None = None
+    """Pass True if the administrator can add new administrators with a
+    subset of their own privileges or demote administrators that they
+    have promoted, directly or indirectly (promoted by administrators
+    that were appointed by him)
+    """
+
+    can_change_info: bool | None = None
+    """Pass True if the administrator can change chat title, photo and
+    other settings
+    """
+
+    can_invite_users: bool | None = None
+    """Pass True if the administrator can invite new users to the chat"""
+
+    can_post_stories: bool | None = None
+    """Pass True if the administrator can post stories to the chat"""
+
+    can_edit_stories: bool | None = None
+    """Pass True if the administrator can edit stories posted by other
+    users, post stories to the chat page, pin chat stories, and access
+    the chat's story archive
+    """
+
+    can_delete_stories: bool | None = None
+    """Pass True if the administrator can delete stories posted by other
+    users
+    """
+
+    can_post_messages: bool | None = None
+    """Pass True if the administrator can post messages in the channel,
+    approve suggested posts, or access channel statistics; for channels
+    only
+    """
+
+    can_edit_messages: bool | None = None
+    """Pass True if the administrator can edit messages of other users and
+    can pin messages; for channels only
+    """
+
+    can_pin_messages: bool | None = None
+    """Pass True if the administrator can pin messages; for supergroups
+    only
+    """
+
+    can_manage_topics: bool | None = None
+    """Pass True if the user is allowed to create, rename, close, and
+    reopen forum topics; for supergroups only
+    """
+
+    can_manage_direct_messages: bool | None = None
+    """Pass True if the administrator can manage direct messages within the
+    channel and decline suggested posts; for channels only
+    """
+
+    can_manage_tags: bool | None = None
+    """Pass True if the administrator can edit the tags of regular members;
+    for groups and supergroups only
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "promoteChatMember",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetChatAdministratorCustomTitleMethod(BaseModel):
+    """Use this method to set a custom title for an administrator in a
+    supergroup promoted by the bot. Returns True on success.
+
+    See
+    https://core.telegram.org/bots/api#setchatadministratorcustomtitle
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    custom_title: str
+    """New custom title for the administrator; 0-16 characters, emoji are
+    not allowed
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatAdministratorCustomTitle",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetChatMemberTagMethod(BaseModel):
+    """Use this method to set a tag for a regular member in a group or a
+    supergroup. The bot must be an administrator in the chat for this to
+    work and must have the can_manage_tags administrator right. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#setchatmembertag
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    tag: str | None = None
+    """New tag for the member; 0-16 characters, emoji are not allowed"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatMemberTag",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class BanChatSenderChatMethod(BaseModel):
+    """Use this method to ban a channel chat in a supergroup or a channel.
+    Until the chat is unbanned, the owner of the banned chat won't be
+    able to send messages on behalf of any of their channels. The bot
+    must be an administrator in the supergroup or channel for this to
+    work and must have the appropriate administrator rights. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#banchatsenderchat
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    sender_chat_id: int
+    """Unique identifier of the target sender chat"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "banChatSenderChat",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnbanChatSenderChatMethod(BaseModel):
+    """Use this method to unban a previously banned channel chat in a
+    supergroup or channel. The bot must be an administrator for this to
+    work and must have the appropriate administrator rights. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#unbanchatsenderchat
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    sender_chat_id: int
+    """Unique identifier of the target sender chat"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unbanChatSenderChat",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetChatPermissionsMethod(BaseModel):
+    """Use this method to set default chat permissions for all members. The
+    bot must be an administrator in the group or a supergroup for this
+    to work and must have the can_restrict_members administrator rights.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#setchatpermissions
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    permissions: ChatPermissions
+    """A JSON-serialized object for new default chat permissions"""
+
+    use_independent_chat_permissions: bool | None = None
+    """Pass True if chat permissions are set independently. Otherwise, the
+    can_send_other_messages and can_add_web_page_previews permissions
+    will imply the can_send_messages, can_send_audios,
+    can_send_documents, can_send_photos, can_send_videos,
+    can_send_video_notes, and can_send_voice_notes permissions; the
+    can_send_polls permission will imply the can_send_messages
+    permission.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatPermissions",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class ExportChatInviteLinkMethod(BaseModel):
+    """Use this method to generate a new primary invite link for a chat;
+    any previously generated primary link is revoked. The bot must be an
+    administrator in the chat for this to work and must have the
+    appropriate administrator rights. Returns the new invite link as
+    String on success.
+
+    Note: Each administrator in a chat generates their own invite links.
+    Bots can't use invite links generated by other administrators. If
+    you want your bot to work with invite links, it will need to
+    generate its own link using exportChatInviteLink or by calling the
+    getChat method. If your bot needs to generate a new primary invite
+    link replacing its previous one, use exportChatInviteLink again.
+
+    See https://core.telegram.org/bots/api#exportchatinvitelink
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> str:
+        return conn.do(
+            "exportChatInviteLink",
+            self._payload(),
+            TypeAdapter(str),
+        )
+
+
+class CreateChatInviteLinkMethod(BaseModel):
+    """Use this method to create an additional invite link for a chat. The
+    bot must be an administrator in the chat for this to work and must
+    have the appropriate administrator rights. The link can be revoked
+    using the method revokeChatInviteLink. Returns the new invite link
+    as ChatInviteLink object.
+
+    See https://core.telegram.org/bots/api#createchatinvitelink
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    name: str | None = None
+    """Invite link name; 0-32 characters"""
+
+    expire_date: int | None = None
+    """Point in time (Unix timestamp) when the link will expire"""
+
+    member_limit: int | None = None
+    """The maximum number of users that can be members of the chat
+    simultaneously after joining the chat via this invite link; 1-99999
+    """
+
+    creates_join_request: bool | None = None
+    """True, if users joining the chat via the link need to be approved by
+    chat administrators. If True, member_limit can't be specified.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatInviteLink:
+        return conn.do(
+            "createChatInviteLink",
+            self._payload(),
+            TypeAdapter(ChatInviteLink),
+        )
+
+
+class EditChatInviteLinkMethod(BaseModel):
+    """Use this method to edit a non-primary invite link created by the
+    bot. The bot must be an administrator in the chat for this to work
+    and must have the appropriate administrator rights. Returns the
+    edited invite link as a ChatInviteLink object.
+
+    See https://core.telegram.org/bots/api#editchatinvitelink
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    invite_link: str
+    """The invite link to edit"""
+
+    name: str | None = None
+    """Invite link name; 0-32 characters"""
+
+    expire_date: int | None = None
+    """Point in time (Unix timestamp) when the link will expire"""
+
+    member_limit: int | None = None
+    """The maximum number of users that can be members of the chat
+    simultaneously after joining the chat via this invite link; 1-99999
+    """
+
+    creates_join_request: bool | None = None
+    """True, if users joining the chat via the link need to be approved by
+    chat administrators. If True, member_limit can't be specified.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatInviteLink:
+        return conn.do(
+            "editChatInviteLink",
+            self._payload(),
+            TypeAdapter(ChatInviteLink),
+        )
+
+
+class CreateChatSubscriptionInviteLinkMethod(BaseModel):
+    """Use this method to create a subscription invite link for a channel
+    chat. The bot must have the can_invite_users administrator rights.
+    The link can be edited using the method
+    editChatSubscriptionInviteLink or revoked using the method
+    revokeChatInviteLink. Returns the new invite link as a
+    ChatInviteLink object.
+
+    See
+    https://core.telegram.org/bots/api#createchatsubscriptioninvitelink
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target channel chat or username of the
+    target channel in the format @username
+    """
+
+    subscription_period: int
+    """The number of seconds the subscription will be active for before the
+    next payment. Currently, it must always be 2592000 (30 days).
+    """
+
+    subscription_price: int
+    """The amount of Telegram Stars a user must pay initially and after
+    each subsequent subscription period to be a member of the chat;
+    1-10000
+    """
+
+    name: str | None = None
+    """Invite link name; 0-32 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatInviteLink:
+        return conn.do(
+            "createChatSubscriptionInviteLink",
+            self._payload(),
+            TypeAdapter(ChatInviteLink),
+        )
+
+
+class EditChatSubscriptionInviteLinkMethod(BaseModel):
+    """Use this method to edit a subscription invite link created by the
+    bot. The bot must have the can_invite_users administrator rights.
+    Returns the edited invite link as a ChatInviteLink object.
+
+    See
+    https://core.telegram.org/bots/api#editchatsubscriptioninvitelink
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    invite_link: str
+    """The invite link to edit"""
+
+    name: str | None = None
+    """Invite link name; 0-32 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatInviteLink:
+        return conn.do(
+            "editChatSubscriptionInviteLink",
+            self._payload(),
+            TypeAdapter(ChatInviteLink),
+        )
+
+
+class RevokeChatInviteLinkMethod(BaseModel):
+    """Use this method to revoke an invite link created by the bot. If the
+    primary link is revoked, a new link is automatically generated. The
+    bot must be an administrator in the chat for this to work and must
+    have the appropriate administrator rights. Returns the revoked
+    invite link as ChatInviteLink object.
+
+    See https://core.telegram.org/bots/api#revokechatinvitelink
+    """
+
+    chat_id: ChatID
+    """Unique identifier of the target chat or username of the target
+    channel in the format @username
+    """
+
+    invite_link: str
+    """The invite link to revoke"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatInviteLink:
+        return conn.do(
+            "revokeChatInviteLink",
+            self._payload(),
+            TypeAdapter(ChatInviteLink),
+        )
+
+
+class ApproveChatJoinRequestMethod(BaseModel):
+    """Use this method to approve a chat join request. The bot must be an
+    administrator in the chat for this to work and must have the
+    can_invite_users administrator right. Returns True on success.
+
+    See https://core.telegram.org/bots/api#approvechatjoinrequest
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "approveChatJoinRequest",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeclineChatJoinRequestMethod(BaseModel):
+    """Use this method to decline a chat join request. The bot must be an
+    administrator in the chat for this to work and must have the
+    can_invite_users administrator right. Returns True on success.
+
+    See https://core.telegram.org/bots/api#declinechatjoinrequest
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "declineChatJoinRequest",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class AnswerChatJoinRequestQueryMethod(BaseModel):
+    """Use this method to process a received chat join request query.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#answerchatjoinrequestquery
+    """
+
+    chat_join_request_query_id: str
+    """Unique identifier of the join request query"""
+
+    result: str
+    """Result of the query. Must be either “approve” to allow the user to
+    join the chat, “decline” to disallow the user to join the chat, or
+    “queue” to leave the decision to other administrators.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "answerChatJoinRequestQuery",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SendChatJoinRequestWebAppMethod(BaseModel):
+    """Use this method to process a received chat join request query by
+    showing a Mini App to the user before deciding the outcome. Call
+    answerChatJoinRequestQuery to resolve the join request query based
+    on the user interaction with the Mini App. Returns True on success.
+
+    See https://core.telegram.org/bots/api#sendchatjoinrequestwebapp
+    """
+
+    chat_join_request_query_id: str
+    """Unique identifier of the join request query"""
+
+    web_app_url: str
+    """An HTTPS URL of a Web App to be opened with additional data as
+    specified in Initializing Web Apps
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "sendChatJoinRequestWebApp",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: setchatphoto (method reaching a file)
+
+
+class DeleteChatPhotoMethod(BaseModel):
+    """Use this method to delete a chat photo. Photos can't be changed for
+    private chats. The bot must be an administrator in the chat for this
+    to work and must have the appropriate administrator rights. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#deletechatphoto
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteChatPhoto",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetChatTitleMethod(BaseModel):
+    """Use this method to change the title of a chat. Titles can't be
+    changed for private chats. The bot must be an administrator in the
+    chat for this to work and must have the appropriate administrator
+    rights. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setchattitle
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    title: str
+    """New chat title, 1-128 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatTitle",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetChatDescriptionMethod(BaseModel):
+    """Use this method to change the description of a group, a supergroup
+    or a channel. The bot must be an administrator in the chat for this
+    to work and must have the appropriate administrator rights. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#setchatdescription
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    description: str | None = None
+    """New chat description, 0-255 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatDescription",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class PinChatMessageMethod(BaseModel):
+    """Use this method to add a message to the list of pinned messages in a
+    chat. In private chats and channel direct messages chats, all
+    non-service messages can be pinned. Conversely, the bot must be an
+    administrator with the 'can_pin_messages' right or the
+    'can_edit_messages' right to pin messages in groups and channels
+    respectively. Returns True on success.
+
+    See https://core.telegram.org/bots/api#pinchatmessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    message_id: int
+    """Identifier of a message to pin"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be pinned
+    """
+
+    disable_notification: bool | None = None
+    """Pass True if it is not necessary to send a notification to all chat
+    members about the new pinned message. Notifications are always
+    disabled in channels and private chats.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "pinChatMessage",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnpinChatMessageMethod(BaseModel):
+    """Use this method to remove a message from the list of pinned messages
+    in a chat. In private chats and channel direct messages chats, all
+    messages can be unpinned. Conversely, the bot must be an
+    administrator with the 'can_pin_messages' right or the
+    'can_edit_messages' right to unpin messages in groups and channels
+    respectively. Returns True on success.
+
+    See https://core.telegram.org/bots/api#unpinchatmessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be unpinned
+    """
+
+    message_id: int | None = None
+    """Identifier of the message to unpin. Required if
+    business_connection_id is specified. If not specified, the most
+    recent pinned message (by sending date) will be unpinned.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unpinChatMessage",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnpinAllChatMessagesMethod(BaseModel):
+    """Use this method to clear the list of pinned messages in a chat. In
+    private chats and channel direct messages chats, no additional
+    rights are required to unpin all pinned messages. Conversely, the
+    bot must be an administrator with the 'can_pin_messages' right or
+    the 'can_edit_messages' right to unpin all pinned messages in groups
+    and channels respectively. Returns True on success.
+
+    See https://core.telegram.org/bots/api#unpinallchatmessages
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unpinAllChatMessages",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class LeaveChatMethod(BaseModel):
+    """Use this method for your bot to leave a group, supergroup or
+    channel. Returns True on success.
+
+    See https://core.telegram.org/bots/api#leavechat
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup or channel in the format @username. Channel direct
+    messages chats aren't supported; leave the corresponding channel
+    instead.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "leaveChat",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetChatMethod(BaseModel):
+    """Use this method to get up-to-date information about the chat.
+    Returns a ChatFullInfo object on success.
+
+    See https://core.telegram.org/bots/api#getchat
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup or channel in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatFullInfo:
+        return conn.do(
+            "getChat",
+            self._payload(),
+            TypeAdapter(ChatFullInfo),
+        )
+
+
+class GetChatAdministratorsMethod(BaseModel):
+    """Use this method to get a list of administrators in a chat. Returns
+    an Array of ChatMember objects.
+
+    See https://core.telegram.org/bots/api#getchatadministrators
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup or channel in the format @username
+    """
+
+    return_bots: bool | None = None
+    """Pass True to additionally receive all bots that are administrators
+    of the chat. By default, bots other than the current bot are
+    omitted.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[ChatMember]:
+        return conn.do(
+            "getChatAdministrators",
+            self._payload(),
+            TypeAdapter(list[ChatMember]),
+        )
+
+
+class GetChatMemberCountMethod(BaseModel):
+    """Use this method to get the number of members in a chat. Returns
+    Integer on success.
+
+    See https://core.telegram.org/bots/api#getchatmembercount
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup or channel in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> int:
+        return conn.do(
+            "getChatMemberCount",
+            self._payload(),
+            TypeAdapter(int),
+        )
+
+
+class GetChatMemberMethod(BaseModel):
+    """Use this method to get information about a member of a chat. The
+    method is only guaranteed to work for other users if the bot is an
+    administrator in the chat. Returns a ChatMember object on success.
+
+    See https://core.telegram.org/bots/api#getchatmember
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup or channel in the format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatMember:
+        return conn.do(
+            "getChatMember",
+            self._payload(),
+            TypeAdapter(ChatMember),
+        )
+
+
+class GetUserPersonalChatMessagesMethod(BaseModel):
+    """Use this method to get the last messages from the personal chat
+    (i.e., the chat currently added to their profile) of a given user.
+    On success, an Array of Message objects is returned.
+
+    See https://core.telegram.org/bots/api#getuserpersonalchatmessages
+    """
+
+    user_id: int
+    """Unique identifier for the target user"""
+
+    limit: int
+    """The maximum number of messages to return; 1-20"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[Message]:
+        return conn.do(
+            "getUserPersonalChatMessages",
+            self._payload(),
+            TypeAdapter(list[Message]),
+        )
+
+
+class SetChatStickerSetMethod(BaseModel):
+    """Use this method to set a new group sticker set for a supergroup. The
+    bot must be an administrator in the chat for this to work and must
+    have the appropriate administrator rights. Use the field
+    can_set_sticker_set optionally returned in getChat requests to check
+    if the bot can use this method. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setchatstickerset
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    sticker_set_name: str
+    """Name of the sticker set to be set as the group sticker set"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatStickerSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteChatStickerSetMethod(BaseModel):
+    """Use this method to delete a group sticker set from a supergroup. The
+    bot must be an administrator in the chat for this to work and must
+    have the appropriate administrator rights. Use the field
+    can_set_sticker_set optionally returned in getChat requests to check
+    if the bot can use this method. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletechatstickerset
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteChatStickerSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetForumTopicIconStickersMethod(BaseModel):
+    """Use this method to get custom emoji stickers, which can be used as a
+    forum topic icon by any user. Requires no parameters. Returns an
+    Array of Sticker objects.
+
+    See https://core.telegram.org/bots/api#getforumtopiciconstickers
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> list[Sticker]:
+        return conn.do(
+            "getForumTopicIconStickers",
+            self._payload(),
+            TypeAdapter(list[Sticker]),
+        )
+
+
+class CreateForumTopicMethod(BaseModel):
+    """Use this method to create a topic in a forum supergroup chat or a
+    private chat with a user. In the case of a supergroup chat the bot
+    must be an administrator in the chat for this to work and must have
+    the can_manage_topics administrator right. Returns information about
+    the created topic as a ForumTopic object.
+
+    See https://core.telegram.org/bots/api#createforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    name: str
+    """Topic name, 1-128 characters"""
+
+    icon_color: int | None = None
+    """Color of the topic icon in RGB format. Currently, must be one of
+    7322096 (0x6FB9F0), 16766590 (0xFFD67E), 13338331 (0xCB86DB),
+    9367192 (0x8EEE98), 16749490 (0xFF93B2), or 16478047 (0xFB6F5F).
+    """
+
+    icon_custom_emoji_id: str | None = None
+    """Unique identifier of the custom emoji shown as the topic icon. Use
+    getForumTopicIconStickers to get all allowed custom emoji
+    identifiers.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ForumTopic:
+        return conn.do(
+            "createForumTopic",
+            self._payload(),
+            TypeAdapter(ForumTopic),
+        )
+
+
+class EditForumTopicMethod(BaseModel):
+    """Use this method to edit name and icon of a topic in a forum
+    supergroup chat or a private chat with a user. In the case of a
+    supergroup chat the bot must be an administrator in the chat for
+    this to work and must have the can_manage_topics administrator
+    rights, unless it is the creator of the topic. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#editforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    message_thread_id: int
+    """Unique identifier for the target message thread of the forum topic"""
+
+    name: str | None = None
+    """New topic name, 0-128 characters. If not specified or empty, the
+    current name of the topic will be kept.
+    """
+
+    icon_custom_emoji_id: str | None = None
+    """New unique identifier of the custom emoji shown as the topic icon.
+    Use getForumTopicIconStickers to get all allowed custom emoji
+    identifiers. Pass an empty string to remove the icon. If not
+    specified, the current icon will be kept.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class CloseForumTopicMethod(BaseModel):
+    """Use this method to close an open topic in a forum supergroup chat.
+    The bot must be an administrator in the chat for this to work and
+    must have the can_manage_topics administrator rights, unless it is
+    the creator of the topic. Returns True on success.
+
+    See https://core.telegram.org/bots/api#closeforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    message_thread_id: int
+    """Unique identifier for the target message thread of the forum topic"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "closeForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class ReopenForumTopicMethod(BaseModel):
+    """Use this method to reopen a closed topic in a forum supergroup chat.
+    The bot must be an administrator in the chat for this to work and
+    must have the can_manage_topics administrator rights, unless it is
+    the creator of the topic. Returns True on success.
+
+    See https://core.telegram.org/bots/api#reopenforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    message_thread_id: int
+    """Unique identifier for the target message thread of the forum topic"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "reopenForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteForumTopicMethod(BaseModel):
+    """Use this method to delete a forum topic along with all its messages
+    in a forum supergroup chat or a private chat with a user. In the
+    case of a supergroup chat the bot must be an administrator in the
+    chat for this to work and must have the can_delete_messages
+    administrator rights. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deleteforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    message_thread_id: int
+    """Unique identifier for the target message thread of the forum topic"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnpinAllForumTopicMessagesMethod(BaseModel):
+    """Use this method to clear the list of pinned messages in a forum
+    topic in a forum supergroup chat or a private chat with a user. In
+    the case of a supergroup chat the bot must be an administrator in
+    the chat for this to work and must have the can_pin_messages
+    administrator right in the supergroup. Returns True on success.
+
+    See https://core.telegram.org/bots/api#unpinallforumtopicmessages
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    message_thread_id: int
+    """Unique identifier for the target message thread of the forum topic"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unpinAllForumTopicMessages",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class EditGeneralForumTopicMethod(BaseModel):
+    """Use this method to edit the name of the 'General' topic in a forum
+    supergroup chat. The bot must be an administrator in the chat for
+    this to work and must have the can_manage_topics administrator
+    rights. Returns True on success.
+
+    See https://core.telegram.org/bots/api#editgeneralforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    name: str
+    """New topic name, 1-128 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editGeneralForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class CloseGeneralForumTopicMethod(BaseModel):
+    """Use this method to close an open 'General' topic in a forum
+    supergroup chat. The bot must be an administrator in the chat for
+    this to work and must have the can_manage_topics administrator
+    rights. Returns True on success.
+
+    See https://core.telegram.org/bots/api#closegeneralforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "closeGeneralForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class ReopenGeneralForumTopicMethod(BaseModel):
+    """Use this method to reopen a closed 'General' topic in a forum
+    supergroup chat. The bot must be an administrator in the chat for
+    this to work and must have the can_manage_topics administrator
+    rights. The topic will be automatically unhidden if it was hidden.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#reopengeneralforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "reopenGeneralForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class HideGeneralForumTopicMethod(BaseModel):
+    """Use this method to hide the 'General' topic in a forum supergroup
+    chat. The bot must be an administrator in the chat for this to work
+    and must have the can_manage_topics administrator rights. The topic
+    will be automatically closed if it was open. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#hidegeneralforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "hideGeneralForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnhideGeneralForumTopicMethod(BaseModel):
+    """Use this method to unhide the 'General' topic in a forum supergroup
+    chat. The bot must be an administrator in the chat for this to work
+    and must have the can_manage_topics administrator rights. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#unhidegeneralforumtopic
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unhideGeneralForumTopic",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UnpinAllGeneralForumTopicMessagesMethod(BaseModel):
+    """Use this method to clear the list of pinned messages in a General
+    forum topic. The bot must be an administrator in the chat for this
+    to work and must have the can_pin_messages administrator right in
+    the supergroup. Returns True on success.
+
+    See
+    https://core.telegram.org/bots/api#unpinallgeneralforumtopicmessages
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "unpinAllGeneralForumTopicMessages",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class AnswerCallbackQueryMethod(BaseModel):
+    """Use this method to send answers to callback queries sent from inline
+    keyboards. The answer will be displayed to the user as a
+    notification at the top of the chat screen or as an alert. On
+    success, True is returned.
+
+    Alternatively, the user can be redirected to the specified Game URL.
+    For this option to work, you must first create a game for your bot
+    via @BotFather and accept the terms. Otherwise, you may use links
+    like t.me/your_bot?start=XXXX that open your bot with a parameter.
+
+    See https://core.telegram.org/bots/api#answercallbackquery
+    """
+
+    callback_query_id: str
+    """Unique identifier for the query to be answered"""
+
+    text: str | None = None
+    """Text of the notification. If not specified, nothing will be shown to
+    the user, 0-200 characters.
+    """
+
+    show_alert: bool | None = None
+    """If True, an alert will be shown by the client instead of a
+    notification at the top of the chat screen. Defaults to False.
+    """
+
+    url: str | None = None
+    """URL that will be opened by the user's client. If you have created a
+    Game and accepted the conditions via @BotFather, specify the URL
+    that opens your game - note that this will only work if the query
+    comes from a callback_game button.
+
+    Otherwise, you may use links like t.me/your_bot?start=XXXX that open
+    your bot with a parameter.
+    """
+
+    cache_time: int | None = None
+    """The maximum amount of time in seconds that the result of the
+    callback query may be cached client-side. Telegram apps will support
+    caching starting in version 3.14. Defaults to 0.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "answerCallbackQuery",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: answerguestquery (method reaching a file)
+
+
+class GetUserChatBoostsMethod(BaseModel):
+    """Use this method to get the list of boosts added to a chat by a user.
+    Requires administrator rights in the chat. Returns a UserChatBoosts
+    object.
+
+    See https://core.telegram.org/bots/api#getuserchatboosts
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the chat or username of the channel in the
+    format @username
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> UserChatBoosts:
+        return conn.do(
+            "getUserChatBoosts",
+            self._payload(),
+            TypeAdapter(UserChatBoosts),
+        )
+
+
+class GetBusinessConnectionMethod(BaseModel):
+    """Use this method to get information about the connection of the bot
+    with a business account. Returns a BusinessConnection object on
+    success.
+
+    See https://core.telegram.org/bots/api#getbusinessconnection
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> BusinessConnection:
+        return conn.do(
+            "getBusinessConnection",
+            self._payload(),
+            TypeAdapter(BusinessConnection),
+        )
+
+
+class GetManagedBotTokenMethod(BaseModel):
+    """Use this method to get the token of a managed bot. Returns the token
+    as String on success.
+
+    See https://core.telegram.org/bots/api#getmanagedbottoken
+    """
+
+    user_id: int
+    """User identifier of the managed bot whose token will be returned"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> str:
+        return conn.do(
+            "getManagedBotToken",
+            self._payload(),
+            TypeAdapter(str),
+        )
+
+
+class ReplaceManagedBotTokenMethod(BaseModel):
+    """Use this method to revoke the current token of a managed bot and
+    generate a new one. Returns the new token as String on success.
+
+    See https://core.telegram.org/bots/api#replacemanagedbottoken
+    """
+
+    user_id: int
+    """User identifier of the managed bot whose token will be replaced"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> str:
+        return conn.do(
+            "replaceManagedBotToken",
+            self._payload(),
+            TypeAdapter(str),
+        )
+
+
+class GetManagedBotAccessSettingsMethod(BaseModel):
+    """Use this method to get the access settings of a managed bot. Returns
+    a BotAccessSettings object on success.
+
+    See https://core.telegram.org/bots/api#getmanagedbotaccesssettings
+    """
+
+    user_id: int
+    """User identifier of the managed bot whose access settings will be
+    returned
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> BotAccessSettings:
+        return conn.do(
+            "getManagedBotAccessSettings",
+            self._payload(),
+            TypeAdapter(BotAccessSettings),
+        )
+
+
+class SetManagedBotAccessSettingsMethod(BaseModel):
+    """Use this method to change the access settings of a managed bot.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmanagedbotaccesssettings
+    """
+
+    user_id: int
+    """User identifier of the managed bot whose access settings will be
+    changed
+    """
+
+    is_access_restricted: bool
+    """Pass True if only selected users can access the bot. The bot's owner
+    can always access it.
+    """
+
+    added_user_ids: list[int] | None = None
+    """A JSON-serialized list of up to 10 identifiers of users who will
+    have access to the bot in addition to its owner. Ignored if
+    is_access_restricted is False.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setManagedBotAccessSettings",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetMyCommandsMethod(BaseModel):
+    """Use this method to change the list of the bot's commands. See this
+    manual for more details about bot commands. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmycommands
+    """
+
+    commands: list[BotCommand]
+    """A JSON-serialized list of bot commands to be set as the list of the
+    bot's commands. At most 100 commands can be specified.
+    """
+
+    scope: BotCommandScope | None = None
+    """A JSON-serialized object, describing scope of users for which the
+    commands are relevant. Defaults to BotCommandScopeDefault.
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code. If empty, commands will be
+    applied to all users from the given scope, for whose language there
+    are no dedicated commands.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMyCommands",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteMyCommandsMethod(BaseModel):
+    """Use this method to delete the list of the bot's commands for the
+    given scope and user language. After deletion, higher level commands
+    will be shown to affected users. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletemycommands
+    """
+
+    scope: BotCommandScope | None = None
+    """A JSON-serialized object, describing scope of users for which the
+    commands are relevant. Defaults to BotCommandScopeDefault.
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code. If empty, commands will be
+    applied to all users from the given scope, for whose language there
+    are no dedicated commands.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteMyCommands",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetMyCommandsMethod(BaseModel):
+    """Use this method to get the current list of the bot's commands for
+    the given scope and user language. Returns an Array of BotCommand
+    objects. If commands aren't set, an empty list is returned.
+
+    See https://core.telegram.org/bots/api#getmycommands
+    """
+
+    scope: BotCommandScope | None = None
+    """A JSON-serialized object, describing scope of users. Defaults to
+    BotCommandScopeDefault.
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code or an empty string"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[BotCommand]:
+        return conn.do(
+            "getMyCommands",
+            self._payload(),
+            TypeAdapter(list[BotCommand]),
+        )
+
+
+class SetMyNameMethod(BaseModel):
+    """Use this method to change the bot's name. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmyname
+    """
+
+    name: str | None = None
+    """New bot name; 0-64 characters. Pass an empty string to remove the
+    dedicated name for the given language.
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code. If empty, the name will be
+    shown to all users for whose language there is no dedicated name.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMyName",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetMyNameMethod(BaseModel):
+    """Use this method to get the current bot name for the given user
+    language. Returns BotName on success.
+
+    See https://core.telegram.org/bots/api#getmyname
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code or an empty string"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> BotName:
+        return conn.do(
+            "getMyName",
+            self._payload(),
+            TypeAdapter(BotName),
+        )
+
+
+class SetMyDescriptionMethod(BaseModel):
+    """Use this method to change the bot's description, which is shown in
+    the chat with the bot if the chat is empty. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmydescription
+    """
+
+    description: str | None = None
+    """New bot description; 0-512 characters. Pass an empty string to
+    remove the dedicated description for the given language.
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code. If empty, the description will
+    be applied to all users for whose language there is no dedicated
+    description.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMyDescription",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetMyDescriptionMethod(BaseModel):
+    """Use this method to get the current bot description for the given
+    user language. Returns BotDescription on success.
+
+    See https://core.telegram.org/bots/api#getmydescription
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code or an empty string"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> BotDescription:
+        return conn.do(
+            "getMyDescription",
+            self._payload(),
+            TypeAdapter(BotDescription),
+        )
+
+
+class SetMyShortDescriptionMethod(BaseModel):
+    """Use this method to change the bot's short description, which is
+    shown on the bot's profile page and is sent together with the link
+    when users share the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmyshortdescription
+    """
+
+    short_description: str | None = None
+    """New short description for the bot; 0-120 characters. Pass an empty
+    string to remove the dedicated short description for the given
+    language.
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code. If empty, the short
+    description will be applied to all users for whose language there is
+    no dedicated short description.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMyShortDescription",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetMyShortDescriptionMethod(BaseModel):
+    """Use this method to get the current bot short description for the
+    given user language. Returns BotShortDescription on success.
+
+    See https://core.telegram.org/bots/api#getmyshortdescription
+    """
+
+    language_code: str | None = None
+    """A two-letter ISO 639-1 language code or an empty string"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> BotShortDescription:
+        return conn.do(
+            "getMyShortDescription",
+            self._payload(),
+            TypeAdapter(BotShortDescription),
+        )
+# TODO: setmyprofilephoto (method reaching a file)
+
+
+class RemoveMyProfilePhotoMethod(BaseModel):
+    """Removes the profile photo of the bot. Requires no parameters.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#removemyprofilephoto
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "removeMyProfilePhoto",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetChatMenuButtonMethod(BaseModel):
+    """Use this method to change the bot's menu button in a private chat,
+    or the default menu button. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setchatmenubutton
+    """
+
+    chat_id: int | None = None
+    """Unique identifier for the target private chat. If not specified, the
+    bot's default menu button will be changed.
+    """
+
+    menu_button: MenuButton | None = None
+    """A JSON-serialized object for the bot's new menu button. Defaults to
+    MenuButtonDefault.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatMenuButton",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetChatMenuButtonMethod(BaseModel):
+    """Use this method to get the current value of the bot's menu button in
+    a private chat, or the default menu button. Returns MenuButton on
+    success.
+
+    See https://core.telegram.org/bots/api#getchatmenubutton
+    """
+
+    chat_id: int | None = None
+    """Unique identifier for the target private chat. If not specified, the
+    bot's default menu button will be returned.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MenuButton:
+        return conn.do(
+            "getChatMenuButton",
+            self._payload(),
+            TypeAdapter(MenuButton),
+        )
+
+
+class SetMyDefaultAdministratorRightsMethod(BaseModel):
+    """Use this method to change the default administrator rights requested
+    by the bot when it's added as an administrator to groups or
+    channels. These rights will be suggested to users, but they are free
+    to modify the list before adding the bot. Returns True on success.
+
+    See
+    https://core.telegram.org/bots/api#setmydefaultadministratorrights
+    """
+
+    rights: ChatAdministratorRights | None = None
+    """A JSON-serialized object describing new default administrator
+    rights. If not specified, the default administrator rights will be
+    cleared.
+    """
+
+    for_channels: bool | None = None
+    """Pass True to change the default administrator rights of the bot in
+    channels. Otherwise, the default administrator rights of the bot for
+    groups and supergroups will be changed.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMyDefaultAdministratorRights",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetMyDefaultAdministratorRightsMethod(BaseModel):
+    """Use this method to get the current default administrator rights of
+    the bot. Returns ChatAdministratorRights on success.
+
+    See
+    https://core.telegram.org/bots/api#getmydefaultadministratorrights
+    """
+
+    for_channels: bool | None = None
+    """Pass True to get default administrator rights of the bot in
+    channels. Otherwise, default administrator rights of the bot for
+    groups and supergroups will be returned.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> ChatAdministratorRights:
+        return conn.do(
+            "getMyDefaultAdministratorRights",
+            self._payload(),
+            TypeAdapter(ChatAdministratorRights),
+        )
+
+
+class GetAvailableGiftsMethod(BaseModel):
+    """Returns the list of gifts that can be sent by the bot to users and
+    channel chats. Requires no parameters. Returns a Gifts object.
+
+    See https://core.telegram.org/bots/api#getavailablegifts
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> Gifts:
+        return conn.do(
+            "getAvailableGifts",
+            self._payload(),
+            TypeAdapter(Gifts),
+        )
+
+
+class SendGiftMethod(BaseModel):
+    """Sends a gift to the given user or channel chat. The gift can't be
+    converted to Telegram Stars by the receiver. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#sendgift
+    """
+
+    gift_id: str
+    """Identifier of the gift; limited gifts can't be sent to channel chats"""
+
+    user_id: int | None = None
+    """Required if chat_id is not specified. Unique identifier of the
+    target user who will receive the gift.
+    """
+
+    chat_id: ChatID | None = None
+    """Required if user_id is not specified. Unique identifier for the chat
+    or username of the channel (in the format @username) that will
+    receive the gift.
+    """
+
+    pay_for_upgrade: bool | None = None
+    """Pass True to pay for the gift upgrade from the bot's balance,
+    thereby making the upgrade free for the receiver
+    """
+
+    text: str | None = None
+    """Text that will be shown along with the gift; 0-128 characters"""
+
+    text_parse_mode: str | None = None
+    """Mode for parsing entities in the text. See formatting options for
+    more details. Entities other than “bold”, “italic”, “underline”,
+    “strikethrough”, “spoiler”, “custom_emoji”, and “date_time” are
+    ignored.
+    """
+
+    text_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the gift
+    text. It can be specified instead of text_parse_mode. Entities other
+    than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”,
+    “custom_emoji”, and “date_time” are ignored.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "sendGift",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GiftPremiumSubscriptionMethod(BaseModel):
+    """Gifts a Telegram Premium subscription to the given user. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#giftpremiumsubscription
+    """
+
+    user_id: int
+    """Unique identifier of the target user who will receive a Telegram
+    Premium subscription
+    """
+
+    month_count: int
+    """Number of months the Telegram Premium subscription will be active
+    for the user; must be one of 3, 6, or 12
+    """
+
+    star_count: int
+    """Number of Telegram Stars to pay for the Telegram Premium
+    subscription; must be 1000 for 3 months, 1500 for 6 months, and 2500
+    for 12 months
+    """
+
+    text: str | None = None
+    """Text that will be shown along with the service message about the
+    subscription; 0-128 characters
+    """
+
+    text_parse_mode: str | None = None
+    """Mode for parsing entities in the text. See formatting options for
+    more details. Entities other than “bold”, “italic”, “underline”,
+    “strikethrough”, “spoiler”, “custom_emoji”, and “date_time” are
+    ignored.
+    """
+
+    text_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the gift
+    text. It can be specified instead of text_parse_mode. Entities other
+    than “bold”, “italic”, “underline”, “strikethrough”, “spoiler”,
+    “custom_emoji”, and “date_time” are ignored.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "giftPremiumSubscription",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class VerifyUserMethod(BaseModel):
+    """Verifies a user on behalf of the organization which is represented
+    by the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#verifyuser
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    custom_description: str | None = None
+    """Custom description for the verification; 0-70 characters. Must be
+    empty if the organization isn't allowed to provide a custom
+    verification description.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "verifyUser",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class VerifyChatMethod(BaseModel):
+    """Verifies a chat on behalf of the organization which is represented
+    by the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#verifychat
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username. Channel direct
+    messages chats can't be verified.
+    """
+
+    custom_description: str | None = None
+    """Custom description for the verification; 0-70 characters. Must be
+    empty if the organization isn't allowed to provide a custom
+    verification description.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "verifyChat",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class RemoveUserVerificationMethod(BaseModel):
+    """Removes verification from a user who is currently verified on behalf
+    of the organization represented by the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#removeuserverification
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "removeUserVerification",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class RemoveChatVerificationMethod(BaseModel):
+    """Removes verification from a chat that is currently verified on
+    behalf of the organization represented by the bot. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#removechatverification
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot
+    or channel in the format @username
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "removeChatVerification",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class ReadBusinessMessageMethod(BaseModel):
+    """Marks incoming message as read on behalf of a business account.
+    Requires the can_read_messages business bot right. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#readbusinessmessage
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection on behalf of which to
+    read the message
+    """
+
+    chat_id: int
+    """Unique identifier of the chat in which the message was received. The
+    chat must have been active in the last 24 hours.
+    """
+
+    message_id: int
+    """Unique identifier of the message to mark as read"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "readBusinessMessage",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteBusinessMessagesMethod(BaseModel):
+    """Delete messages on behalf of a business account. Requires the
+    can_delete_sent_messages business bot right to delete messages sent
+    by the bot itself, or the can_delete_all_messages business bot right
+    to delete any message. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletebusinessmessages
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection on behalf of which to
+    delete the messages
+    """
+
+    message_ids: list[int]
+    """A JSON-serialized list of 1-100 identifiers of messages to delete.
+    All messages must be from the same chat. See deleteMessage for
+    limitations on which messages can be deleted.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteBusinessMessages",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetBusinessAccountNameMethod(BaseModel):
+    """Changes the first and last name of a managed business account.
+    Requires the can_change_name business bot right. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#setbusinessaccountname
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    first_name: str
+    """The new value of the first name for the business account; 1-64
+    characters
+    """
+
+    last_name: str | None = None
+    """The new value of the last name for the business account; 0-64
+    characters
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setBusinessAccountName",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetBusinessAccountUsernameMethod(BaseModel):
+    """Changes the username of a managed business account. Requires the
+    can_change_username business bot right. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setbusinessaccountusername
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    username: str | None = None
+    """The new value of the username for the business account; 0-32
+    characters
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setBusinessAccountUsername",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetBusinessAccountBioMethod(BaseModel):
+    """Changes the bio of a managed business account. Requires the
+    can_change_bio business bot right. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setbusinessaccountbio
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    bio: str | None = None
+    """The new value of the bio for the business account; 0-140 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setBusinessAccountBio",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: setbusinessaccountprofilephoto (method reaching a file)
+
+
+class RemoveBusinessAccountProfilePhotoMethod(BaseModel):
+    """Removes the current profile photo of a managed business account.
+    Requires the can_edit_profile_photo business bot right. Returns True
+    on success.
+
+    See
+    https://core.telegram.org/bots/api#removebusinessaccountprofilephoto
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    is_public: bool | None = None
+    """Pass True to remove the public photo, which is visible even if the
+    main photo is hidden by the business account's privacy settings.
+    After the main photo is removed, the previous profile photo (if
+    present) becomes the main photo.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "removeBusinessAccountProfilePhoto",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetBusinessAccountGiftSettingsMethod(BaseModel):
+    """Changes the privacy settings pertaining to incoming gifts in a
+    managed business account. Requires the can_change_gift_settings
+    business bot right. Returns True on success.
+
+    See
+    https://core.telegram.org/bots/api#setbusinessaccountgiftsettings
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    show_gift_button: bool
+    """Pass True if a button for sending a gift to the user or by the
+    business account must always be shown in the input field
+    """
+
+    accepted_gift_types: AcceptedGiftTypes
+    """Types of gifts accepted by the business account"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setBusinessAccountGiftSettings",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetBusinessAccountStarBalanceMethod(BaseModel):
+    """Returns the amount of Telegram Stars owned by a managed business
+    account. Requires the can_view_gifts_and_stars business bot right.
+    Returns StarAmount on success.
+
+    See https://core.telegram.org/bots/api#getbusinessaccountstarbalance
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> StarAmount:
+        return conn.do(
+            "getBusinessAccountStarBalance",
+            self._payload(),
+            TypeAdapter(StarAmount),
+        )
+
+
+class TransferBusinessAccountStarsMethod(BaseModel):
+    """Transfers Telegram Stars from the business account balance to the
+    bot's balance. Requires the can_transfer_stars business bot right.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#transferbusinessaccountstars
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    star_count: int
+    """Number of Telegram Stars to transfer; 1-10000"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "transferBusinessAccountStars",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetBusinessAccountGiftsMethod(BaseModel):
+    """Returns the gifts received and owned by a managed business account.
+    Requires the can_view_gifts_and_stars business bot right. Returns
+    OwnedGifts on success.
+
+    See https://core.telegram.org/bots/api#getbusinessaccountgifts
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    exclude_unsaved: bool | None = None
+    """Pass True to exclude gifts that aren't saved to the account's
+    profile page
+    """
+
+    exclude_saved: bool | None = None
+    """Pass True to exclude gifts that are saved to the account's profile
+    page
+    """
+
+    exclude_unlimited: bool | None = None
+    """Pass True to exclude gifts that can be purchased an unlimited number
+    of times
+    """
+
+    exclude_limited_upgradable: bool | None = None
+    """Pass True to exclude gifts that can be purchased a limited number of
+    times and can be upgraded to unique
+    """
+
+    exclude_limited_non_upgradable: bool | None = None
+    """Pass True to exclude gifts that can be purchased a limited number of
+    times and can't be upgraded to unique
+    """
+
+    exclude_unique: bool | None = None
+    """Pass True to exclude unique gifts"""
+
+    exclude_from_blockchain: bool | None = None
+    """Pass True to exclude gifts that were assigned from the TON
+    blockchain and can't be resold or transferred in Telegram
+    """
+
+    sort_by_price: bool | None = None
+    """Pass True to sort results by gift price instead of send date.
+    Sorting is applied before pagination.
+    """
+
+    offset: str | None = None
+    """Offset of the first entry to return as received from the previous
+    request; use empty string to get the first chunk of results
+    """
+
+    limit: int | None = None
+    """The maximum number of gifts to be returned; 1-100. Defaults to 100."""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> OwnedGifts:
+        return conn.do(
+            "getBusinessAccountGifts",
+            self._payload(),
+            TypeAdapter(OwnedGifts),
+        )
+
+
+class GetUserGiftsMethod(BaseModel):
+    """Returns the gifts owned and hosted by a user. Returns OwnedGifts on
+    success.
+
+    See https://core.telegram.org/bots/api#getusergifts
+    """
+
+    user_id: int
+    """Unique identifier of the user"""
+
+    exclude_unlimited: bool | None = None
+    """Pass True to exclude gifts that can be purchased an unlimited number
+    of times
+    """
+
+    exclude_limited_upgradable: bool | None = None
+    """Pass True to exclude gifts that can be purchased a limited number of
+    times and can be upgraded to unique
+    """
+
+    exclude_limited_non_upgradable: bool | None = None
+    """Pass True to exclude gifts that can be purchased a limited number of
+    times and can't be upgraded to unique
+    """
+
+    exclude_from_blockchain: bool | None = None
+    """Pass True to exclude gifts that were assigned from the TON
+    blockchain and can't be resold or transferred in Telegram
+    """
+
+    exclude_unique: bool | None = None
+    """Pass True to exclude unique gifts"""
+
+    sort_by_price: bool | None = None
+    """Pass True to sort results by gift price instead of send date.
+    Sorting is applied before pagination.
+    """
+
+    offset: str | None = None
+    """Offset of the first entry to return as received from the previous
+    request; use an empty string to get the first chunk of results
+    """
+
+    limit: int | None = None
+    """The maximum number of gifts to be returned; 1-100. Defaults to 100."""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> OwnedGifts:
+        return conn.do(
+            "getUserGifts",
+            self._payload(),
+            TypeAdapter(OwnedGifts),
+        )
+
+
+class GetChatGiftsMethod(BaseModel):
+    """Returns the gifts owned by a chat. Returns OwnedGifts on success.
+
+    See https://core.telegram.org/bots/api#getchatgifts
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    exclude_unsaved: bool | None = None
+    """Pass True to exclude gifts that aren't saved to the chat's profile
+    page. Always True, unless the bot has the can_post_messages
+    administrator right in the channel.
+    """
+
+    exclude_saved: bool | None = None
+    """Pass True to exclude gifts that are saved to the chat's profile
+    page. Always False, unless the bot has the can_post_messages
+    administrator right in the channel.
+    """
+
+    exclude_unlimited: bool | None = None
+    """Pass True to exclude gifts that can be purchased an unlimited number
+    of times
+    """
+
+    exclude_limited_upgradable: bool | None = None
+    """Pass True to exclude gifts that can be purchased a limited number of
+    times and can be upgraded to unique
+    """
+
+    exclude_limited_non_upgradable: bool | None = None
+    """Pass True to exclude gifts that can be purchased a limited number of
+    times and can't be upgraded to unique
+    """
+
+    exclude_from_blockchain: bool | None = None
+    """Pass True to exclude gifts that were assigned from the TON
+    blockchain and can't be resold or transferred in Telegram
+    """
+
+    exclude_unique: bool | None = None
+    """Pass True to exclude unique gifts"""
+
+    sort_by_price: bool | None = None
+    """Pass True to sort results by gift price instead of send date.
+    Sorting is applied before pagination.
+    """
+
+    offset: str | None = None
+    """Offset of the first entry to return as received from the previous
+    request; use an empty string to get the first chunk of results
+    """
+
+    limit: int | None = None
+    """The maximum number of gifts to be returned; 1-100. Defaults to 100."""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> OwnedGifts:
+        return conn.do(
+            "getChatGifts",
+            self._payload(),
+            TypeAdapter(OwnedGifts),
+        )
+
+
+class ConvertGiftToStarsMethod(BaseModel):
+    """Converts a given regular gift to Telegram Stars. Requires the
+    can_convert_gifts_to_stars business bot right. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#convertgifttostars
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    owned_gift_id: str
+    """Unique identifier of the regular gift that should be converted to
+    Telegram Stars
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "convertGiftToStars",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class UpgradeGiftMethod(BaseModel):
+    """Upgrades a given regular gift to a unique gift. Requires the
+    can_transfer_and_upgrade_gifts business bot right. Additionally
+    requires the can_transfer_stars business bot right if the upgrade is
+    paid. Returns True on success.
+
+    See https://core.telegram.org/bots/api#upgradegift
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    owned_gift_id: str
+    """Unique identifier of the regular gift that should be upgraded to a
+    unique one
+    """
+
+    keep_original_details: bool | None = None
+    """Pass True to keep the original gift text, sender and receiver in the
+    upgraded gift
+    """
+
+    star_count: int | None = None
+    """The amount of Telegram Stars that will be paid for the upgrade from
+    the business account balance. If gift.prepaid_upgrade_star_count >
+    0, then pass 0, otherwise, the can_transfer_stars business bot right
+    is required and gift.upgrade_star_count must be passed.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "upgradeGift",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class TransferGiftMethod(BaseModel):
+    """Transfers an owned unique gift to another user. Requires the
+    can_transfer_and_upgrade_gifts business bot right. Requires
+    can_transfer_stars business bot right if the transfer is paid.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#transfergift
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    owned_gift_id: str
+    """Unique identifier of the regular gift that should be transferred"""
+
+    new_owner_chat_id: int
+    """Unique identifier of the chat which will own the gift. The chat must
+    be active in the last 24 hours.
+    """
+
+    star_count: int | None = None
+    """The amount of Telegram Stars that will be paid for the transfer from
+    the business account balance. If positive, then the
+    can_transfer_stars business bot right is required.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "transferGift",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: poststory (method reaching a file)
+
+
+class RepostStoryMethod(BaseModel):
+    """Reposts a story on behalf of a business account from another
+    business account. Both business accounts must be managed by the same
+    bot, and the story on the source account must have been posted (or
+    reposted) by the bot. Requires the can_manage_stories business bot
+    right for both business accounts. Returns Story on success.
+
+    See https://core.telegram.org/bots/api#repoststory
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    from_chat_id: int
+    """Unique identifier of the chat which posted the story that should be
+    reposted
+    """
+
+    from_story_id: int
+    """Unique identifier of the story that should be reposted"""
+
+    active_period: int
+    """Period after which the story is moved to the archive, in seconds;
+    must be one of 6 * 3600, 12 * 3600, 86400, or 2 * 86400
+    """
+
+    post_to_chat_page: bool | None = None
+    """Pass True to keep the story accessible after it expires"""
+
+    protect_content: bool | None = None
+    """Pass True if the content of the story must be protected from
+    forwarding and screenshotting
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Story:
+        return conn.do(
+            "repostStory",
+            self._payload(),
+            TypeAdapter(Story),
+        )
+# TODO: editstory (method reaching a file)
+
+
+class DeleteStoryMethod(BaseModel):
+    """Deletes a story previously posted by the bot on behalf of a managed
+    business account. Requires the can_manage_stories business bot
+    right. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletestory
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    story_id: int
+    """Unique identifier of the story to delete"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteStory",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: answerwebappquery (method reaching a file)
+# TODO: savepreparedinlinemessage (method reaching a file)
+
+
+class SavePreparedKeyboardButtonMethod(BaseModel):
+    """Stores a keyboard button that can be used by a user within a Mini
+    App. Returns a PreparedKeyboardButton object.
+
+    See https://core.telegram.org/bots/api#savepreparedkeyboardbutton
+    """
+
+    user_id: int
+    """Unique identifier of the target user that can use the button"""
+
+    button: KeyboardButton
+    """A JSON-serialized object describing the button to be saved. The
+    button must be of the type request_users, request_chat, or
+    request_managed_bot.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> PreparedKeyboardButton:
+        return conn.do(
+            "savePreparedKeyboardButton",
+            self._payload(),
+            TypeAdapter(PreparedKeyboardButton),
+        )
+# TODO: editmessagetext (method reaching a file)
+
+
+class EditMessageCaptionMethod(BaseModel):
+    """Use this method to edit captions of messages. On success, if the
+    edited message is not an inline message, the edited Message is
+    returned, otherwise True is returned. Note that business messages
+    that were not sent by the bot and do not contain an inline keyboard
+    can only be edited within 48 hours from the time they were sent.
+
+    See https://core.telegram.org/bots/api#editmessagecaption
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    chat_id: ChatID | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat or username of the target bot, supergroup or
+    channel in the format @username.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    message to edit.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    caption: str | None = None
+    """New caption of the message, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media.
+    Supported only for animation, photo and video messages.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "editMessageCaption",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
+# TODO: editmessagemedia (method reaching a file)
+
+
+class EditMessageLiveLocationMethod(BaseModel):
+    """Use this method to edit live location messages. A location can be
+    edited until its live_period expires or editing is explicitly
+    disabled by a call to stopMessageLiveLocation. On success, if the
+    edited message is not an inline message, the edited Message is
+    returned, otherwise True is returned.
+
+    See https://core.telegram.org/bots/api#editmessagelivelocation
+    """
+
+    latitude: float
+    """Latitude of new location"""
+
+    longitude: float
+    """Longitude of new location"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    chat_id: ChatID | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat or username of the target bot, supergroup or
+    channel in the format @username.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    message to edit.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    live_period: int | None = None
+    """New period in seconds during which the location can be updated,
+    starting from the message send date. If 0x7FFFFFFF is specified,
+    then the location can be updated forever. Otherwise, the new value
+    must not exceed the current live_period by more than a day, and the
+    live location expiration date must remain within the next 90 days.
+    If not specified, then live_period remains unchanged.
+    """
+
+    horizontal_accuracy: float | None = None
+    """The radius of uncertainty for the location, measured in meters;
+    0-1500
+    """
+
+    heading: int | None = None
+    """Direction in which the user is moving, in degrees. Must be between 1
+    and 360 if specified.
+    """
+
+    proximity_alert_radius: int | None = None
+    """The maximum distance for proximity alerts about approaching another
+    chat member, in meters. Must be between 1 and 100000 if specified.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for a new inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "editMessageLiveLocation",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
+
+
+class StopMessageLiveLocationMethod(BaseModel):
+    """Use this method to stop updating a live location message before
+    live_period expires. On success, if the message is not an inline
+    message, the edited Message is returned, otherwise True is returned.
+
+    See https://core.telegram.org/bots/api#stopmessagelivelocation
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    chat_id: ChatID | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat or username of the target bot, supergroup or
+    channel in the format @username.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    message with live location to stop.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for a new inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "stopMessageLiveLocation",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
+
+
+class EditMessageChecklistMethod(BaseModel):
+    """Use this method to edit a checklist on behalf of a connected
+    business account. On success, the edited Message is returned.
+
+    See https://core.telegram.org/bots/api#editmessagechecklist
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot
+    in the format @username
+    """
+
+    message_id: int
+    """Unique identifier for the target message"""
+
+    checklist: InputChecklist
+    """A JSON-serialized object for the new checklist"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for the new inline keyboard for the message"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "editMessageChecklist",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class EditMessageReplyMarkupMethod(BaseModel):
+    """Use this method to edit only the reply markup of messages. On
+    success, if the edited message is not an inline message, the edited
+    Message is returned, otherwise True is returned. Note that business
+    messages that were not sent by the bot and do not contain an inline
+    keyboard can only be edited within 48 hours from the time they were
+    sent.
+
+    See https://core.telegram.org/bots/api#editmessagereplymarkup
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    chat_id: ChatID | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat or username of the target bot, supergroup or
+    channel in the format @username.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    message to edit.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "editMessageReplyMarkup",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
+
+
+class StopPollMethod(BaseModel):
+    """Use this method to stop a poll which was sent by the bot. On
+    success, the stopped Poll is returned.
+
+    See https://core.telegram.org/bots/api#stoppoll
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    message_id: int
+    """Identifier of the original message with the poll"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for a new message inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Poll:
+        return conn.do(
+            "stopPoll",
+            self._payload(),
+            TypeAdapter(Poll),
+        )
+
+
+class EditEphemeralMessageTextMethod(BaseModel):
+    """Use this method to edit an ephemeral text message. Note that it is
+    not guaranteed that the user will receive the message edit event,
+    especially if they are offline. On success, True is returned.
+
+    See https://core.telegram.org/bots/api#editephemeralmessagetext
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    receiver_user_id: int
+    """Identifier of the user who received the message"""
+
+    ephemeral_message_id: int
+    """Identifier of the ephemeral message to edit"""
+
+    text: str
+    """New text of the message, 1-4096 characters after entity parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message text. See formatting
+    options for more details.
+    """
+
+    entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in message
+    text, which can be specified instead of parse_mode
+    """
+
+    link_preview_options: LinkPreviewOptions | None = None
+    """Link preview generation options for the message"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editEphemeralMessageText",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: editephemeralmessagemedia (method reaching a file)
+
+
+class EditEphemeralMessageCaptionMethod(BaseModel):
+    """Use this method to edit the caption of an ephemeral message. Note
+    that it is not guaranteed that the user will receive the message
+    edit event, especially if they are offline. On success, True is
+    returned.
+
+    See https://core.telegram.org/bots/api#editephemeralmessagecaption
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    receiver_user_id: int
+    """Identifier of the user who received the message"""
+
+    ephemeral_message_id: int
+    """Identifier of the ephemeral message to edit"""
+
+    caption: str | None = None
+    """New caption of the message, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editEphemeralMessageCaption",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class EditEphemeralMessageReplyMarkupMethod(BaseModel):
+    """Use this method to edit only the reply markup of an ephemeral
+    message. Note that it is not guaranteed that the user will receive
+    the message edit event, especially if they are offline. On success,
+    True is returned.
+
+    See
+    https://core.telegram.org/bots/api#editephemeralmessagereplymarkup
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    receiver_user_id: int
+    """Identifier of the user who received the message"""
+
+    ephemeral_message_id: int
+    """Identifier of the ephemeral message to edit"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editEphemeralMessageReplyMarkup",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class ApproveSuggestedPostMethod(BaseModel):
+    """Use this method to approve a suggested post in a direct messages
+    chat. The bot must have the 'can_post_messages' administrator right
+    in the corresponding channel chat. Returns True on success.
+
+    See https://core.telegram.org/bots/api#approvesuggestedpost
+    """
+
+    chat_id: int
+    """Unique identifier for the target direct messages chat"""
+
+    message_id: int
+    """Identifier of a suggested post message to approve"""
+
+    send_date: int | None = None
+    """Point in time (Unix timestamp) when the post is expected to be
+    published; omit if the date has already been specified when the
+    suggested post was created. If specified, then the date must be not
+    more than 2678400 seconds (30 days) in the future.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "approveSuggestedPost",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeclineSuggestedPostMethod(BaseModel):
+    """Use this method to decline a suggested post in a direct messages
+    chat. The bot must have the 'can_manage_direct_messages'
+    administrator right in the corresponding channel chat. Returns True
+    on success.
+
+    See https://core.telegram.org/bots/api#declinesuggestedpost
+    """
+
+    chat_id: int
+    """Unique identifier for the target direct messages chat"""
+
+    message_id: int
+    """Identifier of a suggested post message to decline"""
+
+    comment: str | None = None
+    """Comment for the creator of the suggested post; 0-128 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "declineSuggestedPost",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteMessageMethod(BaseModel):
+    """Use this method to delete a message, including service messages,
+    with the following limitations:
+    - A message can only be deleted if it was sent less than 48 hours
+    ago.
+    - Service messages about a supergroup, channel, or forum topic
+    creation can't be deleted.
+    - A dice message in a private chat can only be deleted if it was
+    sent more than 24 hours ago.
+    - Bots can delete outgoing messages in private chats, groups, and
+    supergroups.
+    - Bots can delete incoming messages in private chats.
+    - Bots granted can_post_messages permissions can delete outgoing
+    messages in channels.
+    - If the bot is an administrator of a group, it can delete any
+    message there.
+    - If the bot has can_delete_messages administrator right in a
+    supergroup or a channel, it can delete any message there.
+    - If the bot has can_manage_direct_messages administrator right in a
+    channel, it can delete any message in the corresponding direct
+    messages chat.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletemessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    message_id: int
+    """Identifier of the message to delete"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteMessage",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteMessagesMethod(BaseModel):
+    """Use this method to delete multiple messages simultaneously. If some
+    of the specified messages can't be found, they are skipped. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#deletemessages
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    message_ids: list[int]
+    """A JSON-serialized list of 1-100 identifiers of messages to delete.
+    See deleteMessage for limitations on which messages can be deleted.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteMessages",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteEphemeralMessageMethod(BaseModel):
+    """Use this method to delete an ephemeral message. Note that it is not
+    guaranteed that the user will receive the message deletion event,
+    especially if they are offline. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deleteephemeralmessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    receiver_user_id: int
+    """Identifier of the user who received the message"""
+
+    ephemeral_message_id: int
+    """Identifier of the ephemeral message to delete"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteEphemeralMessage",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteMessageReactionMethod(BaseModel):
+    """Use this method to remove a reaction from a message in a group or a
+    supergroup chat. The bot must have the 'can_delete_messages'
+    administrator right in the chat. Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletemessagereaction
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    message_id: int
+    """Identifier of the target message"""
+
+    user_id: int | None = None
+    """Identifier of the user whose reaction will be removed, if the
+    reaction was added by a user
+    """
+
+    actor_chat_id: int | None = None
+    """Identifier of the chat whose reaction will be removed, if the
+    reaction was added by a chat
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteMessageReaction",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteAllMessageReactionsMethod(BaseModel):
+    """Use this method to remove up to 10000 recent reactions in a group or
+    a supergroup chat added by a given user or chat. The bot must have
+    the 'can_delete_messages' administrator right in the chat. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#deleteallmessagereactions
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    user_id: int | None = None
+    """Identifier of the user whose reactions will be removed, if the
+    reactions were added by a user
+    """
+
+    actor_chat_id: int | None = None
+    """Identifier of the chat whose reactions will be removed, if the
+    reactions were added by a chat
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteAllMessageReactions",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class Sticker(BaseModel):
@@ -7141,22 +12382,273 @@ class InputSticker(BaseModel):
     """List of 0-20 search keywords for the sticker with total length of up
     to 64 characters. For “regular” and “custom_emoji” stickers only.
     """
-# TODO: sendsticker (method)
-# TODO: getstickerset (method)
-# TODO: getcustomemojistickers (method)
-# TODO: uploadstickerfile (method)
-# TODO: createnewstickerset (method)
-# TODO: addstickertoset (method)
-# TODO: setstickerpositioninset (method)
-# TODO: deletestickerfromset (method)
-# TODO: replacestickerinset (method)
-# TODO: setstickeremojilist (method)
-# TODO: setstickerkeywords (method)
-# TODO: setstickermaskposition (method)
-# TODO: setstickersettitle (method)
-# TODO: setstickersetthumbnail (method)
-# TODO: setcustomemojistickersetthumbnail (method)
-# TODO: deletestickerset (method)
+# TODO: sendsticker (method reaching a file)
+
+
+class GetStickerSetMethod(BaseModel):
+    """Use this method to get a sticker set. On success, a StickerSet
+    object is returned.
+
+    See https://core.telegram.org/bots/api#getstickerset
+    """
+
+    name: str
+    """Name of the sticker set"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> StickerSet:
+        return conn.do(
+            "getStickerSet",
+            self._payload(),
+            TypeAdapter(StickerSet),
+        )
+
+
+class GetCustomEmojiStickersMethod(BaseModel):
+    """Use this method to get information about custom emoji stickers by
+    their identifiers. Returns an Array of Sticker objects.
+
+    See https://core.telegram.org/bots/api#getcustomemojistickers
+    """
+
+    custom_emoji_ids: list[str]
+    """A JSON-serialized list of custom emoji identifiers. At most 200
+    custom emoji identifiers can be specified.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[Sticker]:
+        return conn.do(
+            "getCustomEmojiStickers",
+            self._payload(),
+            TypeAdapter(list[Sticker]),
+        )
+# TODO: uploadstickerfile (method reaching a file)
+# TODO: createnewstickerset (method reaching a file)
+# TODO: addstickertoset (method reaching a file)
+
+
+class SetStickerPositionInSetMethod(BaseModel):
+    """Use this method to move a sticker in a set created by the bot to a
+    specific position. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setstickerpositioninset
+    """
+
+    sticker: str
+    """File identifier of the sticker"""
+
+    position: int
+    """New sticker position in the set, zero-based"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setStickerPositionInSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteStickerFromSetMethod(BaseModel):
+    """Use this method to delete a sticker from a set created by the bot.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletestickerfromset
+    """
+
+    sticker: str
+    """File identifier of the sticker"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteStickerFromSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: replacestickerinset (method reaching a file)
+
+
+class SetStickerEmojiListMethod(BaseModel):
+    """Use this method to change the list of emoji assigned to a regular or
+    custom emoji sticker. The sticker must belong to a sticker set
+    created by the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setstickeremojilist
+    """
+
+    sticker: str
+    """File identifier of the sticker"""
+
+    emoji_list: list[str]
+    """A JSON-serialized list of 1-20 emoji associated with the sticker"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setStickerEmojiList",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetStickerKeywordsMethod(BaseModel):
+    """Use this method to change search keywords assigned to a regular or
+    custom emoji sticker. The sticker must belong to a sticker set
+    created by the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setstickerkeywords
+    """
+
+    sticker: str
+    """File identifier of the sticker"""
+
+    keywords: list[str] | None = None
+    """A JSON-serialized list of 0-20 search keywords for the sticker with
+    total length of up to 64 characters
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setStickerKeywords",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetStickerMaskPositionMethod(BaseModel):
+    """Use this method to change the mask position of a mask sticker. The
+    sticker must belong to a sticker set that was created by the bot.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#setstickermaskposition
+    """
+
+    sticker: str
+    """File identifier of the sticker"""
+
+    mask_position: MaskPosition | None = None
+    """A JSON-serialized object with the position where the mask should be
+    placed on faces. Omit the parameter to remove the mask position.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setStickerMaskPosition",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class SetStickerSetTitleMethod(BaseModel):
+    """Use this method to set the title of a created sticker set. Returns
+    True on success.
+
+    See https://core.telegram.org/bots/api#setstickersettitle
+    """
+
+    name: str
+    """Sticker set name"""
+
+    title: str
+    """Sticker set title, 1-64 characters"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setStickerSetTitle",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+# TODO: setstickersetthumbnail (method reaching a file)
+
+
+class SetCustomEmojiStickerSetThumbnailMethod(BaseModel):
+    """Use this method to set the thumbnail of a custom emoji sticker set.
+    Returns True on success.
+
+    See
+    https://core.telegram.org/bots/api#setcustomemojistickersetthumbnail
+    """
+
+    name: str
+    """Sticker set name"""
+
+    custom_emoji_id: str | None = None
+    """Custom emoji identifier of a sticker from the sticker set; pass an
+    empty string to drop the thumbnail and use the first sticker as the
+    thumbnail
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setCustomEmojiStickerSetThumbnail",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class DeleteStickerSetMethod(BaseModel):
+    """Use this method to delete a sticker set that was created by the bot.
+    Returns True on success.
+
+    See https://core.telegram.org/bots/api#deletestickerset
+    """
+
+    name: str
+    """Sticker set name"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "deleteStickerSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class RichMessage(BaseModel):
@@ -7225,8 +12717,8 @@ class InputRichMessageMedia(BaseModel):
     """The media to be sent. Everything except the media itself and its
     properties is ignored.
     """
-# TODO: sendrichmessage (method)
-# TODO: sendrichmessagedraft (method)
+# TODO: sendrichmessage (method reaching a file)
+# TODO: sendrichmessagedraft (method reaching a file)
 
 
 type RichText = (
@@ -8468,7 +13960,7 @@ class InlineQuery(BaseModel):
 
     location: Location | None = None
     """Sender location, only for bots that request user location"""
-# TODO: answerinlinequery (method)
+# TODO: answerinlinequery (method reaching a file)
 
 
 class InlineQueryResultsButton(BaseModel):
@@ -9776,14 +15268,510 @@ class ChosenInlineResult(BaseModel):
     inline keyboard attached to the message. Will be also received in
     callback queries and can be used to edit the message.
     """
-# TODO: sendinvoice (method)
-# TODO: createinvoicelink (method)
-# TODO: answershippingquery (method)
-# TODO: answerprecheckoutquery (method)
-# TODO: getmystarbalance (method)
-# TODO: getstartransactions (method)
-# TODO: refundstarpayment (method)
-# TODO: edituserstarsubscription (method)
+
+
+class SendInvoiceMethod(BaseModel):
+    """Use this method to send invoices. On success, the sent Message is
+    returned.
+
+    See https://core.telegram.org/bots/api#sendinvoice
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    title: str
+    """Product name, 1-32 characters"""
+
+    description: str
+    """Product description, 1-255 characters"""
+
+    payload: str
+    """Bot-defined invoice payload, 1-128 bytes. This will not be displayed
+    to the user, use it for your internal processes.
+    """
+
+    currency: str
+    """Three-letter ISO 4217 currency code, see more on currencies. Pass
+    “XTR” for payments in Telegram Stars.
+    """
+
+    prices: list[LabeledPrice]
+    """Price breakdown, a JSON-serialized list of components (e.g. product
+    price, tax, discount, delivery cost, delivery tax, bonus, etc.).
+    Must contain exactly one item for payments in Telegram Stars.
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    provider_token: str | None = None
+    """Payment provider token, obtained via @BotFather. Pass an empty
+    string for payments in Telegram Stars.
+    """
+
+    max_tip_amount: int | None = None
+    """The maximum accepted amount for tips in the smallest units of the
+    currency (integer, not float/double). For example, for a maximum tip
+    of US$ 1.45 pass max_tip_amount = 145. See the exp parameter in
+    currencies.json, it shows the number of digits past the decimal
+    point for each currency (2 for the majority of currencies). Defaults
+    to 0. Not supported for payments in Telegram Stars.
+    """
+
+    suggested_tip_amounts: list[int] | None = None
+    """A JSON-serialized Array of suggested amounts of tips in the smallest
+    units of the currency (integer, not float/double). At most 4
+    suggested tip amounts can be specified. The suggested tip amounts
+    must be positive, passed in a strictly increased order and must not
+    exceed max_tip_amount.
+    """
+
+    start_parameter: str | None = None
+    """Unique deep-linking parameter. If left empty, forwarded copies of
+    the sent message will have a Pay button, allowing multiple users to
+    pay directly from the forwarded message, using the same invoice. If
+    non-empty, forwarded copies of the sent message will have a URL
+    button with a deep link to the bot (instead of a Pay button), with
+    the value used as the start parameter.
+    """
+
+    provider_data: str | None = None
+    """JSON-serialized data about the invoice, which will be shared with
+    the payment provider. A detailed description of required fields
+    should be provided by the payment provider.
+    """
+
+    photo_url: str | None = None
+    """URL of the product photo for the invoice. Can be a photo of the
+    goods or a marketing image for a service. People like it better when
+    they see what they are paying for.
+    """
+
+    photo_size: int | None = None
+    """Photo size in bytes"""
+
+    photo_width: int | None = None
+    """Photo width"""
+
+    photo_height: int | None = None
+    """Photo height"""
+
+    need_name: bool | None = None
+    """Pass True if you require the user's full name to complete the order.
+    Ignored for payments in Telegram Stars.
+    """
+
+    need_phone_number: bool | None = None
+    """Pass True if you require the user's phone number to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    need_email: bool | None = None
+    """Pass True if you require the user's email address to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    need_shipping_address: bool | None = None
+    """Pass True if you require the user's shipping address to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    send_phone_number_to_provider: bool | None = None
+    """Pass True if the user's phone number should be sent to the provider.
+    Ignored for payments in Telegram Stars.
+    """
+
+    send_email_to_provider: bool | None = None
+    """Pass True if the user's email address should be sent to the
+    provider. Ignored for payments in Telegram Stars.
+    """
+
+    is_flexible: bool | None = None
+    """Pass True if the final price depends on the shipping method. Ignored
+    for payments in Telegram Stars.
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard. If empty, one 'Pay
+    total price' button will be shown. If not empty, the first button
+    must be a Pay button.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendInvoice",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class CreateInvoiceLinkMethod(BaseModel):
+    """Use this method to create a link for an invoice. Returns the created
+    invoice link as String on success.
+
+    See https://core.telegram.org/bots/api#createinvoicelink
+    """
+
+    title: str
+    """Product name, 1-32 characters"""
+
+    description: str
+    """Product description, 1-255 characters"""
+
+    payload: str
+    """Bot-defined invoice payload, 1-128 bytes. This will not be displayed
+    to the user, use it for your internal processes.
+    """
+
+    currency: str
+    """Three-letter ISO 4217 currency code, see more on currencies. Pass
+    “XTR” for payments in Telegram Stars.
+    """
+
+    prices: list[LabeledPrice]
+    """Price breakdown, a JSON-serialized list of components (e.g. product
+    price, tax, discount, delivery cost, delivery tax, bonus, etc.).
+    Must contain exactly one item for payments in Telegram Stars.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    link will be created. For payments in Telegram Stars only.
+    """
+
+    provider_token: str | None = None
+    """Payment provider token, obtained via @BotFather. Pass an empty
+    string for payments in Telegram Stars.
+    """
+
+    subscription_period: int | None = None
+    """The number of seconds the subscription will be active for before the
+    next payment. The currency must be set to “XTR” (Telegram Stars) if
+    the parameter is used. Currently, it must always be 2592000 (30
+    days) if specified. Any number of subscriptions can be active for a
+    given bot at the same time, including multiple concurrent
+    subscriptions from the same user. Subscription price must no exceed
+    10000 Telegram Stars.
+    """
+
+    max_tip_amount: int | None = None
+    """The maximum accepted amount for tips in the smallest units of the
+    currency (integer, not float/double). For example, for a maximum tip
+    of US$ 1.45 pass max_tip_amount = 145. See the exp parameter in
+    currencies.json, it shows the number of digits past the decimal
+    point for each currency (2 for the majority of currencies). Defaults
+    to 0. Not supported for payments in Telegram Stars.
+    """
+
+    suggested_tip_amounts: list[int] | None = None
+    """A JSON-serialized Array of suggested amounts of tips in the smallest
+    units of the currency (integer, not float/double). At most 4
+    suggested tip amounts can be specified. The suggested tip amounts
+    must be positive, passed in a strictly increased order and must not
+    exceed max_tip_amount.
+    """
+
+    provider_data: str | None = None
+    """JSON-serialized data about the invoice, which will be shared with
+    the payment provider. A detailed description of required fields
+    should be provided by the payment provider.
+    """
+
+    photo_url: str | None = None
+    """URL of the product photo for the invoice. Can be a photo of the
+    goods or a marketing image for a service.
+    """
+
+    photo_size: int | None = None
+    """Photo size in bytes"""
+
+    photo_width: int | None = None
+    """Photo width"""
+
+    photo_height: int | None = None
+    """Photo height"""
+
+    need_name: bool | None = None
+    """Pass True if you require the user's full name to complete the order.
+    Ignored for payments in Telegram Stars.
+    """
+
+    need_phone_number: bool | None = None
+    """Pass True if you require the user's phone number to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    need_email: bool | None = None
+    """Pass True if you require the user's email address to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    need_shipping_address: bool | None = None
+    """Pass True if you require the user's shipping address to complete the
+    order. Ignored for payments in Telegram Stars.
+    """
+
+    send_phone_number_to_provider: bool | None = None
+    """Pass True if the user's phone number should be sent to the provider.
+    Ignored for payments in Telegram Stars.
+    """
+
+    send_email_to_provider: bool | None = None
+    """Pass True if the user's email address should be sent to the
+    provider. Ignored for payments in Telegram Stars.
+    """
+
+    is_flexible: bool | None = None
+    """Pass True if the final price depends on the shipping method. Ignored
+    for payments in Telegram Stars.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> str:
+        return conn.do(
+            "createInvoiceLink",
+            self._payload(),
+            TypeAdapter(str),
+        )
+
+
+class AnswerShippingQueryMethod(BaseModel):
+    """If you sent an invoice requesting a shipping address and the
+    parameter is_flexible was specified, the Bot API will send an Update
+    with a shipping_query field to the bot. Use this method to reply to
+    shipping queries. On success, True is returned.
+
+    See https://core.telegram.org/bots/api#answershippingquery
+    """
+
+    shipping_query_id: str
+    """Unique identifier for the query to be answered"""
+
+    ok: bool
+    """Pass True if delivery to the specified address is possible and False
+    if there are any problems (for example, if delivery to the specified
+    address is not possible)
+    """
+
+    shipping_options: list[ShippingOption] | None = None
+    """Required if ok is True. A JSON-serialized Array of available
+    shipping options.
+    """
+
+    error_message: str | None = None
+    """Required if ok is False. Error message in human readable form that
+    explains why it is impossible to complete the order (e.g. “Sorry,
+    delivery to your desired address is unavailable”). Telegram will
+    display this message to the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "answerShippingQuery",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class AnswerPreCheckoutQueryMethod(BaseModel):
+    """Once the user has confirmed their payment and shipping details, the
+    Bot API sends the final confirmation in the form of an Update with
+    the field pre_checkout_query. Use this method to respond to such
+    pre-checkout queries. On success, True is returned. Note: The Bot
+    API must receive an answer within 10 seconds after the pre-checkout
+    query was sent.
+
+    See https://core.telegram.org/bots/api#answerprecheckoutquery
+    """
+
+    pre_checkout_query_id: str
+    """Unique identifier for the query to be answered"""
+
+    ok: bool
+    """Specify True if everything is alright (goods are available, etc.)
+    and the bot is ready to proceed with the order. Use False if there
+    are any problems.
+    """
+
+    error_message: str | None = None
+    """Required if ok is False. Error message in human readable form that
+    explains the reason for failure to proceed with the checkout (e.g.
+    "Sorry, somebody just bought the last of our amazing black T-shirts
+    while you were busy filling out your payment details. Please choose
+    a different color or garment!"). Telegram will display this message
+    to the user.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "answerPreCheckoutQuery",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class GetMyStarBalanceMethod(BaseModel):
+    """A method to get the current Telegram Stars balance of the bot.
+    Requires no parameters. On success, returns a StarAmount object.
+
+    See https://core.telegram.org/bots/api#getmystarbalance
+    """
+
+    def _payload(self) -> Payload:
+        return _EmptyPayload()
+
+    def call(self, conn: Connection) -> StarAmount:
+        return conn.do(
+            "getMyStarBalance",
+            self._payload(),
+            TypeAdapter(StarAmount),
+        )
+
+
+class GetStarTransactionsMethod(BaseModel):
+    """Returns the bot's Telegram Star transactions in chronological order.
+    On success, returns a StarTransactions object.
+
+    See https://core.telegram.org/bots/api#getstartransactions
+    """
+
+    offset: int | None = None
+    """Number of transactions to skip in the response"""
+
+    limit: int | None = None
+    """The maximum number of transactions to be retrieved. Values between
+    1-100 are accepted. Defaults to 100.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> StarTransactions:
+        return conn.do(
+            "getStarTransactions",
+            self._payload(),
+            TypeAdapter(StarTransactions),
+        )
+
+
+class RefundStarPaymentMethod(BaseModel):
+    """Refunds a successful payment in Telegram Stars. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#refundstarpayment
+    """
+
+    user_id: int
+    """Identifier of the user whose payment will be refunded"""
+
+    telegram_payment_charge_id: str
+    """Telegram payment identifier"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "refundStarPayment",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class EditUserStarSubscriptionMethod(BaseModel):
+    """Allows the bot to cancel or re-enable extension of a subscription
+    paid in Telegram Stars. Returns True on success.
+
+    See https://core.telegram.org/bots/api#edituserstarsubscription
+    """
+
+    user_id: int
+    """Identifier of the user whose subscription will be edited"""
+
+    telegram_payment_charge_id: str
+    """Telegram payment identifier for the subscription"""
+
+    is_canceled: bool
+    """Pass True to cancel extension of the user subscription; the
+    subscription must be active up to the end of the current
+    subscription period. Pass False to allow the user to re-enable a
+    subscription that was previously canceled by the bot.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editUserStarSubscription",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class LabeledPrice(BaseModel):
@@ -10462,7 +16450,41 @@ class EncryptedCredentials(BaseModel):
     """Base64-encoded secret, encrypted with the bot's public RSA key,
     required for data decryption
     """
-# TODO: setpassportdataerrors (method)
+
+
+class SetPassportDataErrorsMethod(BaseModel):
+    """Informs a user that some of the Telegram Passport elements they
+    provided contains errors. The user will not be able to re-submit
+    their Passport to you until the errors are fixed (the contents of
+    the field for which you returned the error must change). Returns
+    True on success.
+
+    Use this if the data submitted by the user doesn't satisfy the
+    standards your service requires for any reason. For example, if a
+    birthday date seems invalid, a submitted document is blurry, a scan
+    shows evidence of tampering, etc. Supply some details in the error
+    message to make sure the user knows how to correct the issues.
+
+    See https://core.telegram.org/bots/api#setpassportdataerrors
+    """
+
+    user_id: int
+    """User identifier"""
+
+    errors: list[PassportElementError]
+    """A JSON-serialized Array describing the errors"""
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setPassportDataErrors",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 type PassportElementError = Annotated[
@@ -10694,7 +16716,76 @@ class PassportElementErrorUnspecified(BaseModel):
 
     message: str
     """Error message"""
-# TODO: sendgame (method)
+
+
+class SendGameMethod(BaseModel):
+    """Use this method to send a game. On success, the sent Message is
+    returned.
+
+    See https://core.telegram.org/bots/api#sendgame
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot
+    in the format @username. Games can't be sent to channel direct
+    messages chats and channel chats.
+    """
+
+    game_short_name: str
+    """Short name of the game, serves as the unique identifier for the
+    game. Set up your games via @BotFather.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard. If empty, one 'Play
+    game_title' button will be shown. If not empty, the first button
+    must launch the game.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendGame",
+            self._payload(),
+            TypeAdapter(Message),
+        )
 
 
 class Game(BaseModel):
@@ -10737,8 +16828,104 @@ class CallbackGame(BaseModel):
 
     See https://core.telegram.org/bots/api#callbackgame
     """
-# TODO: setgamescore (method)
-# TODO: getgamehighscores (method)
+
+
+class SetGameScoreMethod(BaseModel):
+    """Use this method to set the score of the specified user in a game
+    message. On success, if the message is not an inline message, the
+    Message is returned, otherwise True is returned. Returns an error,
+    if the new score is not greater than the user's current score in the
+    chat and force is False.
+
+    See https://core.telegram.org/bots/api#setgamescore
+    """
+
+    user_id: int
+    """User identifier"""
+
+    score: int
+    """New score, must be non-negative"""
+
+    force: bool | None = None
+    """Pass True if the high score is allowed to decrease. This can be
+    useful when fixing mistakes or banning cheaters.
+    """
+
+    disable_edit_message: bool | None = None
+    """Pass True if the game message should not be automatically edited to
+    include the current scoreboard
+    """
+
+    chat_id: int | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    sent message.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "setGameScore",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
+
+
+class GetGameHighScoresMethod(BaseModel):
+    """Use this method to get data for high score tables. Will return the
+    score of the specified user and several of their neighbors in a
+    game. Returns an Array of GameHighScore objects.
+
+    This method will currently return scores for the target user, plus
+    two of their closest neighbors on each side. Will also return the
+    top three users if the user and their neighbors are not among them.
+    Please note that this behavior is subject to change.
+
+    See https://core.telegram.org/bots/api#getgamehighscores
+    """
+
+    user_id: int
+    """Target user id"""
+
+    chat_id: int | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    sent message.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    def _payload(self) -> Payload:
+        return _JSONPayload(
+            self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+
+    def call(self, conn: Connection) -> list[GameHighScore]:
+        return conn.do(
+            "getGameHighScores",
+            self._payload(),
+            TypeAdapter(list[GameHighScore]),
+        )
 
 
 class GameHighScore(BaseModel):

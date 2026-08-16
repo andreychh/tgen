@@ -1,0 +1,30 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	method writes one API method: the model holding its parameters, the payload
+	method assembling the request on its own, and the call joining that payload
+	to the connection. The two are parted rather than written as one body, so
+	that what a method puts on the wire can be read — and tested — without a
+	connection to hand it to.
+
+	The parameters are declared the way an object's fields are, since the
+	documentation describes them the same way and the pipeline merges the two
+	into one table long before a target sees them.
+*/}}
+{{- define "method"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+
+class {{.Name}}(BaseModel):
+    {{.Doc}}
+{{- range .Fields}}
+
+    {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
+    {{.Doc}}
+{{- end}}
+
+    def _payload(self) -> Payload:
+{{- render .Payload.Template .}}
+
+    def call(self, conn: Connection) -> {{.Return.Signature}}:
+{{- render .Return.Template .}}
+{{- end}}
