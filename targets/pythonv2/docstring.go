@@ -37,6 +37,12 @@ func NewClassDocstring(passage prose.Passage) Docstring {
 	return NewDocstring(passage, 4)
 }
 
+// NewStatementDocstring creates a Docstring for a name declared by a statement
+// at the margin of the module, which nothing indents.
+func NewStatementDocstring(passage prose.Passage) Docstring {
+	return NewDocstring(passage, 0)
+}
+
 // NewFieldDocstring creates a Docstring for a name declared inside a class. A
 // field is described by a table cell, which holds inline prose only, so its one
 // phrase becomes the single paragraph of a passage.

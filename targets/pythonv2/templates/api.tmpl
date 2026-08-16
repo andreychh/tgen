@@ -22,7 +22,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated
+
+from pydantic import BaseModel, Field, RootModel
 {{- range .Spec.Definitions}}
 {{render (override .Ref .Template) .}}
 {{- end}}

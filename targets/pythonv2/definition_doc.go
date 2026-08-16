@@ -26,20 +26,20 @@ func NewDefinitionDoc(ref model.Reference, passage prose.Passage, introduced boo
 	return DefinitionDoc{ref: ref, passage: passage, introduced: introduced}
 }
 
-// Value returns the docstring, closing with the URL of the section unless tgen
-// introduced the definition, which the page never named and so gave no section
-// to address.
-func (d DefinitionDoc) Value() string {
+// Passage returns the prose describing the definition, closed by the URL of the
+// section unless tgen introduced it, which the page never named and so gave no
+// section to address. What indentation the prose is written at belongs to
+// [Docstring], since it follows from where the declaration stands and not from
+// what the documentation says.
+func (d DefinitionDoc) Passage() prose.Passage {
 	if d.introduced {
-		return NewClassDocstring(d.passage).Value()
+		return d.passage
 	}
-	return NewClassDocstring(
-		prose.NewPassage(append(
-			slices.Clone(d.passage.Blocks()),
-			prose.NewParagraph(prose.NewText(
-				"See "+targets.NewTelegramURL(d.ref).Value(),
-				prose.StylePlain,
-			)),
-		)...),
-	).Value()
+	return prose.NewPassage(append(
+		slices.Clone(d.passage.Blocks()),
+		prose.NewParagraph(prose.NewText(
+			"See "+targets.NewTelegramURL(d.ref).Value(),
+			prose.StylePlain,
+		)),
+	)...)
 }

@@ -23,6 +23,12 @@ func NewAnnotation(typ typebound.Type, opt model.Optionality) Annotation {
 	return Annotation{typ: typ, opt: opt}
 }
 
+// NewRequiredAnnotation creates an Annotation from a resolved type no
+// optionality applies to, such as the one an alias declares its name for.
+func NewRequiredAnnotation(typ typebound.Type) Annotation {
+	return NewAnnotation(typ, false)
+}
+
 // Value returns the annotation: the name of the atom, enclosed in one list per
 // dimension, admitting None where whatever carries it is optional. An optional
 // list and an optional single value are annotated alike, since None is a value

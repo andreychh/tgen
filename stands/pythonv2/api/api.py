@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated
+
+from pydantic import BaseModel, Field, RootModel
 
 
 class Update(BaseModel):
@@ -566,8 +568,6 @@ class Message(BaseModel):
     See https://core.telegram.org/bots/api#message
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
     message_id: int
     """Unique message identifier inside this chat; 0 for ephemeral
     messages. In specific instances (e.g., a message containing a video
@@ -1100,7 +1100,17 @@ class InaccessibleMessage(BaseModel):
     """Always 0. The field can be used to differentiate regular and
     inaccessible messages.
     """
-# TODO: maybeinaccessiblemessage (union)
+
+
+type MaybeInaccessibleMessage = (
+    Message
+    | InaccessibleMessage
+)
+"""This object describes a message that can be inaccessible to the bot. It
+can be one of
+
+See https://core.telegram.org/bots/api#maybeinaccessiblemessage
+"""
 
 
 class MessageEntity(BaseModel):
@@ -1341,7 +1351,19 @@ class ReplyParameters(BaseModel):
 
     poll_option_id: str | None = None
     """Persistent identifier of the specific poll option to be replied to"""
-# TODO: messageorigin (discriminated union)
+
+
+type MessageOrigin = Annotated[
+    MessageOriginUser
+    | MessageOriginHiddenUser
+    | MessageOriginChat
+    | MessageOriginChannel,
+    Field(discriminator="type"),
+]
+"""This object describes the origin of a message. It can be one of
+
+See https://core.telegram.org/bots/api#messageorigin
+"""
 # TODO: messageoriginuser (discriminated object)
 # TODO: messageoriginhiddenuser (discriminated object)
 # TODO: messageoriginchat (discriminated object)
@@ -1717,7 +1739,19 @@ class PaidMediaInfo(BaseModel):
 
     paid_media: list[PaidMedia]
     """Information about the paid media"""
-# TODO: paidmedia (discriminated union)
+
+
+type PaidMedia = Annotated[
+    PaidMediaLivePhoto
+    | PaidMediaPhoto
+    | PaidMediaPreview
+    | PaidMediaVideo,
+    Field(discriminator="type"),
+]
+"""This object describes paid media. Currently, it can be one of
+
+See https://core.telegram.org/bots/api#paidmedia
+"""
 # TODO: paidmedialivephoto (discriminated object)
 # TODO: paidmediaphoto (discriminated object)
 # TODO: paidmediapreview (discriminated object)
@@ -1819,8 +1853,42 @@ class PollMedia(BaseModel):
 
     video: Video | None = None
     """Media is a video, information about the video"""
-# TODO: inputpollmedia (discriminated union)
-# TODO: inputpolloptionmedia (discriminated union)
+
+
+type InputPollMedia = Annotated[
+    InputMediaAnimation
+    | InputMediaAudio
+    | InputMediaDocument
+    | InputMediaLivePhoto
+    | InputMediaLocation
+    | InputMediaPhoto
+    | InputMediaVenue
+    | InputMediaVideo,
+    Field(discriminator="type"),
+]
+"""This object represents the content of a poll description or a quiz
+explanation to be sent. It should be one of
+
+See https://core.telegram.org/bots/api#inputpollmedia
+"""
+
+
+type InputPollOptionMedia = Annotated[
+    InputMediaAnimation
+    | InputMediaLink
+    | InputMediaLivePhoto
+    | InputMediaLocation
+    | InputMediaPhoto
+    | InputMediaSticker
+    | InputMediaVenue
+    | InputMediaVideo,
+    Field(discriminator="type"),
+]
+"""This object represents the content of a poll option to be sent. It
+should be one of
+
+See https://core.telegram.org/bots/api#inputpolloptionmedia
+"""
 
 
 class PollOption(BaseModel):
@@ -2340,11 +2408,36 @@ class ChatBoostAdded(BaseModel):
 
     boost_count: int
     """Number of boosts added by the user"""
-# TODO: backgroundfill (discriminated union)
+
+
+type BackgroundFill = Annotated[
+    BackgroundFillSolid
+    | BackgroundFillGradient
+    | BackgroundFillFreeformGradient,
+    Field(discriminator="type"),
+]
+"""This object describes the way a background is filled based on the
+selected colors. Currently, it can be one of
+
+See https://core.telegram.org/bots/api#backgroundfill
+"""
 # TODO: backgroundfillsolid (discriminated object)
 # TODO: backgroundfillgradient (discriminated object)
 # TODO: backgroundfillfreeformgradient (discriminated object)
-# TODO: backgroundtype (discriminated union)
+
+
+type BackgroundType = Annotated[
+    BackgroundTypeFill
+    | BackgroundTypeWallpaper
+    | BackgroundTypePattern
+    | BackgroundTypeChatTheme,
+    Field(discriminator="type"),
+]
+"""This object describes the type of a background. Currently, it can be one
+of
+
+See https://core.telegram.org/bots/api#backgroundtype
+"""
 # TODO: backgroundtypefill (discriminated object)
 # TODO: backgroundtypewallpaper (discriminated object)
 # TODO: backgroundtypepattern (discriminated object)
@@ -3603,8 +3696,6 @@ class CallbackQuery(BaseModel):
     See https://core.telegram.org/bots/api#callbackquery
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
     id: str
     """Unique identifier for this query"""
 
@@ -3879,8 +3970,6 @@ class ChatMemberUpdated(BaseModel):
     See https://core.telegram.org/bots/api#chatmemberupdated
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
     chat: Chat
     """Chat the user belongs to"""
 
@@ -3909,7 +3998,22 @@ class ChatMemberUpdated(BaseModel):
 
     via_chat_folder_invite_link: bool | None = None
     """True, if the user joined the chat via a chat folder invite link"""
-# TODO: chatmember (discriminated union)
+
+
+type ChatMember = Annotated[
+    ChatMemberOwner
+    | ChatMemberAdministrator
+    | ChatMemberMember
+    | ChatMemberRestricted
+    | ChatMemberLeft
+    | ChatMemberBanned,
+    Field(discriminator="status"),
+]
+"""This object contains information about one member of a chat. Currently,
+the following 6 types of chat members are supported:
+
+See https://core.telegram.org/bots/api#chatmember
+"""
 # TODO: chatmemberowner (discriminated object)
 # TODO: chatmemberadministrator (discriminated object)
 # TODO: chatmembermember (discriminated object)
@@ -3923,8 +4027,6 @@ class ChatJoinRequest(BaseModel):
 
     See https://core.telegram.org/bots/api#chatjoinrequest
     """
-
-    model_config = ConfigDict(populate_by_name=True)
 
     chat: Chat
     """Chat to which the request was sent"""
@@ -4194,7 +4296,21 @@ class LocationAddress(BaseModel):
 
     street: str | None = None
     """Street address of the location"""
-# TODO: storyareatype (discriminated union)
+
+
+type StoryAreaType = Annotated[
+    StoryAreaTypeLocation
+    | StoryAreaTypeSuggestedReaction
+    | StoryAreaTypeLink
+    | StoryAreaTypeWeather
+    | StoryAreaTypeUniqueGift,
+    Field(discriminator="type"),
+]
+"""Describes the type of a clickable area on a story. Currently, it can be
+one of
+
+See https://core.telegram.org/bots/api#storyareatype
+"""
 # TODO: storyareatypelocation (discriminated object)
 # TODO: storyareatypesuggestedreaction (discriminated object)
 # TODO: storyareatypelink (discriminated object)
@@ -4228,7 +4344,19 @@ class ChatLocation(BaseModel):
 
     address: str
     """Location address; 1-64 characters, as defined by the chat owner"""
-# TODO: reactiontype (discriminated union)
+
+
+type ReactionType = Annotated[
+    ReactionTypeEmoji
+    | ReactionTypeCustomEmoji
+    | ReactionTypePaid,
+    Field(discriminator="type"),
+]
+"""This object describes the type of a reaction. Currently, it can be one
+of
+
+See https://core.telegram.org/bots/api#reactiontype
+"""
 # TODO: reactiontypeemoji (discriminated object)
 # TODO: reactiontypecustomemoji (discriminated object)
 # TODO: reactiontypepaid (discriminated object)
@@ -4667,7 +4795,18 @@ class UniqueGiftInfo(BaseModel):
     """Point in time (Unix timestamp) when the gift can be transferred. If
     it is in the past, then the gift can be transferred now.
     """
-# TODO: ownedgift (discriminated union)
+
+
+type OwnedGift = Annotated[
+    OwnedGiftRegular
+    | OwnedGiftUnique,
+    Field(discriminator="type"),
+]
+"""This object describes a gift received and owned by a user or a chat.
+Currently, it can be one of
+
+See https://core.telegram.org/bots/api#ownedgift
+"""
 # TODO: ownedgiftregular (discriminated object)
 # TODO: ownedgiftunique (discriminated object)
 
@@ -4765,7 +4904,23 @@ class BotCommand(BaseModel):
     """True, if the command sends an ephemeral message, which can be seen
     only by the sender of the message and the bot
     """
-# TODO: botcommandscope (discriminated union)
+
+
+type BotCommandScope = Annotated[
+    BotCommandScopeDefault
+    | BotCommandScopeAllPrivateChats
+    | BotCommandScopeAllGroupChats
+    | BotCommandScopeAllChatAdministrators
+    | BotCommandScopeChat
+    | BotCommandScopeChatAdministrators
+    | BotCommandScopeChatMember,
+    Field(discriminator="type"),
+]
+"""This object represents the scope to which bot commands are applied.
+Currently, the following 7 scopes are supported:
+
+See https://core.telegram.org/bots/api#botcommandscope
+"""
 # TODO: botcommandscopedefault (discriminated object)
 # TODO: botcommandscopeallprivatechats (discriminated object)
 # TODO: botcommandscopeallgroupchats (discriminated object)
@@ -4803,11 +4958,38 @@ class BotShortDescription(BaseModel):
 
     short_description: str
     """The bot's short description"""
-# TODO: menubutton (discriminated union)
+
+
+type MenuButton = Annotated[
+    MenuButtonCommands
+    | MenuButtonWebApp
+    | MenuButtonDefault,
+    Field(discriminator="type"),
+]
+"""This object describes the bot's menu button in a private chat. It should
+be one of
+
+If a menu button other than MenuButtonDefault is set for a private chat,
+then it is applied in the chat. Otherwise the default menu button is
+applied. By default, the menu button opens the list of bot commands.
+
+See https://core.telegram.org/bots/api#menubutton
+"""
 # TODO: menubuttoncommands (discriminated object)
 # TODO: menubuttonwebapp (discriminated object)
 # TODO: menubuttondefault (discriminated object)
-# TODO: chatboostsource (discriminated union)
+
+
+type ChatBoostSource = Annotated[
+    ChatBoostSourcePremium
+    | ChatBoostSourceGiftCode
+    | ChatBoostSourceGiveaway,
+    Field(discriminator="source"),
+]
+"""This object describes the source of a chat boost. It can be one of
+
+See https://core.telegram.org/bots/api#chatboostsource
+"""
 # TODO: chatboostsourcepremium (discriminated object)
 # TODO: chatboostsourcegiftcode (discriminated object)
 # TODO: chatboostsourcegiveaway (discriminated object)
@@ -5083,7 +5265,22 @@ class ResponseParameters(BaseModel):
     """In case of exceeding flood control, the number of seconds left to
     wait before the request can be repeated
     """
-# TODO: inputmedia (discriminated union)
+
+
+type InputMedia = Annotated[
+    InputMediaAnimation
+    | InputMediaAudio
+    | InputMediaDocument
+    | InputMediaLivePhoto
+    | InputMediaPhoto
+    | InputMediaVideo,
+    Field(discriminator="type"),
+]
+"""This object represents the content of a media message to be sent. It
+should be one of
+
+See https://core.telegram.org/bots/api#inputmedia
+"""
 # TODO: inputmediaanimation (discriminated object)
 # TODO: inputmediaaudio (discriminated object)
 # TODO: inputmediadocument (discriminated object)
@@ -5095,14 +5292,48 @@ class ResponseParameters(BaseModel):
 # TODO: inputmediavenue (discriminated object)
 # TODO: inputmediavideo (discriminated object)
 # TODO: inputmediavoicenote (discriminated object)
-# TODO: inputpaidmedia (discriminated union)
+
+
+type InputPaidMedia = Annotated[
+    InputPaidMediaLivePhoto
+    | InputPaidMediaPhoto
+    | InputPaidMediaVideo,
+    Field(discriminator="type"),
+]
+"""This object describes the paid media to be sent. Currently, it can be
+one of
+
+See https://core.telegram.org/bots/api#inputpaidmedia
+"""
 # TODO: inputpaidmedialivephoto (discriminated object)
 # TODO: inputpaidmediaphoto (discriminated object)
 # TODO: inputpaidmediavideo (discriminated object)
-# TODO: inputprofilephoto (discriminated union)
+
+
+type InputProfilePhoto = Annotated[
+    InputProfilePhotoStatic
+    | InputProfilePhotoAnimated,
+    Field(discriminator="type"),
+]
+"""This object describes a profile photo to set. Currently, it can be one
+of
+
+See https://core.telegram.org/bots/api#inputprofilephoto
+"""
 # TODO: inputprofilephotostatic (discriminated object)
 # TODO: inputprofilephotoanimated (discriminated object)
-# TODO: inputstorycontent (discriminated union)
+
+
+type InputStoryContent = Annotated[
+    InputStoryContentPhoto
+    | InputStoryContentVideo,
+    Field(discriminator="type"),
+]
+"""This object describes the content of a story to post. Currently, it can
+be one of
+
+See https://core.telegram.org/bots/api#inputstorycontent
+"""
 # TODO: inputstorycontentphoto (discriminated object)
 # TODO: inputstorycontentvideo (discriminated object)
 # TODO: getme (method)
@@ -5492,7 +5723,43 @@ class InputRichMessageMedia(BaseModel):
     """
 # TODO: sendrichmessage (method)
 # TODO: sendrichmessagedraft (method)
-# TODO: richtext (union)
+
+
+type RichText = (
+    RichTextBold
+    | RichTextItalic
+    | RichTextUnderline
+    | RichTextStrikethrough
+    | RichTextSpoiler
+    | RichTextDateTime
+    | RichTextTextMention
+    | RichTextSubscript
+    | RichTextSuperscript
+    | RichTextMarked
+    | RichTextCode
+    | RichTextCustomEmoji
+    | RichTextMathematicalExpression
+    | RichTextURL
+    | RichTextEmailAddress
+    | RichTextPhoneNumber
+    | RichTextBankCardNumber
+    | RichTextMention
+    | RichTextHashtag
+    | RichTextCashtag
+    | RichTextBotCommand
+    | RichTextAnchor
+    | RichTextAnchorLink
+    | RichTextReference
+    | RichTextReferenceLink
+    | RichTextPlain
+    | RichTextSequence
+)
+"""This object represents a rich formatted text. Currently, it can be
+either a String for plain text, an Array of RichText, or any of the
+following types:
+
+See https://core.telegram.org/bots/api#richtext
+"""
 # TODO: richtextbold (discriminated object)
 # TODO: richtextitalic (discriminated object)
 # TODO: richtextunderline (discriminated object)
@@ -5589,7 +5856,37 @@ class RichBlockListItem(BaseModel):
     Roman numerals, “I” for uppercase Roman numerals, or “1” for decimal
     numbers
     """
-# TODO: richblock (discriminated union)
+
+
+type RichBlock = Annotated[
+    RichBlockParagraph
+    | RichBlockSectionHeading
+    | RichBlockPreformatted
+    | RichBlockFooter
+    | RichBlockDivider
+    | RichBlockMathematicalExpression
+    | RichBlockAnchor
+    | RichBlockList
+    | RichBlockBlockQuotation
+    | RichBlockPullQuotation
+    | RichBlockCollage
+    | RichBlockSlideshow
+    | RichBlockTable
+    | RichBlockDetails
+    | RichBlockMap
+    | RichBlockAnimation
+    | RichBlockAudio
+    | RichBlockPhoto
+    | RichBlockVideo
+    | RichBlockVoiceNote
+    | RichBlockThinking,
+    Field(discriminator="type"),
+]
+"""This object represents a block in a rich formatted message. Currently,
+it can be any of the following types:
+
+See https://core.telegram.org/bots/api#richblock
+"""
 # TODO: richblockparagraph (discriminated object)
 # TODO: richblocksectionheading (discriminated object)
 # TODO: richblockpreformatted (discriminated object)
@@ -5637,7 +5934,37 @@ class InputRichBlockListItem(BaseModel):
     Roman numerals, “I” for uppercase Roman numerals, or “1” for decimal
     numbers
     """
-# TODO: inputrichblock (discriminated union)
+
+
+type InputRichBlock = Annotated[
+    InputRichBlockParagraph
+    | InputRichBlockSectionHeading
+    | InputRichBlockPreformatted
+    | InputRichBlockFooter
+    | InputRichBlockDivider
+    | InputRichBlockMathematicalExpression
+    | InputRichBlockAnchor
+    | InputRichBlockList
+    | InputRichBlockBlockQuotation
+    | InputRichBlockPullQuotation
+    | InputRichBlockCollage
+    | InputRichBlockSlideshow
+    | InputRichBlockTable
+    | InputRichBlockDetails
+    | InputRichBlockMap
+    | InputRichBlockAnimation
+    | InputRichBlockAudio
+    | InputRichBlockPhoto
+    | InputRichBlockVideo
+    | InputRichBlockVoiceNote
+    | InputRichBlockThinking,
+    Field(discriminator="type"),
+]
+"""This object represents a block in a rich formatted message to be sent.
+Currently, it can be any of the following types:
+
+See https://core.telegram.org/bots/api#inputrichblock
+"""
 # TODO: inputrichblockparagraph (discriminated object)
 # TODO: inputrichblocksectionheading (discriminated object)
 # TODO: inputrichblockpreformatted (discriminated object)
@@ -5668,8 +5995,6 @@ class InlineQuery(BaseModel):
 
     See https://core.telegram.org/bots/api#inlinequery
     """
-
-    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     """Unique identifier for this query"""
@@ -5727,7 +6052,38 @@ class InlineQueryResultsButton(BaseModel):
     button so that the user can easily return to the chat where they
     wanted to use the bot's inline capabilities.
     """
-# TODO: inlinequeryresult (union)
+
+
+type InlineQueryResult = (
+    InlineQueryResultCachedAudio
+    | InlineQueryResultCachedDocument
+    | InlineQueryResultCachedGif
+    | InlineQueryResultCachedMpeg4Gif
+    | InlineQueryResultCachedPhoto
+    | InlineQueryResultCachedSticker
+    | InlineQueryResultCachedVideo
+    | InlineQueryResultCachedVoice
+    | InlineQueryResultArticle
+    | InlineQueryResultAudio
+    | InlineQueryResultContact
+    | InlineQueryResultGame
+    | InlineQueryResultDocument
+    | InlineQueryResultGif
+    | InlineQueryResultLocation
+    | InlineQueryResultMpeg4Gif
+    | InlineQueryResultPhoto
+    | InlineQueryResultVenue
+    | InlineQueryResultVideo
+    | InlineQueryResultVoice
+)
+"""This object represents one result of an inline query. Telegram clients
+currently support results of the following 20 types:
+
+Note: All URLs passed in inline query results will be available to end
+users and therefore must be assumed to be public.
+
+See https://core.telegram.org/bots/api#inlinequeryresult
+"""
 # TODO: inlinequeryresultarticle (discriminated object)
 # TODO: inlinequeryresultphoto (discriminated object)
 # TODO: inlinequeryresultgif (discriminated object)
@@ -5748,7 +6104,22 @@ class InlineQueryResultsButton(BaseModel):
 # TODO: inlinequeryresultcachedvideo (discriminated object)
 # TODO: inlinequeryresultcachedvoice (discriminated object)
 # TODO: inlinequeryresultcachedaudio (discriminated object)
-# TODO: inputmessagecontent (union)
+
+
+type InputMessageContent = (
+    InputTextMessageContent
+    | InputRichMessageContent
+    | InputLocationMessageContent
+    | InputVenueMessageContent
+    | InputContactMessageContent
+    | InputInvoiceMessageContent
+)
+"""This object represents the content of a message to be sent as a result
+of an inline query. Telegram clients currently support the following
+types:
+
+See https://core.telegram.org/bots/api#inputmessagecontent
+"""
 
 
 class InputTextMessageContent(BaseModel):
@@ -5996,8 +6367,6 @@ class ChosenInlineResult(BaseModel):
     See https://core.telegram.org/bots/api#choseninlineresult
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
     result_id: str
     """The unique identifier for the result that was chosen"""
 
@@ -6218,8 +6587,6 @@ class ShippingQuery(BaseModel):
     See https://core.telegram.org/bots/api#shippingquery
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
     id: str
     """Unique query identifier"""
 
@@ -6239,8 +6606,6 @@ class PreCheckoutQuery(BaseModel):
 
     See https://core.telegram.org/bots/api#precheckoutquery
     """
-
-    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     """Unique query identifier"""
@@ -6277,14 +6642,24 @@ class PaidMediaPurchased(BaseModel):
     See https://core.telegram.org/bots/api#paidmediapurchased
     """
 
-    model_config = ConfigDict(populate_by_name=True)
-
     from_: User = Field(alias="from")
     """User who purchased the media"""
 
     paid_media_payload: str
     """Bot-specified paid media payload"""
-# TODO: revenuewithdrawalstate (discriminated union)
+
+
+type RevenueWithdrawalState = Annotated[
+    RevenueWithdrawalStatePending
+    | RevenueWithdrawalStateSucceeded
+    | RevenueWithdrawalStateFailed,
+    Field(discriminator="type"),
+]
+"""This object describes the state of a revenue withdrawal operation.
+Currently, it can be one of
+
+See https://core.telegram.org/bots/api#revenuewithdrawalstate
+"""
 # TODO: revenuewithdrawalstatepending (discriminated object)
 # TODO: revenuewithdrawalstatesucceeded (discriminated object)
 # TODO: revenuewithdrawalstatefailed (discriminated object)
@@ -6321,7 +6696,23 @@ class AffiliateInfo(BaseModel):
     """The number of 1/1000000000 shares of Telegram Stars received by the
     affiliate; from -999999999 to 999999999; can be negative for refunds
     """
-# TODO: transactionpartner (discriminated union)
+
+
+type TransactionPartner = Annotated[
+    TransactionPartnerUser
+    | TransactionPartnerChat
+    | TransactionPartnerAffiliateProgram
+    | TransactionPartnerFragment
+    | TransactionPartnerTelegramAds
+    | TransactionPartnerTelegramAPI
+    | TransactionPartnerOther,
+    Field(discriminator="type"),
+]
+"""This object describes the source of a transaction, or its recipient for
+outgoing transactions. Currently, it can be one of
+
+See https://core.telegram.org/bots/api#transactionpartner
+"""
 # TODO: transactionpartneruser (discriminated object)
 # TODO: transactionpartnerchat (discriminated object)
 # TODO: transactionpartneraffiliateprogram (discriminated object)
@@ -6520,7 +6911,25 @@ class EncryptedCredentials(BaseModel):
     required for data decryption
     """
 # TODO: setpassportdataerrors (method)
-# TODO: passportelementerror (discriminated union)
+
+
+type PassportElementError = Annotated[
+    PassportElementErrorDataField
+    | PassportElementErrorFrontSide
+    | PassportElementErrorReverseSide
+    | PassportElementErrorSelfie
+    | PassportElementErrorFile
+    | PassportElementErrorFiles
+    | PassportElementErrorTranslationFile
+    | PassportElementErrorTranslationFiles
+    | PassportElementErrorUnspecified,
+    Field(discriminator="source"),
+]
+"""This object represents an error in the Telegram Passport element which
+was submitted that should be resolved by the user. It should be one of:
+
+See https://core.telegram.org/bots/api#passportelementerror
+"""
 # TODO: passportelementerrordatafield (discriminated object)
 # TODO: passportelementerrorfrontside (discriminated object)
 # TODO: passportelementerrorreverseside (discriminated object)
@@ -6591,21 +7000,89 @@ class GameHighScore(BaseModel):
 
     score: int
     """Score"""
-# TODO: chatid (union)
-# TODO: id (alias)
-# TODO: username (alias)
-# TODO: replymarkup (union)
-# TODO: inputmediagroup (discriminated union)
-# TODO: inputrichmedia (discriminated union)
-# TODO: inputfile (union)
-# TODO: fileid (alias)
+
+
+type ChatID = (
+    ID
+    | Username
+)
+"""ChatId represents a chat identifier, either a numeric ID or a username."""
+
+
+class ID(RootModel[int]):
+    """ID represents a numeric Telegram chat or user identifier."""
+
+
+class Username(RootModel[str]):
+    """Username represents a Telegram username."""
+
+
+type ReplyMarkup = (
+    InlineKeyboardMarkup
+    | ReplyKeyboardMarkup
+    | ReplyKeyboardRemove
+    | ForceReply
+)
+"""ReplyMarkup represents a reply markup attached to a message."""
+
+
+type InputMediaGroup = Annotated[
+    InputMediaAudio
+    | InputMediaDocument
+    | InputMediaLivePhoto
+    | InputMediaPhoto
+    | InputMediaVideo,
+    Field(discriminator="type"),
+]
+"""InputMediaGroup represents a media element in a media group."""
+
+
+type InputRichMedia = Annotated[
+    InputMediaAnimation
+    | InputMediaAudio
+    | InputMediaPhoto
+    | InputMediaVideo
+    | InputMediaVoiceNote,
+    Field(discriminator="type"),
+]
+"""InputRichMedia represents a media element embedded in a rich message."""
+
+
+type InputFile = (
+    FileID
+    | Upload
+)
+"""InputFile represents a file to send, either by file ID or by uploading."""
+
+
+class FileID(RootModel[str]):
+    """FileID represents a Telegram file identifier."""
 
 
 class Upload(BaseModel):
     """Upload represents a file sent with the request, carrying the bytes
     to send and the name to send them under.
     """
-# TODO: maybemessage (union)
-# TODO: true (alias)
-# TODO: richtextplain (alias)
-# TODO: richtextsequence (alias)
+
+
+type MaybeMessage = (
+    Message
+    | True_
+)
+"""MaybeMessage represents a method return value that is either an edited
+Message or True for inline messages.
+"""
+
+
+class True_(RootModel[bool]):
+    """True represents the boolean true value in Telegram API responses."""
+
+
+class RichTextPlain(RootModel[str]):
+    """RichTextPlain represents the plain-text variant of a RichText value."""
+
+
+class RichTextSequence(RootModel[list[RichText]]):
+    """RichTextSequence represents the nested-array variant of a RichText
+    value.
+    """

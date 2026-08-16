@@ -7,29 +7,48 @@
 	where Python reads one from, and the docstring of a field stands under the
 	field for the same reason.
 
-	The configuration admitting both the attribute and the key is written only
-	where a field carries a key its attribute stopped spelling. Nine objects of
-	the documented API hold such a field; a rule generated onto every class would
-	be a rule the other three hundred pay a line for and never read.
+	A field whose key Python reserves is declared under a name of its own and
+	aliased back to the key. The alias names what the class reads and writes, and
+	nothing else: the class is configured by nothing, so the name the field
+	declares is not a name the class is read by. That is the whole shape for an
+	object a response alone carries, which is decoded rather than assembled — and
+	it is the wrong shape for one a request carries, whose caller would have to
+	name a field Python reserves in order to build it.
+
+	So the shape is pinned rather than made conditional. Writing the other two
+	directions now would be writing branches no page exercises and no output
+	shows; the assertion stops the generation instead, and sends a person here to
+	write the branch against the object that finally needs it.
 */}}
 {{- define "object"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Object*/}}
+{{- if .Aliased}}
+{{- assert .Direction.Inbound (printf "%s holds an aliased field and no longer travels inbound" .Name)}}
+{{- end}}
 
 class {{.Name}}(BaseModel):
-{{- with .Doc}}
-    {{.}}
-{{- end}}
-{{- if .Aliased}}
-
-    model_config = ConfigDict(populate_by_name=True)
-{{- end}}
+    {{.Doc}}
 {{- range .Fields}}
 
     {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
-{{- with .Doc}}
-    {{.}}
+    {{.Doc}}
 {{- end}}
 {{- end}}
-{{- if and (not .Doc) (not .Fields)}}
-    pass
-{{- end}}
+
+{{- /*
+	alias writes a name tgen gives a type the documentation leaves unnamed. It is
+	a class over the type rather than an assignment to it, because the Go target
+	declares a type of its own here and the two targets have to name the same
+	things: what Go writes as type RichTextPlain string, Python writes as a model
+	whose root is a str, and neither writes the bare built-in.
+
+	The body carries the docstring alone, which is a body: every definition is
+	described by prose, so nothing here has to answer for an empty one. A
+	documented definition is closed by the link to its section whatever the page
+	says about it, and the thirteen tgen introduces are described where they are
+	introduced.
+*/}}
+{{- define "alias"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Alias*/}}
+
+class {{.Name}}(RootModel[{{.Annotation}}]):
+    {{.Doc}}
 {{- end}}

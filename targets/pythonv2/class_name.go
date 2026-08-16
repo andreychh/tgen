@@ -32,12 +32,21 @@ func NewClassName(n model.Name) ClassName {
 }
 
 // Value returns the name in the capitalized words a class is declared by, with
-// the acronyms spelled in capitals. The Go target spells them the same way, and
-// a name is what a reader of either target looks the other one up by.
+// the acronyms spelled in capitals, and followed by an underscore where the
+// result is a word Python reserves. The Go target spells the capitals the same
+// way, and a name is what a reader of either target looks the other one up by.
+//
+// Only True, False and None can ever need the underscore: every other reserved
+// word is lowercase, and none survives the capitalization as itself. tgen names
+// one definition True today, and Python would read the declaration of a class
+// by that name as an assignment to a literal.
 func (n ClassName) Value() string {
 	camel := strcase.ToCamel(string(n.inner))
 	for wrong, right := range acronyms {
 		camel = strings.ReplaceAll(camel, wrong, right)
+	}
+	if keywords[model.Key(camel)] {
+		return camel + "_"
 	}
 	return camel
 }

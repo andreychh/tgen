@@ -33,11 +33,11 @@ func NewDeclaration(record ir.Definition) Declaration {
 	case ir.DiscriminatedObject:
 		return NewStub(record.Ref, "discriminated object")
 	case ir.Union:
-		return NewStub(record.Ref, "union")
+		return NewUnion(record)
 	case ir.DiscriminatedUnion:
-		return NewStub(record.Ref, "discriminated union")
+		return NewDiscriminatedUnion(record)
 	case ir.Alias:
-		return NewStub(record.Ref, "alias")
+		return NewAlias(record)
 	case ir.Method:
 		return NewStub(record.Ref, "method")
 	}

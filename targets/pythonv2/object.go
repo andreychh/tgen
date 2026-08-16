@@ -21,7 +21,8 @@ func NewObject(o ir.Object) Object {
 // Doc returns the docstring of the declaration, closing with a link back to the
 // section the object was read from.
 func (o Object) Doc() string {
-	return NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced).Value()
+	doc := NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced)
+	return NewClassDocstring(doc.Passage()).Value()
 }
 
 // Ref implements [Declaration].
@@ -45,10 +46,16 @@ func (o Object) Fields() []Field {
 	return slices.NewMapped(o.inner.Fields, NewField)
 }
 
-// Aliased reports whether any field of the object is read from a key its
-// attribute stopped spelling, which is what obliges the class to admit both
-// names. An object holding no such field is configured by nothing, rather than
-// carrying a rule the whole API would pay for and nine of its objects use.
+// Direction returns which way the object travels, which is what decides whether
+// the key a field is aliased by is the name a response is read by.
+func (o Object) Direction() Direction {
+	return NewDirection(o.inner.Direction)
+}
+
+// Aliased reports whether any field of the object is read from a key its name
+// stopped spelling. Such a class reads that key and nothing else, which holds
+// only while the object travels inbound alone — hence the assertion the
+// template pins on it.
 func (o Object) Aliased() bool {
 	for _, field := range o.Fields() {
 		if field.Aliased() {
