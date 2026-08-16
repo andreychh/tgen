@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, RootModel
 
@@ -1364,10 +1364,77 @@ type MessageOrigin = Annotated[
 
 See https://core.telegram.org/bots/api#messageorigin
 """
-# TODO: messageoriginuser (discriminated object)
-# TODO: messageoriginhiddenuser (discriminated object)
-# TODO: messageoriginchat (discriminated object)
-# TODO: messageoriginchannel (discriminated object)
+
+
+class MessageOriginUser(BaseModel):
+    """The message was originally sent by a known user.
+
+    See https://core.telegram.org/bots/api#messageoriginuser
+    """
+
+    type: Literal["user"] = "user"
+
+    date: int
+    """Date the message was sent originally in Unix time"""
+
+    sender_user: User
+    """User that sent the message originally"""
+
+
+class MessageOriginHiddenUser(BaseModel):
+    """The message was originally sent by an unknown user.
+
+    See https://core.telegram.org/bots/api#messageoriginhiddenuser
+    """
+
+    type: Literal["hidden_user"] = "hidden_user"
+
+    date: int
+    """Date the message was sent originally in Unix time"""
+
+    sender_user_name: str
+    """Name of the user that sent the message originally"""
+
+
+class MessageOriginChat(BaseModel):
+    """The message was originally sent on behalf of a chat to a group chat.
+
+    See https://core.telegram.org/bots/api#messageoriginchat
+    """
+
+    type: Literal["chat"] = "chat"
+
+    date: int
+    """Date the message was sent originally in Unix time"""
+
+    sender_chat: Chat
+    """Chat that sent the message originally"""
+
+    author_signature: str | None = None
+    """For messages originally sent by an anonymous chat administrator,
+    original message author signature
+    """
+
+
+class MessageOriginChannel(BaseModel):
+    """The message was originally sent to a channel chat.
+
+    See https://core.telegram.org/bots/api#messageoriginchannel
+    """
+
+    type: Literal["channel"] = "channel"
+
+    date: int
+    """Date the message was sent originally in Unix time"""
+
+    chat: Chat
+    """Channel chat to which the message was originally sent"""
+
+    message_id: int
+    """Unique message identifier inside the chat"""
+
+    author_signature: str | None = None
+    """Signature of the original post author"""
 
 
 class PhotoSize(BaseModel):
@@ -1752,10 +1819,60 @@ type PaidMedia = Annotated[
 
 See https://core.telegram.org/bots/api#paidmedia
 """
-# TODO: paidmedialivephoto (discriminated object)
-# TODO: paidmediaphoto (discriminated object)
-# TODO: paidmediapreview (discriminated object)
-# TODO: paidmediavideo (discriminated object)
+
+
+class PaidMediaLivePhoto(BaseModel):
+    """The paid media is a live photo.
+
+    See https://core.telegram.org/bots/api#paidmedialivephoto
+    """
+
+    type: Literal["live_photo"] = "live_photo"
+
+    live_photo: LivePhoto
+    """The photo"""
+
+
+class PaidMediaPhoto(BaseModel):
+    """The paid media is a photo.
+
+    See https://core.telegram.org/bots/api#paidmediaphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    photo: list[PhotoSize]
+    """The photo"""
+
+
+class PaidMediaPreview(BaseModel):
+    """The paid media isn't available before the payment.
+
+    See https://core.telegram.org/bots/api#paidmediapreview
+    """
+
+    type: Literal["preview"] = "preview"
+
+    width: int | None = None
+    """Media width as defined by the sender"""
+
+    height: int | None = None
+    """Media height as defined by the sender"""
+
+    duration: int | None = None
+    """Duration of the media in seconds as defined by the sender"""
+
+
+class PaidMediaVideo(BaseModel):
+    """The paid media is a video.
+
+    See https://core.telegram.org/bots/api#paidmediavideo
+    """
+
+    type: Literal["video"] = "video"
+
+    video: Video
+    """The video"""
 
 
 class Contact(BaseModel):
@@ -2421,9 +2538,52 @@ selected colors. Currently, it can be one of
 
 See https://core.telegram.org/bots/api#backgroundfill
 """
-# TODO: backgroundfillsolid (discriminated object)
-# TODO: backgroundfillgradient (discriminated object)
-# TODO: backgroundfillfreeformgradient (discriminated object)
+
+
+class BackgroundFillSolid(BaseModel):
+    """The background is filled using the selected color.
+
+    See https://core.telegram.org/bots/api#backgroundfillsolid
+    """
+
+    type: Literal["solid"] = "solid"
+
+    color: int
+    """The color of the background fill in the RGB24 format"""
+
+
+class BackgroundFillGradient(BaseModel):
+    """The background is a gradient fill.
+
+    See https://core.telegram.org/bots/api#backgroundfillgradient
+    """
+
+    type: Literal["gradient"] = "gradient"
+
+    top_color: int
+    """Top color of the gradient in the RGB24 format"""
+
+    bottom_color: int
+    """Bottom color of the gradient in the RGB24 format"""
+
+    rotation_angle: int
+    """Clockwise rotation angle of the background fill in degrees; 0-359"""
+
+
+class BackgroundFillFreeformGradient(BaseModel):
+    """The background is a freeform gradient that rotates after every
+    message in the chat.
+
+    See
+    https://core.telegram.org/bots/api#backgroundfillfreeformgradient
+    """
+
+    type: Literal["freeform_gradient"] = "freeform_gradient"
+
+    colors: list[int]
+    """A list of the 3 or 4 base colors that are used to generate the
+    freeform gradient in the RGB24 format
+    """
 
 
 type BackgroundType = Annotated[
@@ -2438,10 +2598,87 @@ of
 
 See https://core.telegram.org/bots/api#backgroundtype
 """
-# TODO: backgroundtypefill (discriminated object)
-# TODO: backgroundtypewallpaper (discriminated object)
-# TODO: backgroundtypepattern (discriminated object)
-# TODO: backgroundtypechattheme (discriminated object)
+
+
+class BackgroundTypeFill(BaseModel):
+    """The background is automatically filled based on the selected colors.
+
+    See https://core.telegram.org/bots/api#backgroundtypefill
+    """
+
+    type: Literal["fill"] = "fill"
+
+    fill: BackgroundFill
+    """The background fill"""
+
+    dark_theme_dimming: int
+    """Dimming of the background in dark themes, as a percentage; 0-100"""
+
+
+class BackgroundTypeWallpaper(BaseModel):
+    """The background is a wallpaper in the JPEG format.
+
+    See https://core.telegram.org/bots/api#backgroundtypewallpaper
+    """
+
+    type: Literal["wallpaper"] = "wallpaper"
+
+    document: Document
+    """Document with the wallpaper"""
+
+    dark_theme_dimming: int
+    """Dimming of the background in dark themes, as a percentage; 0-100"""
+
+    is_blurred: bool | None = None
+    """True, if the wallpaper is downscaled to fit in a 450x450 square and
+    then box-blurred with radius 12
+    """
+
+    is_moving: bool | None = None
+    """True, if the background moves slightly when the device is tilted"""
+
+
+class BackgroundTypePattern(BaseModel):
+    """The background is a .PNG or .TGV (gzipped subset of SVG with MIME
+    type “application/x-tgwallpattern”) pattern to be combined with the
+    background fill chosen by the user.
+
+    See https://core.telegram.org/bots/api#backgroundtypepattern
+    """
+
+    type: Literal["pattern"] = "pattern"
+
+    document: Document
+    """Document with the pattern"""
+
+    fill: BackgroundFill
+    """The background fill that is combined with the pattern"""
+
+    intensity: int
+    """Intensity of the pattern when it is shown above the filled
+    background; 0-100
+    """
+
+    is_inverted: bool | None = None
+    """True, if the background fill must be applied only to the pattern
+    itself. All other pixels are black in this case. For dark themes
+    only.
+    """
+
+    is_moving: bool | None = None
+    """True, if the background moves slightly when the device is tilted"""
+
+
+class BackgroundTypeChatTheme(BaseModel):
+    """The background is taken directly from a built-in chat theme.
+
+    See https://core.telegram.org/bots/api#backgroundtypechattheme
+    """
+
+    type: Literal["chat_theme"] = "chat_theme"
+
+    theme_name: str
+    """Name of the chat theme, which is usually an emoji"""
 
 
 class ChatBackground(BaseModel):
@@ -4014,12 +4251,257 @@ the following 6 types of chat members are supported:
 
 See https://core.telegram.org/bots/api#chatmember
 """
-# TODO: chatmemberowner (discriminated object)
-# TODO: chatmemberadministrator (discriminated object)
-# TODO: chatmembermember (discriminated object)
-# TODO: chatmemberrestricted (discriminated object)
-# TODO: chatmemberleft (discriminated object)
-# TODO: chatmemberbanned (discriminated object)
+
+
+class ChatMemberOwner(BaseModel):
+    """Represents a chat member that owns the chat and has all
+    administrator privileges.
+
+    See https://core.telegram.org/bots/api#chatmemberowner
+    """
+
+    status: Literal["creator"] = "creator"
+
+    user: User
+    """Information about the user"""
+
+    is_anonymous: bool
+    """True, if the user's presence in the chat is hidden"""
+
+    custom_title: str | None = None
+    """Custom title for this user"""
+
+
+class ChatMemberAdministrator(BaseModel):
+    """Represents a chat member that has some additional privileges.
+
+    See https://core.telegram.org/bots/api#chatmemberadministrator
+    """
+
+    status: Literal["administrator"] = "administrator"
+
+    user: User
+    """Information about the user"""
+
+    can_be_edited: bool
+    """True, if the bot is allowed to edit administrator privileges of that
+    user
+    """
+
+    is_anonymous: bool
+    """True, if the user's presence in the chat is hidden"""
+
+    can_manage_chat: bool
+    """True, if the administrator can access the chat event log, get boost
+    list, see hidden supergroup and channel members, report spam
+    messages, ignore slow mode, and send messages to the chat without
+    paying Telegram Stars. Implied by any other administrator privilege.
+    """
+
+    can_delete_messages: bool
+    """True, if the administrator can delete messages of other users"""
+
+    can_manage_video_chats: bool
+    """True, if the administrator can manage video chats"""
+
+    can_restrict_members: bool
+    """True, if the administrator can restrict, ban or unban chat members,
+    or access supergroup statistics
+    """
+
+    can_promote_members: bool
+    """True, if the administrator can add new administrators with a subset
+    of their own privileges or demote administrators that they have
+    promoted, directly or indirectly (promoted by administrators that
+    were appointed by the user)
+    """
+
+    can_change_info: bool
+    """True, if the user is allowed to change the chat title, photo and
+    other settings
+    """
+
+    can_invite_users: bool
+    """True, if the user is allowed to invite new users to the chat"""
+
+    can_post_stories: bool
+    """True, if the administrator can post stories to the chat"""
+
+    can_edit_stories: bool
+    """True, if the administrator can edit stories posted by other users,
+    post stories to the chat page, pin chat stories, and access the
+    chat's story archive
+    """
+
+    can_delete_stories: bool
+    """True, if the administrator can delete stories posted by other users"""
+
+    can_post_messages: bool | None = None
+    """True, if the administrator can post messages in the channel, approve
+    suggested posts, or access channel statistics; for channels only
+    """
+
+    can_edit_messages: bool | None = None
+    """True, if the administrator can edit messages of other users and can
+    pin messages; for channels only
+    """
+
+    can_pin_messages: bool | None = None
+    """True, if the user is allowed to pin messages; for groups and
+    supergroups only
+    """
+
+    can_manage_topics: bool | None = None
+    """True, if the user is allowed to create, rename, close, and reopen
+    forum topics; for supergroups only
+    """
+
+    can_manage_direct_messages: bool | None = None
+    """True, if the administrator can manage direct messages of the channel
+    and decline suggested posts; for channels only
+    """
+
+    can_manage_tags: bool | None = None
+    """True, if the administrator can edit the tags of regular members; for
+    groups and supergroups only. If omitted, defaults to the value of
+    can_pin_messages.
+    """
+
+    custom_title: str | None = None
+    """Custom title for this user"""
+
+
+class ChatMemberMember(BaseModel):
+    """Represents a chat member that has no additional privileges or
+    restrictions.
+
+    See https://core.telegram.org/bots/api#chatmembermember
+    """
+
+    status: Literal["member"] = "member"
+
+    user: User
+    """Information about the user"""
+
+    tag: str | None = None
+    """Tag of the member"""
+
+    until_date: int | None = None
+    """Date when the user's subscription will expire; Unix time"""
+
+
+class ChatMemberRestricted(BaseModel):
+    """Represents a chat member that is under certain restrictions in the
+    chat. Supergroups only.
+
+    See https://core.telegram.org/bots/api#chatmemberrestricted
+    """
+
+    status: Literal["restricted"] = "restricted"
+
+    user: User
+    """Information about the user"""
+
+    is_member: bool
+    """True, if the user is a member of the chat at the moment of the
+    request
+    """
+
+    can_send_messages: bool
+    """True, if the user is allowed to send text messages, rich messages,
+    contacts, giveaways, giveaway winners, invoices, locations and
+    venues
+    """
+
+    can_send_audios: bool
+    """True, if the user is allowed to send audios"""
+
+    can_send_documents: bool
+    """True, if the user is allowed to send documents"""
+
+    can_send_photos: bool
+    """True, if the user is allowed to send photos"""
+
+    can_send_videos: bool
+    """True, if the user is allowed to send videos"""
+
+    can_send_video_notes: bool
+    """True, if the user is allowed to send video notes"""
+
+    can_send_voice_notes: bool
+    """True, if the user is allowed to send voice notes"""
+
+    can_send_polls: bool
+    """True, if the user is allowed to send polls and checklists"""
+
+    can_send_other_messages: bool
+    """True, if the user is allowed to send animations, games, stickers and
+    use inline bots
+    """
+
+    can_add_web_page_previews: bool
+    """True, if the user is allowed to add web page previews to their
+    messages
+    """
+
+    can_react_to_messages: bool
+    """True, if the user is allowed to react to messages"""
+
+    can_edit_tag: bool
+    """True, if the user is allowed to edit their own tag"""
+
+    can_change_info: bool
+    """True, if the user is allowed to change the chat title, photo and
+    other settings
+    """
+
+    can_invite_users: bool
+    """True, if the user is allowed to invite new users to the chat"""
+
+    can_pin_messages: bool
+    """True, if the user is allowed to pin messages"""
+
+    can_manage_topics: bool
+    """True, if the user is allowed to create forum topics"""
+
+    until_date: int
+    """Date when restrictions will be lifted for this user; Unix time. If
+    0, then the user is restricted forever.
+    """
+
+    tag: str | None = None
+    """Tag of the member"""
+
+
+class ChatMemberLeft(BaseModel):
+    """Represents a chat member that isn't currently a member of the chat,
+    but may join it themselves.
+
+    See https://core.telegram.org/bots/api#chatmemberleft
+    """
+
+    status: Literal["left"] = "left"
+
+    user: User
+    """Information about the user"""
+
+
+class ChatMemberBanned(BaseModel):
+    """Represents a chat member that was banned in the chat and can't
+    return to the chat or view chat messages.
+
+    See https://core.telegram.org/bots/api#chatmemberbanned
+    """
+
+    status: Literal["kicked"] = "kicked"
+
+    user: User
+    """Information about the user"""
+
+    until_date: int
+    """Date when restrictions will be lifted for this user; Unix time. If
+    0, then the user is banned forever.
+    """
 
 
 class ChatJoinRequest(BaseModel):
@@ -4311,11 +4793,90 @@ one of
 
 See https://core.telegram.org/bots/api#storyareatype
 """
-# TODO: storyareatypelocation (discriminated object)
-# TODO: storyareatypesuggestedreaction (discriminated object)
-# TODO: storyareatypelink (discriminated object)
-# TODO: storyareatypeweather (discriminated object)
-# TODO: storyareatypeuniquegift (discriminated object)
+
+
+class StoryAreaTypeLocation(BaseModel):
+    """Describes a story area pointing to a location. Currently, a story
+    can have up to 10 location areas.
+
+    See https://core.telegram.org/bots/api#storyareatypelocation
+    """
+
+    type: Literal["location"] = "location"
+
+    latitude: float
+    """Location latitude in degrees"""
+
+    longitude: float
+    """Location longitude in degrees"""
+
+    address: LocationAddress | None = None
+    """Address of the location"""
+
+
+class StoryAreaTypeSuggestedReaction(BaseModel):
+    """Describes a story area pointing to a suggested reaction. Currently,
+    a story can have up to 5 suggested reaction areas.
+
+    See
+    https://core.telegram.org/bots/api#storyareatypesuggestedreaction
+    """
+
+    type: Literal["suggested_reaction"] = "suggested_reaction"
+
+    reaction_type: ReactionType
+    """Type of the reaction"""
+
+    is_dark: bool | None = None
+    """Pass True if the reaction area has a dark background"""
+
+    is_flipped: bool | None = None
+    """Pass True if reaction area corner is flipped"""
+
+
+class StoryAreaTypeLink(BaseModel):
+    """Describes a story area pointing to an HTTP or tg:// link. Currently,
+    a story can have up to 3 link areas.
+
+    See https://core.telegram.org/bots/api#storyareatypelink
+    """
+
+    type: Literal["link"] = "link"
+
+    url: str
+    """HTTP or tg:// URL to be opened when the area is clicked"""
+
+
+class StoryAreaTypeWeather(BaseModel):
+    """Describes a story area containing weather information. Currently, a
+    story can have up to 3 weather areas.
+
+    See https://core.telegram.org/bots/api#storyareatypeweather
+    """
+
+    type: Literal["weather"] = "weather"
+
+    temperature: float
+    """Temperature, in degree Celsius"""
+
+    emoji: str
+    """Emoji representing the weather"""
+
+    background_color: int
+    """A color of the area background in the ARGB format"""
+
+
+class StoryAreaTypeUniqueGift(BaseModel):
+    """Describes a story area pointing to a unique gift. Currently, a story
+    can have at most 1 unique gift area.
+
+    See https://core.telegram.org/bots/api#storyareatypeuniquegift
+    """
+
+    type: Literal["unique_gift"] = "unique_gift"
+
+    name: str
+    """Unique name of the gift"""
 
 
 class StoryArea(BaseModel):
@@ -4357,9 +4918,46 @@ of
 
 See https://core.telegram.org/bots/api#reactiontype
 """
-# TODO: reactiontypeemoji (discriminated object)
-# TODO: reactiontypecustomemoji (discriminated object)
-# TODO: reactiontypepaid (discriminated object)
+
+
+class ReactionTypeEmoji(BaseModel):
+    """The reaction is based on an emoji.
+
+    See https://core.telegram.org/bots/api#reactiontypeemoji
+    """
+
+    type: Literal["emoji"] = "emoji"
+
+    emoji: str
+    """Reaction emoji. Currently, it can be one of "❤", "👍", "👎", "🔥", "🥰",
+    "👏", "😁", "🤔", "🤯", "😱", "🤬", "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌",
+    "🕊", "🤡", "🥱", "🥴", "😍", "🐳", "❤‍🔥", "🌚", "🌭", "💯", "🤣", "⚡", "🍌",
+    "🏆", "💔", "🤨", "😐", "🍓", "🍾", "💋", "🖕", "😈", "😴", "😭", "🤓", "👻",
+    "👨‍💻", "👀", "🎃", "🙈", "😇", "😨", "🤝", "✍", "🤗", "🫡", "🎅", "🎄", "☃",
+    "💅", "🤪", "🗿", "🆒", "💘", "🙉", "🦄", "😘", "💊", "🙊", "😎", "👾", "🤷‍♂",
+    "🤷", "🤷‍♀", "😡".
+    """
+
+
+class ReactionTypeCustomEmoji(BaseModel):
+    """The reaction is based on a custom emoji.
+
+    See https://core.telegram.org/bots/api#reactiontypecustomemoji
+    """
+
+    type: Literal["custom_emoji"] = "custom_emoji"
+
+    custom_emoji_id: str
+    """Custom emoji identifier"""
+
+
+class ReactionTypePaid(BaseModel):
+    """The reaction is paid.
+
+    See https://core.telegram.org/bots/api#reactiontypepaid
+    """
+
+    type: Literal["paid"] = "paid"
 
 
 class ReactionCount(BaseModel):
@@ -4807,8 +5405,117 @@ Currently, it can be one of
 
 See https://core.telegram.org/bots/api#ownedgift
 """
-# TODO: ownedgiftregular (discriminated object)
-# TODO: ownedgiftunique (discriminated object)
+
+
+class OwnedGiftRegular(BaseModel):
+    """Describes a regular gift owned by a user or a chat.
+
+    See https://core.telegram.org/bots/api#ownedgiftregular
+    """
+
+    type: Literal["regular"] = "regular"
+
+    gift: Gift
+    """Information about the regular gift"""
+
+    send_date: int
+    """Date the gift was sent in Unix time"""
+
+    owned_gift_id: str | None = None
+    """Unique identifier of the gift for the bot; for gifts received on
+    behalf of business accounts only
+    """
+
+    sender_user: User | None = None
+    """Sender of the gift if it is a known user"""
+
+    text: str | None = None
+    """Text of the message that was added to the gift"""
+
+    entities: list[MessageEntity] | None = None
+    """Special entities that appear in the text"""
+
+    is_private: bool | None = None
+    """True, if the sender and gift text are shown only to the gift
+    receiver; otherwise, everyone will be able to see them
+    """
+
+    is_saved: bool | None = None
+    """True, if the gift is displayed on the account's profile page; for
+    gifts received on behalf of business accounts only
+    """
+
+    can_be_upgraded: bool | None = None
+    """True, if the gift can be upgraded to a unique gift; for gifts
+    received on behalf of business accounts only
+    """
+
+    was_refunded: bool | None = None
+    """True, if the gift was refunded and isn't available anymore"""
+
+    convert_star_count: int | None = None
+    """Number of Telegram Stars that can be claimed by the receiver instead
+    of the gift; omitted if the gift cannot be converted to Telegram
+    Stars; for gifts received on behalf of business accounts only
+    """
+
+    prepaid_upgrade_star_count: int | None = None
+    """Number of Telegram Stars that were paid for the ability to upgrade
+    the gift
+    """
+
+    is_upgrade_separate: bool | None = None
+    """True, if the gift's upgrade was purchased after the gift was sent;
+    for gifts received on behalf of business accounts only
+    """
+
+    unique_gift_number: int | None = None
+    """Unique number reserved for this gift when upgraded. See the number
+    field in UniqueGift.
+    """
+
+
+class OwnedGiftUnique(BaseModel):
+    """Describes a unique gift received and owned by a user or a chat.
+
+    See https://core.telegram.org/bots/api#ownedgiftunique
+    """
+
+    type: Literal["unique"] = "unique"
+
+    gift: UniqueGift
+    """Information about the unique gift"""
+
+    send_date: int
+    """Date the gift was sent in Unix time"""
+
+    owned_gift_id: str | None = None
+    """Unique identifier of the received gift for the bot; for gifts
+    received on behalf of business accounts only
+    """
+
+    sender_user: User | None = None
+    """Sender of the gift if it is a known user"""
+
+    is_saved: bool | None = None
+    """True, if the gift is displayed on the account's profile page; for
+    gifts received on behalf of business accounts only
+    """
+
+    can_be_transferred: bool | None = None
+    """True, if the gift can be transferred to another owner; for gifts
+    received on behalf of business accounts only
+    """
+
+    transfer_star_count: int | None = None
+    """Number of Telegram Stars that must be paid to transfer the gift;
+    omitted if the bot cannot transfer the gift
+    """
+
+    next_transfer_date: int | None = None
+    """Point in time (Unix timestamp) when the gift can be transferred. If
+    it is in the past, then the gift can be transferred now.
+    """
 
 
 class OwnedGifts(BaseModel):
@@ -4921,13 +5628,99 @@ Currently, the following 7 scopes are supported:
 
 See https://core.telegram.org/bots/api#botcommandscope
 """
-# TODO: botcommandscopedefault (discriminated object)
-# TODO: botcommandscopeallprivatechats (discriminated object)
-# TODO: botcommandscopeallgroupchats (discriminated object)
-# TODO: botcommandscopeallchatadministrators (discriminated object)
-# TODO: botcommandscopechat (discriminated object)
-# TODO: botcommandscopechatadministrators (discriminated object)
-# TODO: botcommandscopechatmember (discriminated object)
+
+
+class BotCommandScopeDefault(BaseModel):
+    """Represents the default scope of bot commands. Default commands are
+    used if no commands with a narrower scope are specified for the
+    user.
+
+    See https://core.telegram.org/bots/api#botcommandscopedefault
+    """
+
+    type: Literal["default"] = "default"
+
+
+class BotCommandScopeAllPrivateChats(BaseModel):
+    """Represents the scope of bot commands, covering all private chats.
+
+    See
+    https://core.telegram.org/bots/api#botcommandscopeallprivatechats
+    """
+
+    type: Literal["all_private_chats"] = "all_private_chats"
+
+
+class BotCommandScopeAllGroupChats(BaseModel):
+    """Represents the scope of bot commands, covering all group and
+    supergroup chats.
+
+    See https://core.telegram.org/bots/api#botcommandscopeallgroupchats
+    """
+
+    type: Literal["all_group_chats"] = "all_group_chats"
+
+
+class BotCommandScopeAllChatAdministrators(BaseModel):
+    """Represents the scope of bot commands, covering all group and
+    supergroup chat administrators.
+
+    See
+    https://core.telegram.org/bots/api#botcommandscopeallchatadministrators
+    """
+
+    type: Literal["all_chat_administrators"] = "all_chat_administrators"
+
+
+class BotCommandScopeChat(BaseModel):
+    """Represents the scope of bot commands, covering a specific chat.
+
+    See https://core.telegram.org/bots/api#botcommandscopechat
+    """
+
+    type: Literal["chat"] = "chat"
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username. Channel direct messages chats
+    and channel chats aren't supported.
+    """
+
+
+class BotCommandScopeChatAdministrators(BaseModel):
+    """Represents the scope of bot commands, covering all administrators of
+    a specific group or supergroup chat.
+
+    See
+    https://core.telegram.org/bots/api#botcommandscopechatadministrators
+    """
+
+    type: Literal["chat_administrators"] = "chat_administrators"
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username. Channel direct messages chats
+    and channel chats aren't supported.
+    """
+
+
+class BotCommandScopeChatMember(BaseModel):
+    """Represents the scope of bot commands, covering a specific member of
+    a group or supergroup chat.
+
+    See https://core.telegram.org/bots/api#botcommandscopechatmember
+    """
+
+    type: Literal["chat_member"] = "chat_member"
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username. Channel direct messages chats
+    and channel chats aren't supported.
+    """
+
+    user_id: int
+    """Unique identifier of the target user"""
 
 
 class BotName(BaseModel):
@@ -4975,9 +5768,45 @@ applied. By default, the menu button opens the list of bot commands.
 
 See https://core.telegram.org/bots/api#menubutton
 """
-# TODO: menubuttoncommands (discriminated object)
-# TODO: menubuttonwebapp (discriminated object)
-# TODO: menubuttondefault (discriminated object)
+
+
+class MenuButtonCommands(BaseModel):
+    """Represents a menu button, which opens the bot's list of commands.
+
+    See https://core.telegram.org/bots/api#menubuttoncommands
+    """
+
+    type: Literal["commands"] = "commands"
+
+
+class MenuButtonWebApp(BaseModel):
+    """Represents a menu button, which launches a Web App.
+
+    See https://core.telegram.org/bots/api#menubuttonwebapp
+    """
+
+    type: Literal["web_app"] = "web_app"
+
+    text: str
+    """Text on the button"""
+
+    web_app: WebAppInfo
+    """Description of the Web App that will be launched when the user
+    presses the button. The Web App will be able to send an arbitrary
+    message on behalf of the user using the method answerWebAppQuery.
+    Alternatively, a t.me link to a Web App of the bot can be specified
+    in the object instead of the Web App's URL, in which case the Web
+    App will be opened as if the user pressed the link.
+    """
+
+
+class MenuButtonDefault(BaseModel):
+    """Describes that no specific value for the menu button was set.
+
+    See https://core.telegram.org/bots/api#menubuttondefault
+    """
+
+    type: Literal["default"] = "default"
 
 
 type ChatBoostSource = Annotated[
@@ -4990,9 +5819,67 @@ type ChatBoostSource = Annotated[
 
 See https://core.telegram.org/bots/api#chatboostsource
 """
-# TODO: chatboostsourcepremium (discriminated object)
-# TODO: chatboostsourcegiftcode (discriminated object)
-# TODO: chatboostsourcegiveaway (discriminated object)
+
+
+class ChatBoostSourcePremium(BaseModel):
+    """The boost was obtained by subscribing to Telegram Premium or by
+    gifting a Telegram Premium subscription to another user.
+
+    See https://core.telegram.org/bots/api#chatboostsourcepremium
+    """
+
+    source: Literal["premium"] = "premium"
+
+    user: User
+    """User that boosted the chat"""
+
+
+class ChatBoostSourceGiftCode(BaseModel):
+    """The boost was obtained by the creation of Telegram Premium gift
+    codes to boost a chat. Each such code boosts the chat 4 times for
+    the duration of the corresponding Telegram Premium subscription.
+
+    See https://core.telegram.org/bots/api#chatboostsourcegiftcode
+    """
+
+    source: Literal["gift_code"] = "gift_code"
+
+    user: User
+    """User for which the gift code was created"""
+
+
+class ChatBoostSourceGiveaway(BaseModel):
+    """The boost was obtained by the creation of a Telegram Premium or a
+    Telegram Star giveaway. This boosts the chat 4 times for the
+    duration of the corresponding Telegram Premium subscription for
+    Telegram Premium giveaways and prize_star_count / 500 times for one
+    year for Telegram Star giveaways.
+
+    See https://core.telegram.org/bots/api#chatboostsourcegiveaway
+    """
+
+    source: Literal["giveaway"] = "giveaway"
+
+    giveaway_message_id: int
+    """Identifier of a message in the chat with the giveaway; the message
+    could have been deleted already. May be 0 if the message isn't sent
+    yet.
+    """
+
+    user: User | None = None
+    """User that won the prize in the giveaway if any; for Telegram Premium
+    giveaways only
+    """
+
+    prize_star_count: int | None = None
+    """The number of Telegram Stars to be split between giveaway winners;
+    for Telegram Star giveaways only
+    """
+
+    is_unclaimed: bool | None = None
+    """True, if the giveaway was completed, but there was no user to win
+    the prize
+    """
 
 
 class ChatBoost(BaseModel):
@@ -5281,17 +6168,457 @@ should be one of
 
 See https://core.telegram.org/bots/api#inputmedia
 """
-# TODO: inputmediaanimation (discriminated object)
-# TODO: inputmediaaudio (discriminated object)
-# TODO: inputmediadocument (discriminated object)
-# TODO: inputmedialink (discriminated object)
-# TODO: inputmedialivephoto (discriminated object)
-# TODO: inputmedialocation (discriminated object)
-# TODO: inputmediaphoto (discriminated object)
-# TODO: inputmediasticker (discriminated object)
-# TODO: inputmediavenue (discriminated object)
-# TODO: inputmediavideo (discriminated object)
-# TODO: inputmediavoicenote (discriminated object)
+
+
+class InputMediaAnimation(BaseModel):
+    """Represents an animation file (GIF or H.264/MPEG-4 AVC video without
+    sound) to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediaanimation
+    """
+
+    type: Literal["animation"] = "animation"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    caption: str | None = None
+    """Caption of the animation to be sent, 0-1024 characters after
+    entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the animation caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    width: int | None = None
+    """Animation width"""
+
+    height: int | None = None
+    """Animation height"""
+
+    duration: int | None = None
+    """Animation duration in seconds"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the animation needs to be covered with a spoiler
+    animation
+    """
+
+
+class InputMediaAudio(BaseModel):
+    """Represents an audio file to be treated as music to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediaaudio
+    """
+
+    type: Literal["audio"] = "audio"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    caption: str | None = None
+    """Caption of the audio to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the audio caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    duration: int | None = None
+    """Duration of the audio in seconds"""
+
+    performer: str | None = None
+    """Performer of the audio"""
+
+    title: str | None = None
+    """Title of the audio"""
+
+
+class InputMediaDocument(BaseModel):
+    """Represents a general file to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediadocument
+    """
+
+    type: Literal["document"] = "document"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    caption: str | None = None
+    """Caption of the document to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the document caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    disable_content_type_detection: bool | None = None
+    """Disables automatic server-side content type detection for files
+    uploaded using multipart/form-data. Always True, if the document is
+    sent as part of an album.
+    """
+
+
+class InputMediaLink(BaseModel):
+    """Represents an HTTP link to be sent.
+
+    See https://core.telegram.org/bots/api#inputmedialink
+    """
+
+    type: Literal["link"] = "link"
+
+    url: str
+    """HTTP URL of the link"""
+
+
+class InputMediaLivePhoto(BaseModel):
+    """Represents a live photo to be sent.
+
+    See https://core.telegram.org/bots/api#inputmedialivephoto
+    """
+
+    type: Literal["live_photo"] = "live_photo"
+
+    media: InputFile
+    """Video of the live photo to send. Pass a file_id to send a file that
+    exists on the Telegram servers (recommended) or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files ». Sending live photos by a URL is currently
+    unsupported.
+    """
+
+    photo: InputFile
+    """The static photo to send. Pass a file_id to send a file that exists
+    on the Telegram servers (recommended) or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files ». Sending live photos by a URL is currently
+    unsupported.
+    """
+
+    caption: str | None = None
+    """Caption of the live photo to be sent, 0-1024 characters after
+    entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the live photo caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the live photo needs to be covered with a spoiler
+    animation
+    """
+
+
+class InputMediaLocation(BaseModel):
+    """Represents a location to be sent.
+
+    See https://core.telegram.org/bots/api#inputmedialocation
+    """
+
+    type: Literal["location"] = "location"
+
+    latitude: float
+    """Latitude of the location"""
+
+    longitude: float
+    """Longitude of the location"""
+
+    horizontal_accuracy: float | None = None
+    """The radius of uncertainty for the location, measured in meters;
+    0-1500
+    """
+
+
+class InputMediaPhoto(BaseModel):
+    """Represents a photo to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediaphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    caption: str | None = None
+    """Caption of the photo to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the photo caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the photo needs to be covered with a spoiler animation"""
+
+
+class InputMediaSticker(BaseModel):
+    """Represents a sticker file to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediasticker
+    """
+
+    type: Literal["sticker"] = "sticker"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a .WEBP sticker from the Internet, or pass
+    “attach://<file_attach_name>” to upload a new .WEBP, .TGS, or .WEBM
+    sticker using multipart/form-data under <file_attach_name> name.
+    More information on Sending Files »
+    """
+
+    emoji: str | None = None
+    """Emoji associated with the sticker; only for just uploaded stickers"""
+
+
+class InputMediaVenue(BaseModel):
+    """Represents a venue to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediavenue
+    """
+
+    type: Literal["venue"] = "venue"
+
+    latitude: float
+    """Latitude of the location"""
+
+    longitude: float
+    """Longitude of the location"""
+
+    title: str
+    """Name of the venue"""
+
+    address: str
+    """Address of the venue"""
+
+    foursquare_id: str | None = None
+    """Foursquare identifier of the venue"""
+
+    foursquare_type: str | None = None
+    """Foursquare type of the venue, if known. (For example,
+    “arts_entertainment/default”, “arts_entertainment/aquarium” or
+    “food/icecream”.)
+    """
+
+    google_place_id: str | None = None
+    """Google Places identifier of the venue"""
+
+    google_place_type: str | None = None
+    """Google Places type of the venue. (See supported types.)"""
+
+
+class InputMediaVideo(BaseModel):
+    """Represents a video to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediavideo
+    """
+
+    type: Literal["video"] = "video"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    cover: InputFile | None = None
+    """Cover for the video in the message. Pass a file_id to send a file
+    that exists on the Telegram servers (recommended), pass an HTTP URL
+    for Telegram to get a file from the Internet, or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files »
+    """
+
+    start_timestamp: int | None = None
+    """Start timestamp for the video in the message"""
+
+    caption: str | None = None
+    """Caption of the video to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the video caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    width: int | None = None
+    """Video width"""
+
+    height: int | None = None
+    """Video height"""
+
+    duration: int | None = None
+    """Video duration in seconds"""
+
+    supports_streaming: bool | None = None
+    """Pass True if the uploaded video is suitable for streaming"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the video needs to be covered with a spoiler animation"""
+
+
+class InputMediaVoiceNote(BaseModel):
+    """Represents a voice message file to be sent.
+
+    See https://core.telegram.org/bots/api#inputmediavoicenote
+    """
+
+    type: Literal["voice_note"] = "voice_note"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass "attach://<file_attach_name>" to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    caption: str | None = None
+    """Caption of the voice message to be sent, 0-1024 characters after
+    entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the voice message caption. See
+    formatting options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    duration: int | None = None
+    """Duration of the voice message in seconds"""
 
 
 type InputPaidMedia = Annotated[
@@ -5305,9 +6632,103 @@ one of
 
 See https://core.telegram.org/bots/api#inputpaidmedia
 """
-# TODO: inputpaidmedialivephoto (discriminated object)
-# TODO: inputpaidmediaphoto (discriminated object)
-# TODO: inputpaidmediavideo (discriminated object)
+
+
+class InputPaidMediaLivePhoto(BaseModel):
+    """The paid media to send is a live photo.
+
+    See https://core.telegram.org/bots/api#inputpaidmedialivephoto
+    """
+
+    type: Literal["live_photo"] = "live_photo"
+
+    media: InputFile
+    """Video of the live photo to send. Pass a file_id to send a file that
+    exists on the Telegram servers (recommended) or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files ». Sending live photos by a URL is currently
+    unsupported.
+    """
+
+    photo: InputFile
+    """The static photo to send. Pass a file_id to send a file that exists
+    on the Telegram servers (recommended) or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files ». Sending live photos by a URL is currently
+    unsupported.
+    """
+
+
+class InputPaidMediaPhoto(BaseModel):
+    """The paid media to send is a photo.
+
+    See https://core.telegram.org/bots/api#inputpaidmediaphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+
+class InputPaidMediaVideo(BaseModel):
+    """The paid media to send is a video.
+
+    See https://core.telegram.org/bots/api#inputpaidmediavideo
+    """
+
+    type: Literal["video"] = "video"
+
+    media: InputFile
+    """File to send. Pass a file_id to send a file that exists on the
+    Telegram servers (recommended), pass an HTTP URL for Telegram to get
+    a file from the Internet, or pass “attach://<file_attach_name>” to
+    upload a new one using multipart/form-data under <file_attach_name>
+    name. More information on Sending Files »
+    """
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    cover: InputFile | None = None
+    """Cover for the video in the message. Pass a file_id to send a file
+    that exists on the Telegram servers (recommended), pass an HTTP URL
+    for Telegram to get a file from the Internet, or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files »
+    """
+
+    start_timestamp: int | None = None
+    """Start timestamp for the video in the message"""
+
+    width: int | None = None
+    """Video width"""
+
+    height: int | None = None
+    """Video height"""
+
+    duration: int | None = None
+    """Video duration in seconds"""
+
+    supports_streaming: bool | None = None
+    """Pass True if the uploaded video is suitable for streaming"""
 
 
 type InputProfilePhoto = Annotated[
@@ -5320,8 +6741,45 @@ of
 
 See https://core.telegram.org/bots/api#inputprofilephoto
 """
-# TODO: inputprofilephotostatic (discriminated object)
-# TODO: inputprofilephotoanimated (discriminated object)
+
+
+class InputProfilePhotoStatic(BaseModel):
+    """A static profile photo in the .JPG format.
+
+    See https://core.telegram.org/bots/api#inputprofilephotostatic
+    """
+
+    type: Literal["static"] = "static"
+
+    photo: InputFile
+    """The static profile photo. Profile photos can't be reused and can
+    only be uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the photo was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+
+class InputProfilePhotoAnimated(BaseModel):
+    """An animated profile photo in the MPEG4 format.
+
+    See https://core.telegram.org/bots/api#inputprofilephotoanimated
+    """
+
+    type: Literal["animated"] = "animated"
+
+    animation: InputFile
+    """The animated profile photo. Profile photos can't be reused and can
+    only be uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the photo was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    main_frame_timestamp: float | None = None
+    """Timestamp in seconds of the frame that will be used as the static
+    profile photo. Defaults to 0.0.
+    """
 
 
 type InputStoryContent = Annotated[
@@ -5334,8 +6792,54 @@ be one of
 
 See https://core.telegram.org/bots/api#inputstorycontent
 """
-# TODO: inputstorycontentphoto (discriminated object)
-# TODO: inputstorycontentvideo (discriminated object)
+
+
+class InputStoryContentPhoto(BaseModel):
+    """Describes a photo to post as a story.
+
+    See https://core.telegram.org/bots/api#inputstorycontentphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    photo: InputFile
+    """The photo to post as a story. The photo must be of the size
+    1080x1920 and must not exceed 10 MB. The photo can't be reused and
+    can only be uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the photo was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+
+class InputStoryContentVideo(BaseModel):
+    """Describes a video to post as a story.
+
+    See https://core.telegram.org/bots/api#inputstorycontentvideo
+    """
+
+    type: Literal["video"] = "video"
+
+    video: InputFile
+    """The video to post as a story. The video must be of the size
+    720x1280, streamable, encoded with H.265 codec, with key frames
+    added each second in the MPEG4 format, and must not exceed 30 MB.
+    The video can't be reused and can only be uploaded as a new file, so
+    you can pass “attach://<file_attach_name>” if the video was uploaded
+    using multipart/form-data under <file_attach_name>. More information
+    on Sending Files »
+    """
+
+    duration: float | None = None
+    """Precise duration of the video in seconds; 0-60"""
+
+    cover_frame_timestamp: float | None = None
+    """Timestamp in seconds of the frame that will be used as the static
+    cover for the story. Defaults to 0.0.
+    """
+
+    is_animation: bool | None = None
+    """Pass True if the video has no sound"""
 # TODO: getme (method)
 # TODO: logout (method)
 # TODO: close (method)
@@ -5760,31 +7264,358 @@ following types:
 
 See https://core.telegram.org/bots/api#richtext
 """
-# TODO: richtextbold (discriminated object)
-# TODO: richtextitalic (discriminated object)
-# TODO: richtextunderline (discriminated object)
-# TODO: richtextstrikethrough (discriminated object)
-# TODO: richtextspoiler (discriminated object)
-# TODO: richtextdatetime (discriminated object)
-# TODO: richtexttextmention (discriminated object)
-# TODO: richtextsubscript (discriminated object)
-# TODO: richtextsuperscript (discriminated object)
-# TODO: richtextmarked (discriminated object)
-# TODO: richtextcode (discriminated object)
-# TODO: richtextcustomemoji (discriminated object)
-# TODO: richtextmathematicalexpression (discriminated object)
-# TODO: richtexturl (discriminated object)
-# TODO: richtextemailaddress (discriminated object)
-# TODO: richtextphonenumber (discriminated object)
-# TODO: richtextbankcardnumber (discriminated object)
-# TODO: richtextmention (discriminated object)
-# TODO: richtexthashtag (discriminated object)
-# TODO: richtextcashtag (discriminated object)
-# TODO: richtextbotcommand (discriminated object)
-# TODO: richtextanchor (discriminated object)
-# TODO: richtextanchorlink (discriminated object)
-# TODO: richtextreference (discriminated object)
-# TODO: richtextreferencelink (discriminated object)
+
+
+class RichTextBold(BaseModel):
+    """A bold text.
+
+    See https://core.telegram.org/bots/api#richtextbold
+    """
+
+    type: Literal["bold"] = "bold"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextItalic(BaseModel):
+    """An italicized text.
+
+    See https://core.telegram.org/bots/api#richtextitalic
+    """
+
+    type: Literal["italic"] = "italic"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextUnderline(BaseModel):
+    """An underlined text.
+
+    See https://core.telegram.org/bots/api#richtextunderline
+    """
+
+    type: Literal["underline"] = "underline"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextStrikethrough(BaseModel):
+    """A strikethrough text.
+
+    See https://core.telegram.org/bots/api#richtextstrikethrough
+    """
+
+    type: Literal["strikethrough"] = "strikethrough"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextSpoiler(BaseModel):
+    """A text covered by a spoiler.
+
+    See https://core.telegram.org/bots/api#richtextspoiler
+    """
+
+    type: Literal["spoiler"] = "spoiler"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextDateTime(BaseModel):
+    """Formatted date and time.
+
+    See https://core.telegram.org/bots/api#richtextdatetime
+    """
+
+    type: Literal["date_time"] = "date_time"
+
+    text: RichText
+    """The text"""
+
+    unix_time: int
+    """The Unix time associated with the entity"""
+
+    date_time_format: str
+    """The string that defines the formatting of the date and time. See
+    date-time entity formatting for more details.
+    """
+
+
+class RichTextTextMention(BaseModel):
+    """A mention of a Telegram user by their identifier.
+
+    See https://core.telegram.org/bots/api#richtexttextmention
+    """
+
+    type: Literal["text_mention"] = "text_mention"
+
+    text: RichText
+    """The text"""
+
+    user: User
+    """The mentioned user"""
+
+
+class RichTextSubscript(BaseModel):
+    """A subscript text.
+
+    See https://core.telegram.org/bots/api#richtextsubscript
+    """
+
+    type: Literal["subscript"] = "subscript"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextSuperscript(BaseModel):
+    """A superscript text.
+
+    See https://core.telegram.org/bots/api#richtextsuperscript
+    """
+
+    type: Literal["superscript"] = "superscript"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextMarked(BaseModel):
+    """A marked text.
+
+    See https://core.telegram.org/bots/api#richtextmarked
+    """
+
+    type: Literal["marked"] = "marked"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextCode(BaseModel):
+    """A monowidth text.
+
+    See https://core.telegram.org/bots/api#richtextcode
+    """
+
+    type: Literal["code"] = "code"
+
+    text: RichText
+    """The text"""
+
+
+class RichTextCustomEmoji(BaseModel):
+    """A custom emoji.
+
+    See https://core.telegram.org/bots/api#richtextcustomemoji
+    """
+
+    type: Literal["custom_emoji"] = "custom_emoji"
+
+    custom_emoji_id: str
+    """Unique identifier of the custom emoji. Use getCustomEmojiStickers to
+    get full information about the sticker.
+    """
+
+    alternative_text: str
+    """Alternative emoji for the custom emoji"""
+
+
+class RichTextMathematicalExpression(BaseModel):
+    """A mathematical expression.
+
+    See
+    https://core.telegram.org/bots/api#richtextmathematicalexpression
+    """
+
+    type: Literal["mathematical_expression"] = "mathematical_expression"
+
+    expression: str
+    """The expression in LaTeX format"""
+
+
+class RichTextURL(BaseModel):
+    """A text with a link.
+
+    See https://core.telegram.org/bots/api#richtexturl
+    """
+
+    type: Literal["url"] = "url"
+
+    text: RichText
+    """The text"""
+
+    url: str
+    """URL of the link"""
+
+
+class RichTextEmailAddress(BaseModel):
+    """A text with an email address.
+
+    See https://core.telegram.org/bots/api#richtextemailaddress
+    """
+
+    type: Literal["email_address"] = "email_address"
+
+    text: RichText
+    """The text"""
+
+    email_address: str
+    """The email address"""
+
+
+class RichTextPhoneNumber(BaseModel):
+    """A text with a phone number.
+
+    See https://core.telegram.org/bots/api#richtextphonenumber
+    """
+
+    type: Literal["phone_number"] = "phone_number"
+
+    text: RichText
+    """The text"""
+
+    phone_number: str
+    """The phone number"""
+
+
+class RichTextBankCardNumber(BaseModel):
+    """A text with a bank card number.
+
+    See https://core.telegram.org/bots/api#richtextbankcardnumber
+    """
+
+    type: Literal["bank_card_number"] = "bank_card_number"
+
+    text: RichText
+    """The text"""
+
+    bank_card_number: str
+    """The bank card number"""
+
+
+class RichTextMention(BaseModel):
+    """A mention by a username.
+
+    See https://core.telegram.org/bots/api#richtextmention
+    """
+
+    type: Literal["mention"] = "mention"
+
+    text: RichText
+    """The text"""
+
+    username: str
+    """The username"""
+
+
+class RichTextHashtag(BaseModel):
+    """A hashtag.
+
+    See https://core.telegram.org/bots/api#richtexthashtag
+    """
+
+    type: Literal["hashtag"] = "hashtag"
+
+    text: RichText
+    """The text"""
+
+    hashtag: str
+    """The hashtag"""
+
+
+class RichTextCashtag(BaseModel):
+    """A cashtag.
+
+    See https://core.telegram.org/bots/api#richtextcashtag
+    """
+
+    type: Literal["cashtag"] = "cashtag"
+
+    text: RichText
+    """The text"""
+
+    cashtag: str
+    """The cashtag"""
+
+
+class RichTextBotCommand(BaseModel):
+    """A bot command.
+
+    See https://core.telegram.org/bots/api#richtextbotcommand
+    """
+
+    type: Literal["bot_command"] = "bot_command"
+
+    text: RichText
+    """The text"""
+
+    bot_command: str
+    """The bot command"""
+
+
+class RichTextAnchor(BaseModel):
+    """An anchor.
+
+    See https://core.telegram.org/bots/api#richtextanchor
+    """
+
+    type: Literal["anchor"] = "anchor"
+
+    name: str
+    """The name of the anchor"""
+
+
+class RichTextAnchorLink(BaseModel):
+    """A link to an anchor.
+
+    See https://core.telegram.org/bots/api#richtextanchorlink
+    """
+
+    type: Literal["anchor_link"] = "anchor_link"
+
+    text: RichText
+    """The link text"""
+
+    anchor_name: str
+    """The name of the anchor. If the name is empty, then the link brings
+    back to the top of the message.
+    """
+
+
+class RichTextReference(BaseModel):
+    """A reference.
+
+    See https://core.telegram.org/bots/api#richtextreference
+    """
+
+    type: Literal["reference"] = "reference"
+
+    text: RichText
+    """Text of the reference"""
+
+    name: str
+    """The name of the reference"""
+
+
+class RichTextReferenceLink(BaseModel):
+    """A link to a reference.
+
+    See https://core.telegram.org/bots/api#richtextreferencelink
+    """
+
+    type: Literal["reference_link"] = "reference_link"
+
+    text: RichText
+    """The link text"""
+
+    reference_name: str
+    """The name of the reference"""
 
 
 class RichBlockCaption(BaseModel):
@@ -5887,27 +7718,340 @@ it can be any of the following types:
 
 See https://core.telegram.org/bots/api#richblock
 """
-# TODO: richblockparagraph (discriminated object)
-# TODO: richblocksectionheading (discriminated object)
-# TODO: richblockpreformatted (discriminated object)
-# TODO: richblockfooter (discriminated object)
-# TODO: richblockdivider (discriminated object)
-# TODO: richblockmathematicalexpression (discriminated object)
-# TODO: richblockanchor (discriminated object)
-# TODO: richblocklist (discriminated object)
-# TODO: richblockblockquotation (discriminated object)
-# TODO: richblockpullquotation (discriminated object)
-# TODO: richblockcollage (discriminated object)
-# TODO: richblockslideshow (discriminated object)
-# TODO: richblocktable (discriminated object)
-# TODO: richblockdetails (discriminated object)
-# TODO: richblockmap (discriminated object)
-# TODO: richblockanimation (discriminated object)
-# TODO: richblockaudio (discriminated object)
-# TODO: richblockphoto (discriminated object)
-# TODO: richblockvideo (discriminated object)
-# TODO: richblockvoicenote (discriminated object)
-# TODO: richblockthinking (discriminated object)
+
+
+class RichBlockParagraph(BaseModel):
+    """A text paragraph, corresponding to the HTML tag <p>.
+
+    See https://core.telegram.org/bots/api#richblockparagraph
+    """
+
+    type: Literal["paragraph"] = "paragraph"
+
+    text: RichText
+    """Text of the block"""
+
+
+class RichBlockSectionHeading(BaseModel):
+    """A section heading, corresponding to the HTML tags <h1>, <h2>, <h3>,
+    <h4>, <h5>, or <h6>.
+
+    See https://core.telegram.org/bots/api#richblocksectionheading
+    """
+
+    type: Literal["heading"] = "heading"
+
+    text: RichText
+    """Text of the block"""
+
+    size: int
+    """Relative size of the text font; 1-6, 1 is the largest, 6 is the
+    smallest
+    """
+
+
+class RichBlockPreformatted(BaseModel):
+    """A preformatted text block, corresponding to the nested HTML tags
+    <pre> and <code>.
+
+    See https://core.telegram.org/bots/api#richblockpreformatted
+    """
+
+    type: Literal["pre"] = "pre"
+
+    text: RichText
+    """Text of the block"""
+
+    language: str | None = None
+    """The programming language of the text"""
+
+
+class RichBlockFooter(BaseModel):
+    """A footer, corresponding to the HTML tag <footer>.
+
+    See https://core.telegram.org/bots/api#richblockfooter
+    """
+
+    type: Literal["footer"] = "footer"
+
+    text: RichText
+    """Text of the block"""
+
+
+class RichBlockDivider(BaseModel):
+    """A divider, corresponding to the HTML tag <hr/>.
+
+    See https://core.telegram.org/bots/api#richblockdivider
+    """
+
+    type: Literal["divider"] = "divider"
+
+
+class RichBlockMathematicalExpression(BaseModel):
+    """A block with a mathematical expression in LaTeX format,
+    corresponding to the custom HTML tag <tg-math-block>.
+
+    See
+    https://core.telegram.org/bots/api#richblockmathematicalexpression
+    """
+
+    type: Literal["mathematical_expression"] = "mathematical_expression"
+
+    expression: str
+    """The mathematical expression in LaTeX format"""
+
+
+class RichBlockAnchor(BaseModel):
+    """A block with an anchor, corresponding to the HTML tag <a> with the
+    attribute name.
+
+    See https://core.telegram.org/bots/api#richblockanchor
+    """
+
+    type: Literal["anchor"] = "anchor"
+
+    name: str
+    """The name of the anchor"""
+
+
+class RichBlockList(BaseModel):
+    """A list of blocks, corresponding to the HTML tag <ul> or <ol> with
+    multiple nested tags <li>.
+
+    See https://core.telegram.org/bots/api#richblocklist
+    """
+
+    type: Literal["list"] = "list"
+
+    items: list[RichBlockListItem]
+    """Items of the list"""
+
+
+class RichBlockBlockQuotation(BaseModel):
+    """A block quotation, corresponding to the HTML tag <blockquote>.
+
+    See https://core.telegram.org/bots/api#richblockblockquotation
+    """
+
+    type: Literal["blockquote"] = "blockquote"
+
+    blocks: list[RichBlock]
+    """Content of the block"""
+
+    credit: RichText | None = None
+    """Credit of the block"""
+
+
+class RichBlockPullQuotation(BaseModel):
+    """A quotation with centered text, loosely corresponding to the HTML
+    tag <aside>.
+
+    See https://core.telegram.org/bots/api#richblockpullquotation
+    """
+
+    type: Literal["pullquote"] = "pullquote"
+
+    text: RichText
+    """Text of the block"""
+
+    credit: RichText | None = None
+    """Credit of the block"""
+
+
+class RichBlockCollage(BaseModel):
+    """A collage, corresponding to the custom HTML tag <tg-collage>.
+
+    See https://core.telegram.org/bots/api#richblockcollage
+    """
+
+    type: Literal["collage"] = "collage"
+
+    blocks: list[RichBlock]
+    """Elements of the collage"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockSlideshow(BaseModel):
+    """A slideshow, corresponding to the custom HTML tag <tg-slideshow>.
+
+    See https://core.telegram.org/bots/api#richblockslideshow
+    """
+
+    type: Literal["slideshow"] = "slideshow"
+
+    blocks: list[RichBlock]
+    """Elements of the slideshow"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockTable(BaseModel):
+    """A table, corresponding to the HTML tag <table>.
+
+    See https://core.telegram.org/bots/api#richblocktable
+    """
+
+    type: Literal["table"] = "table"
+
+    cells: list[list[RichBlockTableCell]]
+    """Cells of the table"""
+
+    is_bordered: bool | None = None
+    """True, if the table has borders"""
+
+    is_striped: bool | None = None
+    """True, if the table is striped"""
+
+    caption: RichText | None = None
+    """Caption of the table"""
+
+
+class RichBlockDetails(BaseModel):
+    """An expandable block for details disclosure, corresponding to the
+    HTML tag <details>.
+
+    See https://core.telegram.org/bots/api#richblockdetails
+    """
+
+    type: Literal["details"] = "details"
+
+    summary: RichText
+    """Always shown summary of the block"""
+
+    blocks: list[RichBlock]
+    """Content of the block"""
+
+    is_open: bool | None = None
+    """True, if the content of the block is visible by default"""
+
+
+class RichBlockMap(BaseModel):
+    """A block with a map, corresponding to the custom HTML tag <tg-map>.
+
+    See https://core.telegram.org/bots/api#richblockmap
+    """
+
+    type: Literal["map"] = "map"
+
+    location: Location
+    """Location of the center of the map"""
+
+    zoom: int
+    """Map zoom level; 13-20"""
+
+    width: int
+    """Expected width of the map"""
+
+    height: int
+    """Expected height of the map"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockAnimation(BaseModel):
+    """A block with an animation, corresponding to the HTML tag <video>.
+
+    See https://core.telegram.org/bots/api#richblockanimation
+    """
+
+    type: Literal["animation"] = "animation"
+
+    animation: Animation
+    """The animation"""
+
+    has_spoiler: bool | None = None
+    """True, if the media preview is covered by a spoiler animation"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockAudio(BaseModel):
+    """A block with a music file, corresponding to the HTML tag <audio>.
+
+    See https://core.telegram.org/bots/api#richblockaudio
+    """
+
+    type: Literal["audio"] = "audio"
+
+    audio: Audio
+    """The audio"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockPhoto(BaseModel):
+    """A block with a photo, corresponding to the HTML tag <img>.
+
+    See https://core.telegram.org/bots/api#richblockphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    photo: list[PhotoSize]
+    """Available sizes of the photo"""
+
+    has_spoiler: bool | None = None
+    """True, if the media preview is covered by a spoiler animation"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockVideo(BaseModel):
+    """A block with a video, corresponding to the HTML tag <video>.
+
+    See https://core.telegram.org/bots/api#richblockvideo
+    """
+
+    type: Literal["video"] = "video"
+
+    video: Video
+    """The video"""
+
+    has_spoiler: bool | None = None
+    """True, if the media preview is covered by a spoiler animation"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockVoiceNote(BaseModel):
+    """A block with a voice note, corresponding to the HTML tag <audio>.
+
+    See https://core.telegram.org/bots/api#richblockvoicenote
+    """
+
+    type: Literal["voice_note"] = "voice_note"
+
+    voice_note: Voice
+    """The voice note"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class RichBlockThinking(BaseModel):
+    """A block with a “Thinking…” placeholder, corresponding to the custom
+    HTML tag <tg-thinking>. The block may be used only in
+    sendRichMessageDraft, therefore it can't be received in messages.
+    See https://t.me/addemoji/AIActions for examples of custom emoji
+    that are recommended for usage in the block.
+
+    See https://core.telegram.org/bots/api#richblockthinking
+    """
+
+    type: Literal["thinking"] = "thinking"
+
+    text: RichText
+    """Text of the block. See https://t.me/addemoji/AIActions for examples
+    of custom emoji that are recommended for usage in the block.
+    """
 
 
 class InputRichBlockListItem(BaseModel):
@@ -5965,27 +8109,333 @@ Currently, it can be any of the following types:
 
 See https://core.telegram.org/bots/api#inputrichblock
 """
-# TODO: inputrichblockparagraph (discriminated object)
-# TODO: inputrichblocksectionheading (discriminated object)
-# TODO: inputrichblockpreformatted (discriminated object)
-# TODO: inputrichblockfooter (discriminated object)
-# TODO: inputrichblockdivider (discriminated object)
-# TODO: inputrichblockmathematicalexpression (discriminated object)
-# TODO: inputrichblockanchor (discriminated object)
-# TODO: inputrichblocklist (discriminated object)
-# TODO: inputrichblockblockquotation (discriminated object)
-# TODO: inputrichblockpullquotation (discriminated object)
-# TODO: inputrichblockcollage (discriminated object)
-# TODO: inputrichblockslideshow (discriminated object)
-# TODO: inputrichblocktable (discriminated object)
-# TODO: inputrichblockdetails (discriminated object)
-# TODO: inputrichblockmap (discriminated object)
-# TODO: inputrichblockanimation (discriminated object)
-# TODO: inputrichblockaudio (discriminated object)
-# TODO: inputrichblockphoto (discriminated object)
-# TODO: inputrichblockvideo (discriminated object)
-# TODO: inputrichblockvoicenote (discriminated object)
-# TODO: inputrichblockthinking (discriminated object)
+
+
+class InputRichBlockParagraph(BaseModel):
+    """A text paragraph, corresponding to the HTML tag <p>.
+
+    See https://core.telegram.org/bots/api#inputrichblockparagraph
+    """
+
+    type: Literal["paragraph"] = "paragraph"
+
+    text: RichText
+    """Text of the block"""
+
+
+class InputRichBlockSectionHeading(BaseModel):
+    """A section heading, corresponding to the HTML tags <h1>, <h2>, <h3>,
+    <h4>, <h5>, or <h6>.
+
+    See https://core.telegram.org/bots/api#inputrichblocksectionheading
+    """
+
+    type: Literal["heading"] = "heading"
+
+    text: RichText
+    """Text of the block"""
+
+    size: int
+    """Relative size of the text font; 1-6, 1 is the largest, 6 is the
+    smallest
+    """
+
+
+class InputRichBlockPreformatted(BaseModel):
+    """A preformatted text block, corresponding to the nested HTML tags
+    <pre> and <code>.
+
+    See https://core.telegram.org/bots/api#inputrichblockpreformatted
+    """
+
+    type: Literal["pre"] = "pre"
+
+    text: RichText
+    """Text of the block"""
+
+    language: str | None = None
+    """The programming language of the text"""
+
+
+class InputRichBlockFooter(BaseModel):
+    """A footer, corresponding to the HTML tag <footer>.
+
+    See https://core.telegram.org/bots/api#inputrichblockfooter
+    """
+
+    type: Literal["footer"] = "footer"
+
+    text: RichText
+    """Text of the block"""
+
+
+class InputRichBlockDivider(BaseModel):
+    """A divider, corresponding to the HTML tag <hr/>.
+
+    See https://core.telegram.org/bots/api#inputrichblockdivider
+    """
+
+    type: Literal["divider"] = "divider"
+
+
+class InputRichBlockMathematicalExpression(BaseModel):
+    """A block with a mathematical expression in LaTeX format,
+    corresponding to the custom HTML tag <tg-math-block>.
+
+    See
+    https://core.telegram.org/bots/api#inputrichblockmathematicalexpression
+    """
+
+    type: Literal["mathematical_expression"] = "mathematical_expression"
+
+    expression: str
+    """The mathematical expression in LaTeX format"""
+
+
+class InputRichBlockAnchor(BaseModel):
+    """A block with an anchor, corresponding to the HTML tag <a> with the
+    attribute name.
+
+    See https://core.telegram.org/bots/api#inputrichblockanchor
+    """
+
+    type: Literal["anchor"] = "anchor"
+
+    name: str
+    """The name of the anchor"""
+
+
+class InputRichBlockList(BaseModel):
+    """A list of blocks, corresponding to the HTML tag <ul> or <ol> with
+    multiple nested tags <li>.
+
+    See https://core.telegram.org/bots/api#inputrichblocklist
+    """
+
+    type: Literal["list"] = "list"
+
+    items: list[InputRichBlockListItem]
+    """Items of the list"""
+
+
+class InputRichBlockBlockQuotation(BaseModel):
+    """A block quotation, corresponding to the HTML tag <blockquote>.
+
+    See https://core.telegram.org/bots/api#inputrichblockblockquotation
+    """
+
+    type: Literal["blockquote"] = "blockquote"
+
+    blocks: list[InputRichBlock]
+    """Content of the block"""
+
+    credit: RichText | None = None
+    """Credit of the block"""
+
+
+class InputRichBlockPullQuotation(BaseModel):
+    """A quotation with centered text, loosely corresponding to the HTML
+    tag <aside>.
+
+    See https://core.telegram.org/bots/api#inputrichblockpullquotation
+    """
+
+    type: Literal["pullquote"] = "pullquote"
+
+    text: RichText
+    """Text of the block"""
+
+    credit: RichText | None = None
+    """Credit of the block"""
+
+
+class InputRichBlockCollage(BaseModel):
+    """A collage, corresponding to the custom HTML tag <tg-collage>.
+
+    See https://core.telegram.org/bots/api#inputrichblockcollage
+    """
+
+    type: Literal["collage"] = "collage"
+
+    blocks: list[InputRichBlock]
+    """Elements of the collage"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockSlideshow(BaseModel):
+    """A slideshow, corresponding to the custom HTML tag <tg-slideshow>.
+
+    See https://core.telegram.org/bots/api#inputrichblockslideshow
+    """
+
+    type: Literal["slideshow"] = "slideshow"
+
+    blocks: list[InputRichBlock]
+    """Elements of the slideshow"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockTable(BaseModel):
+    """A table, corresponding to the HTML tag <table>.
+
+    See https://core.telegram.org/bots/api#inputrichblocktable
+    """
+
+    type: Literal["table"] = "table"
+
+    cells: list[list[RichBlockTableCell]]
+    """Cells of the table"""
+
+    is_bordered: bool | None = None
+    """Pass True if the table has borders"""
+
+    is_striped: bool | None = None
+    """Pass True if the table is striped"""
+
+    caption: RichText | None = None
+    """Caption of the table"""
+
+
+class InputRichBlockDetails(BaseModel):
+    """An expandable block for details disclosure, corresponding to the
+    HTML tag <details>.
+
+    See https://core.telegram.org/bots/api#inputrichblockdetails
+    """
+
+    type: Literal["details"] = "details"
+
+    summary: RichText
+    """Always shown summary of the block"""
+
+    blocks: list[InputRichBlock]
+    """Content of the block"""
+
+    is_open: bool | None = None
+    """Pass True if the content of the block is visible by default"""
+
+
+class InputRichBlockMap(BaseModel):
+    """A block with a map, corresponding to the custom HTML tag <tg-map>.
+    The map's width and height must not exceed 10000 in total. The width
+    and height ratio must be at most 20.
+
+    See https://core.telegram.org/bots/api#inputrichblockmap
+    """
+
+    type: Literal["map"] = "map"
+
+    location: Location
+    """Location of the center of the map"""
+
+    zoom: int
+    """Map zoom level; 0-24"""
+
+    width: int
+    """Map width; 0-10000"""
+
+    height: int
+    """Map height; 0-10000"""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockAnimation(BaseModel):
+    """A block with an animation, corresponding to the HTML tag <video>.
+
+    See https://core.telegram.org/bots/api#inputrichblockanimation
+    """
+
+    type: Literal["animation"] = "animation"
+
+    animation: InputMediaAnimation
+    """The animation. Caption is ignored."""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockAudio(BaseModel):
+    """A block with a music file, corresponding to the HTML tag <audio>.
+
+    See https://core.telegram.org/bots/api#inputrichblockaudio
+    """
+
+    type: Literal["audio"] = "audio"
+
+    audio: InputMediaAudio
+    """The audio. Caption is ignored."""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockPhoto(BaseModel):
+    """A block with a photo, corresponding to the HTML tag <img>.
+
+    See https://core.telegram.org/bots/api#inputrichblockphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    photo: InputMediaPhoto
+    """The photo. Caption is ignored."""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockVideo(BaseModel):
+    """A block with a video, corresponding to the HTML tag <video>.
+
+    See https://core.telegram.org/bots/api#inputrichblockvideo
+    """
+
+    type: Literal["video"] = "video"
+
+    video: InputMediaVideo
+    """The video. Caption is ignored."""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockVoiceNote(BaseModel):
+    """A block with a voice note, corresponding to the HTML tag <audio>.
+
+    See https://core.telegram.org/bots/api#inputrichblockvoicenote
+    """
+
+    type: Literal["voice_note"] = "voice_note"
+
+    voice_note: InputMediaVoiceNote
+    """The voice note. Caption is ignored."""
+
+    caption: RichBlockCaption | None = None
+    """Caption of the block"""
+
+
+class InputRichBlockThinking(BaseModel):
+    """A block with a “Thinking…” placeholder, corresponding to the custom
+    HTML tag <tg-thinking>. The block may be used only in
+    sendRichMessageDraft, therefore it can't be received in messages.
+    See https://t.me/addemoji/AIActions for examples of custom emoji
+    that are recommended for usage in the block.
+
+    See https://core.telegram.org/bots/api#inputrichblockthinking
+    """
+
+    type: Literal["thinking"] = "thinking"
+
+    text: RichText
+    """Text of the block. See https://t.me/addemoji/AIActions for examples
+    of custom emoji that are recommended for usage in the block.
+    """
 
 
 class InlineQuery(BaseModel):
@@ -6084,26 +8534,968 @@ users and therefore must be assumed to be public.
 
 See https://core.telegram.org/bots/api#inlinequeryresult
 """
-# TODO: inlinequeryresultarticle (discriminated object)
-# TODO: inlinequeryresultphoto (discriminated object)
-# TODO: inlinequeryresultgif (discriminated object)
-# TODO: inlinequeryresultmpeg4gif (discriminated object)
-# TODO: inlinequeryresultvideo (discriminated object)
-# TODO: inlinequeryresultaudio (discriminated object)
-# TODO: inlinequeryresultvoice (discriminated object)
-# TODO: inlinequeryresultdocument (discriminated object)
-# TODO: inlinequeryresultlocation (discriminated object)
-# TODO: inlinequeryresultvenue (discriminated object)
-# TODO: inlinequeryresultcontact (discriminated object)
-# TODO: inlinequeryresultgame (discriminated object)
-# TODO: inlinequeryresultcachedphoto (discriminated object)
-# TODO: inlinequeryresultcachedgif (discriminated object)
-# TODO: inlinequeryresultcachedmpeg4gif (discriminated object)
-# TODO: inlinequeryresultcachedsticker (discriminated object)
-# TODO: inlinequeryresultcacheddocument (discriminated object)
-# TODO: inlinequeryresultcachedvideo (discriminated object)
-# TODO: inlinequeryresultcachedvoice (discriminated object)
-# TODO: inlinequeryresultcachedaudio (discriminated object)
+
+
+class InlineQueryResultArticle(BaseModel):
+    """Represents a link to an article or web page.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultarticle
+    """
+
+    type: Literal["article"] = "article"
+
+    id: str
+    """Unique identifier for this result, 1-64 Bytes"""
+
+    title: str
+    """Title of the result"""
+
+    input_message_content: InputMessageContent
+    """Content of the message to be sent"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    url: str | None = None
+    """URL of the result"""
+
+    description: str | None = None
+    """Short description of the result"""
+
+    thumbnail_url: str | None = None
+    """Url of the thumbnail for the result"""
+
+    thumbnail_width: int | None = None
+    """Thumbnail width"""
+
+    thumbnail_height: int | None = None
+    """Thumbnail height"""
+
+
+class InlineQueryResultPhoto(BaseModel):
+    """Represents a link to a photo. By default, this photo will be sent by
+    the user with optional caption. Alternatively, you can use
+    input_message_content to send a message with the specified content
+    instead of the photo.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    photo_url: str
+    """A valid URL of the photo. Photo must be in JPEG format. Photo size
+    must not exceed 5MB.
+    """
+
+    thumbnail_url: str
+    """URL of the thumbnail for the photo"""
+
+    photo_width: int | None = None
+    """Width of the photo"""
+
+    photo_height: int | None = None
+    """Height of the photo"""
+
+    title: str | None = None
+    """Title for the result"""
+
+    description: str | None = None
+    """Short description of the result"""
+
+    caption: str | None = None
+    """Caption of the photo to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the photo caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the photo"""
+
+
+class InlineQueryResultGif(BaseModel):
+    """Represents a link to an animated GIF file. By default, this animated
+    GIF file will be sent by the user with optional caption.
+    Alternatively, you can use input_message_content to send a message
+    with the specified content instead of the animation.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultgif
+    """
+
+    type: Literal["gif"] = "gif"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    gif_url: str
+    """A valid URL for the GIF file"""
+
+    thumbnail_url: str
+    """URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for
+    the result
+    """
+
+    gif_width: int | None = None
+    """Width of the GIF"""
+
+    gif_height: int | None = None
+    """Height of the GIF"""
+
+    gif_duration: int | None = None
+    """Duration of the GIF in seconds"""
+
+    thumbnail_mime_type: str | None = None
+    """MIME type of the thumbnail, must be one of “image/jpeg”,
+    “image/gif”, or “video/mp4”. Defaults to “image/jpeg”.
+    """
+
+    title: str | None = None
+    """Title for the result"""
+
+    caption: str | None = None
+    """Caption of the GIF file to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the caption. See formatting options for
+    more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the GIF animation"""
+
+
+class InlineQueryResultMpeg4Gif(BaseModel):
+    """Represents a link to a video animation (H.264/MPEG-4 AVC video
+    without sound). By default, this animated MPEG-4 file will be sent
+    by the user with optional caption. Alternatively, you can use
+    input_message_content to send a message with the specified content
+    instead of the animation.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultmpeg4gif
+    """
+
+    type: Literal["mpeg4_gif"] = "mpeg4_gif"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    mpeg4_url: str
+    """A valid URL for the MPEG4 file"""
+
+    thumbnail_url: str
+    """URL of the static (JPEG or GIF) or animated (MPEG4) thumbnail for
+    the result
+    """
+
+    mpeg4_width: int | None = None
+    """Video width"""
+
+    mpeg4_height: int | None = None
+    """Video height"""
+
+    mpeg4_duration: int | None = None
+    """Video duration in seconds"""
+
+    thumbnail_mime_type: str | None = None
+    """MIME type of the thumbnail, must be one of “image/jpeg”,
+    “image/gif”, or “video/mp4”. Defaults to “image/jpeg”.
+    """
+
+    title: str | None = None
+    """Title for the result"""
+
+    caption: str | None = None
+    """Caption of the MPEG-4 file to be sent, 0-1024 characters after
+    entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the caption. See formatting options for
+    more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the video animation"""
+
+
+class InlineQueryResultVideo(BaseModel):
+    """Represents a link to a page containing an embedded video player or a
+    video file. By default, this video file will be sent by the user
+    with an optional caption. Alternatively, you can use
+    input_message_content to send a message with the specified content
+    instead of the video.
+
+    If an InlineQueryResultVideo message contains an embedded video
+    (e.g., YouTube), you must replace its content using
+    input_message_content.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultvideo
+    """
+
+    type: Literal["video"] = "video"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    video_url: str
+    """A valid URL for the embedded video player or video file"""
+
+    mime_type: str
+    """MIME type of the content of the video URL, “text/html” or
+    “video/mp4”
+    """
+
+    thumbnail_url: str
+    """URL of the thumbnail (JPEG only) for the video"""
+
+    title: str
+    """Title for the result"""
+
+    caption: str | None = None
+    """Caption of the video to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the video caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    video_width: int | None = None
+    """Video width"""
+
+    video_height: int | None = None
+    """Video height"""
+
+    video_duration: int | None = None
+    """Video duration in seconds"""
+
+    description: str | None = None
+    """Short description of the result"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the video. This field
+    is required if InlineQueryResultVideo is used to send an HTML-page
+    as a result (e.g., a YouTube video).
+    """
+
+
+class InlineQueryResultAudio(BaseModel):
+    """Represents a link to an MP3 audio file. By default, this audio file
+    will be sent by the user. Alternatively, you can use
+    input_message_content to send a message with the specified content
+    instead of the audio.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultaudio
+    """
+
+    type: Literal["audio"] = "audio"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    audio_url: str
+    """A valid URL for the audio file"""
+
+    title: str
+    """Title"""
+
+    caption: str | None = None
+    """Caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the audio caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    performer: str | None = None
+    """Performer"""
+
+    audio_duration: int | None = None
+    """Audio duration in seconds"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the audio"""
+
+
+class InlineQueryResultVoice(BaseModel):
+    """Represents a link to a voice recording in an .OGG container encoded
+    with OPUS. By default, this voice recording will be sent by the
+    user. Alternatively, you can use input_message_content to send a
+    message with the specified content instead of the the voice message.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultvoice
+    """
+
+    type: Literal["voice"] = "voice"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    voice_url: str
+    """A valid URL for the voice recording"""
+
+    title: str
+    """Recording title"""
+
+    caption: str | None = None
+    """Caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the voice message caption. See
+    formatting options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    voice_duration: int | None = None
+    """Recording duration in seconds"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the voice recording"""
+
+
+class InlineQueryResultDocument(BaseModel):
+    """Represents a link to a file. By default, this file will be sent by
+    the user with an optional caption. Alternatively, you can use
+    input_message_content to send a message with the specified content
+    instead of the file. Currently, only .PDF and .ZIP files can be sent
+    using this method.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultdocument
+    """
+
+    type: Literal["document"] = "document"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    title: str
+    """Title for the result"""
+
+    document_url: str
+    """A valid URL for the file"""
+
+    mime_type: str
+    """MIME type of the content of the file, either “application/pdf” or
+    “application/zip”
+    """
+
+    caption: str | None = None
+    """Caption of the document to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the document caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    description: str | None = None
+    """Short description of the result"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the file"""
+
+    thumbnail_url: str | None = None
+    """URL of the thumbnail (JPEG only) for the file"""
+
+    thumbnail_width: int | None = None
+    """Thumbnail width"""
+
+    thumbnail_height: int | None = None
+    """Thumbnail height"""
+
+
+class InlineQueryResultLocation(BaseModel):
+    """Represents a location on a map. By default, the location will be
+    sent by the user. Alternatively, you can use input_message_content
+    to send a message with the specified content instead of the
+    location.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultlocation
+    """
+
+    type: Literal["location"] = "location"
+
+    id: str
+    """Unique identifier for this result, 1-64 Bytes"""
+
+    latitude: float
+    """Location latitude in degrees"""
+
+    longitude: float
+    """Location longitude in degrees"""
+
+    title: str
+    """Location title"""
+
+    horizontal_accuracy: float | None = None
+    """The radius of uncertainty for the location, measured in meters;
+    0-1500
+    """
+
+    live_period: int | None = None
+    """Period in seconds during which the location can be updated, must be
+    between 60 and 86400, or 0x7FFFFFFF for live locations that can be
+    edited indefinitely
+    """
+
+    heading: int | None = None
+    """For live locations, a direction in which the user is moving, in
+    degrees. Must be between 1 and 360 if specified.
+    """
+
+    proximity_alert_radius: int | None = None
+    """For live locations, a maximum distance for proximity alerts about
+    approaching another chat member, in meters. Must be between 1 and
+    100000 if specified.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the location"""
+
+    thumbnail_url: str | None = None
+    """Url of the thumbnail for the result"""
+
+    thumbnail_width: int | None = None
+    """Thumbnail width"""
+
+    thumbnail_height: int | None = None
+    """Thumbnail height"""
+
+
+class InlineQueryResultVenue(BaseModel):
+    """Represents a venue. By default, the venue will be sent by the user.
+    Alternatively, you can use input_message_content to send a message
+    with the specified content instead of the venue.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultvenue
+    """
+
+    type: Literal["venue"] = "venue"
+
+    id: str
+    """Unique identifier for this result, 1-64 Bytes"""
+
+    latitude: float
+    """Latitude of the venue location in degrees"""
+
+    longitude: float
+    """Longitude of the venue location in degrees"""
+
+    title: str
+    """Title of the venue"""
+
+    address: str
+    """Address of the venue"""
+
+    foursquare_id: str | None = None
+    """Foursquare identifier of the venue if known"""
+
+    foursquare_type: str | None = None
+    """Foursquare type of the venue, if known. (For example,
+    “arts_entertainment/default”, “arts_entertainment/aquarium” or
+    “food/icecream”.)
+    """
+
+    google_place_id: str | None = None
+    """Google Places identifier of the venue"""
+
+    google_place_type: str | None = None
+    """Google Places type of the venue. (See supported types.)"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the venue"""
+
+    thumbnail_url: str | None = None
+    """Url of the thumbnail for the result"""
+
+    thumbnail_width: int | None = None
+    """Thumbnail width"""
+
+    thumbnail_height: int | None = None
+    """Thumbnail height"""
+
+
+class InlineQueryResultContact(BaseModel):
+    """Represents a contact with a phone number. By default, this contact
+    will be sent by the user. Alternatively, you can use
+    input_message_content to send a message with the specified content
+    instead of the contact.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultcontact
+    """
+
+    type: Literal["contact"] = "contact"
+
+    id: str
+    """Unique identifier for this result, 1-64 Bytes"""
+
+    phone_number: str
+    """Contact's phone number"""
+
+    first_name: str
+    """Contact's first name"""
+
+    last_name: str | None = None
+    """Contact's last name"""
+
+    vcard: str | None = None
+    """Additional data about the contact in the form of a vCard, 0-2048
+    bytes
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the contact"""
+
+    thumbnail_url: str | None = None
+    """Url of the thumbnail for the result"""
+
+    thumbnail_width: int | None = None
+    """Thumbnail width"""
+
+    thumbnail_height: int | None = None
+    """Thumbnail height"""
+
+
+class InlineQueryResultGame(BaseModel):
+    """Represents a Game.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultgame
+    """
+
+    type: Literal["game"] = "game"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    game_short_name: str
+    """Short name of the game"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+
+class InlineQueryResultCachedPhoto(BaseModel):
+    """Represents a link to a photo stored on the Telegram servers. By
+    default, this photo will be sent by the user with an optional
+    caption. Alternatively, you can use input_message_content to send a
+    message with the specified content instead of the photo.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultcachedphoto
+    """
+
+    type: Literal["photo"] = "photo"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    photo_file_id: str
+    """A valid file identifier of the photo"""
+
+    title: str | None = None
+    """Title for the result"""
+
+    description: str | None = None
+    """Short description of the result"""
+
+    caption: str | None = None
+    """Caption of the photo to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the photo caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the photo"""
+
+
+class InlineQueryResultCachedGif(BaseModel):
+    """Represents a link to an animated GIF file stored on the Telegram
+    servers. By default, this animated GIF file will be sent by the user
+    with an optional caption. Alternatively, you can use
+    input_message_content to send a message with specified content
+    instead of the animation.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultcachedgif
+    """
+
+    type: Literal["gif"] = "gif"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    gif_file_id: str
+    """A valid file identifier for the GIF file"""
+
+    title: str | None = None
+    """Title for the result"""
+
+    caption: str | None = None
+    """Caption of the GIF file to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the caption. See formatting options for
+    more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the GIF animation"""
+
+
+class InlineQueryResultCachedMpeg4Gif(BaseModel):
+    """Represents a link to a video animation (H.264/MPEG-4 AVC video
+    without sound) stored on the Telegram servers. By default, this
+    animated MPEG-4 file will be sent by the user with an optional
+    caption. Alternatively, you can use input_message_content to send a
+    message with the specified content instead of the animation.
+
+    See
+    https://core.telegram.org/bots/api#inlinequeryresultcachedmpeg4gif
+    """
+
+    type: Literal["mpeg4_gif"] = "mpeg4_gif"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    mpeg4_file_id: str
+    """A valid file identifier for the MPEG4 file"""
+
+    title: str | None = None
+    """Title for the result"""
+
+    caption: str | None = None
+    """Caption of the MPEG-4 file to be sent, 0-1024 characters after
+    entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the caption. See formatting options for
+    more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the video animation"""
+
+
+class InlineQueryResultCachedSticker(BaseModel):
+    """Represents a link to a sticker stored on the Telegram servers. By
+    default, this sticker will be sent by the user. Alternatively, you
+    can use input_message_content to send a message with the specified
+    content instead of the sticker.
+
+    See
+    https://core.telegram.org/bots/api#inlinequeryresultcachedsticker
+    """
+
+    type: Literal["sticker"] = "sticker"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    sticker_file_id: str
+    """A valid file identifier of the sticker"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the sticker"""
+
+
+class InlineQueryResultCachedDocument(BaseModel):
+    """Represents a link to a file stored on the Telegram servers. By
+    default, this file will be sent by the user with an optional
+    caption. Alternatively, you can use input_message_content to send a
+    message with the specified content instead of the file.
+
+    See
+    https://core.telegram.org/bots/api#inlinequeryresultcacheddocument
+    """
+
+    type: Literal["document"] = "document"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    title: str
+    """Title for the result"""
+
+    document_file_id: str
+    """A valid file identifier for the file"""
+
+    description: str | None = None
+    """Short description of the result"""
+
+    caption: str | None = None
+    """Caption of the document to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the document caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the file"""
+
+
+class InlineQueryResultCachedVideo(BaseModel):
+    """Represents a link to a video file stored on the Telegram servers. By
+    default, this video file will be sent by the user with an optional
+    caption. Alternatively, you can use input_message_content to send a
+    message with the specified content instead of the video.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultcachedvideo
+    """
+
+    type: Literal["video"] = "video"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    video_file_id: str
+    """A valid file identifier for the video file"""
+
+    title: str
+    """Title for the result"""
+
+    description: str | None = None
+    """Short description of the result"""
+
+    caption: str | None = None
+    """Caption of the video to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the video caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the video"""
+
+
+class InlineQueryResultCachedVoice(BaseModel):
+    """Represents a link to a voice message stored on the Telegram servers.
+    By default, this voice message will be sent by the user.
+    Alternatively, you can use input_message_content to send a message
+    with the specified content instead of the voice message.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultcachedvoice
+    """
+
+    type: Literal["voice"] = "voice"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    voice_file_id: str
+    """A valid file identifier for the voice message"""
+
+    title: str
+    """Voice message title"""
+
+    caption: str | None = None
+    """Caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the voice message caption. See
+    formatting options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the voice message"""
+
+
+class InlineQueryResultCachedAudio(BaseModel):
+    """Represents a link to an MP3 audio file stored on the Telegram
+    servers. By default, this audio file will be sent by the user.
+    Alternatively, you can use input_message_content to send a message
+    with the specified content instead of the audio.
+
+    See https://core.telegram.org/bots/api#inlinequeryresultcachedaudio
+    """
+
+    type: Literal["audio"] = "audio"
+
+    id: str
+    """Unique identifier for this result, 1-64 bytes"""
+
+    audio_file_id: str
+    """A valid file identifier for the audio file"""
+
+    caption: str | None = None
+    """Caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the audio caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """List of special entities that appear in the caption, which can be
+    specified instead of parse_mode
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """Inline keyboard attached to the message"""
+
+    input_message_content: InputMessageContent | None = None
+    """Content of the message to be sent instead of the audio"""
 
 
 type InputMessageContent = (
@@ -6660,9 +10052,40 @@ Currently, it can be one of
 
 See https://core.telegram.org/bots/api#revenuewithdrawalstate
 """
-# TODO: revenuewithdrawalstatepending (discriminated object)
-# TODO: revenuewithdrawalstatesucceeded (discriminated object)
-# TODO: revenuewithdrawalstatefailed (discriminated object)
+
+
+class RevenueWithdrawalStatePending(BaseModel):
+    """The withdrawal is in progress.
+
+    See https://core.telegram.org/bots/api#revenuewithdrawalstatepending
+    """
+
+    type: Literal["pending"] = "pending"
+
+
+class RevenueWithdrawalStateSucceeded(BaseModel):
+    """The withdrawal succeeded.
+
+    See
+    https://core.telegram.org/bots/api#revenuewithdrawalstatesucceeded
+    """
+
+    type: Literal["succeeded"] = "succeeded"
+
+    date: int
+    """Date the withdrawal was completed in Unix time"""
+
+    url: str
+    """An HTTPS URL that can be used to see transaction details"""
+
+
+class RevenueWithdrawalStateFailed(BaseModel):
+    """The withdrawal failed and the transaction was refunded.
+
+    See https://core.telegram.org/bots/api#revenuewithdrawalstatefailed
+    """
+
+    type: Literal["failed"] = "failed"
 
 
 class AffiliateInfo(BaseModel):
@@ -6713,13 +10136,142 @@ outgoing transactions. Currently, it can be one of
 
 See https://core.telegram.org/bots/api#transactionpartner
 """
-# TODO: transactionpartneruser (discriminated object)
-# TODO: transactionpartnerchat (discriminated object)
-# TODO: transactionpartneraffiliateprogram (discriminated object)
-# TODO: transactionpartnerfragment (discriminated object)
-# TODO: transactionpartnertelegramads (discriminated object)
-# TODO: transactionpartnertelegramapi (discriminated object)
-# TODO: transactionpartnerother (discriminated object)
+
+
+class TransactionPartnerUser(BaseModel):
+    """Describes a transaction with a user.
+
+    See https://core.telegram.org/bots/api#transactionpartneruser
+    """
+
+    type: Literal["user"] = "user"
+
+    transaction_type: str
+    """Type of the transaction, currently one of “invoice_payment” for
+    payments via invoices, “paid_media_payment” for payments for paid
+    media, “gift_purchase” for gifts sent by the bot, “premium_purchase”
+    for Telegram Premium subscriptions gifted by the bot,
+    “business_account_transfer” for direct transfers from managed
+    business accounts
+    """
+
+    user: User
+    """Information about the user"""
+
+    affiliate: AffiliateInfo | None = None
+    """Information about the affiliate that received a commission via this
+    transaction. Can be available only for “invoice_payment” and
+    “paid_media_payment” transactions.
+    """
+
+    invoice_payload: str | None = None
+    """Bot-specified invoice payload. Can be available only for
+    “invoice_payment” transactions.
+    """
+
+    subscription_period: int | None = None
+    """The duration of the paid subscription. Can be available only for
+    “invoice_payment” transactions.
+    """
+
+    paid_media: list[PaidMedia] | None = None
+    """Information about the paid media bought by the user; for
+    “paid_media_payment” transactions only
+    """
+
+    paid_media_payload: str | None = None
+    """Bot-specified paid media payload. Can be available only for
+    “paid_media_payment” transactions.
+    """
+
+    gift: Gift | None = None
+    """The gift sent to the user by the bot; for “gift_purchase”
+    transactions only
+    """
+
+    premium_subscription_duration: int | None = None
+    """Number of months the gifted Telegram Premium subscription will be
+    active for; for “premium_purchase” transactions only
+    """
+
+
+class TransactionPartnerChat(BaseModel):
+    """Describes a transaction with a chat.
+
+    See https://core.telegram.org/bots/api#transactionpartnerchat
+    """
+
+    type: Literal["chat"] = "chat"
+
+    chat: Chat
+    """Information about the chat"""
+
+    gift: Gift | None = None
+    """The gift sent to the chat by the bot"""
+
+
+class TransactionPartnerAffiliateProgram(BaseModel):
+    """Describes the affiliate program that issued the affiliate commission
+    received via this transaction.
+
+    See
+    https://core.telegram.org/bots/api#transactionpartneraffiliateprogram
+    """
+
+    type: Literal["affiliate_program"] = "affiliate_program"
+
+    commission_per_mille: int
+    """The number of Telegram Stars received by the bot for each 1000
+    Telegram Stars received by the affiliate program sponsor from
+    referred users
+    """
+
+    sponsor_user: User | None = None
+    """Information about the bot that sponsored the affiliate program"""
+
+
+class TransactionPartnerFragment(BaseModel):
+    """Describes a withdrawal transaction with Fragment.
+
+    See https://core.telegram.org/bots/api#transactionpartnerfragment
+    """
+
+    type: Literal["fragment"] = "fragment"
+
+    withdrawal_state: RevenueWithdrawalState | None = None
+    """State of the transaction if the transaction is outgoing"""
+
+
+class TransactionPartnerTelegramAds(BaseModel):
+    """Describes a withdrawal transaction to the Telegram Ads platform.
+
+    See https://core.telegram.org/bots/api#transactionpartnertelegramads
+    """
+
+    type: Literal["telegram_ads"] = "telegram_ads"
+
+
+class TransactionPartnerTelegramAPI(BaseModel):
+    """Describes a transaction with payment for paid broadcasting.
+
+    See https://core.telegram.org/bots/api#transactionpartnertelegramapi
+    """
+
+    type: Literal["telegram_api"] = "telegram_api"
+
+    request_count: int
+    """The number of successful requests that exceeded regular limits and
+    were therefore billed
+    """
+
+
+class TransactionPartnerOther(BaseModel):
+    """Describes a transaction with an unknown source or recipient.
+
+    See https://core.telegram.org/bots/api#transactionpartnerother
+    """
+
+    type: Literal["other"] = "other"
 
 
 class StarTransaction(BaseModel):
@@ -6930,15 +10482,218 @@ was submitted that should be resolved by the user. It should be one of:
 
 See https://core.telegram.org/bots/api#passportelementerror
 """
-# TODO: passportelementerrordatafield (discriminated object)
-# TODO: passportelementerrorfrontside (discriminated object)
-# TODO: passportelementerrorreverseside (discriminated object)
-# TODO: passportelementerrorselfie (discriminated object)
-# TODO: passportelementerrorfile (discriminated object)
-# TODO: passportelementerrorfiles (discriminated object)
-# TODO: passportelementerrortranslationfile (discriminated object)
-# TODO: passportelementerrortranslationfiles (discriminated object)
-# TODO: passportelementerrorunspecified (discriminated object)
+
+
+class PassportElementErrorDataField(BaseModel):
+    """Represents an issue in one of the data fields that was provided by
+    the user. The error is considered resolved when the field's value
+    changes.
+
+    See https://core.telegram.org/bots/api#passportelementerrordatafield
+    """
+
+    source: Literal["data"] = "data"
+
+    type: str
+    """The section of the user's Telegram Passport which has the error, one
+    of “personal_details”, “passport”, “driver_license”,
+    “identity_card”, “internal_passport”, “address”
+    """
+
+    field_name: str
+    """Name of the data field which has the error"""
+
+    data_hash: str
+    """Base64-encoded data hash"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorFrontSide(BaseModel):
+    """Represents an issue with the front side of a document. The error is
+    considered resolved when the file with the front side of the
+    document changes.
+
+    See https://core.telegram.org/bots/api#passportelementerrorfrontside
+    """
+
+    source: Literal["front_side"] = "front_side"
+
+    type: str
+    """The section of the user's Telegram Passport which has the issue, one
+    of “passport”, “driver_license”, “identity_card”,
+    “internal_passport”
+    """
+
+    file_hash: str
+    """Base64-encoded hash of the file with the front side of the document"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorReverseSide(BaseModel):
+    """Represents an issue with the reverse side of a document. The error
+    is considered resolved when the file with reverse side of the
+    document changes.
+
+    See
+    https://core.telegram.org/bots/api#passportelementerrorreverseside
+    """
+
+    source: Literal["reverse_side"] = "reverse_side"
+
+    type: str
+    """The section of the user's Telegram Passport which has the issue, one
+    of “driver_license”, “identity_card”
+    """
+
+    file_hash: str
+    """Base64-encoded hash of the file with the reverse side of the
+    document
+    """
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorSelfie(BaseModel):
+    """Represents an issue with the selfie with a document. The error is
+    considered resolved when the file with the selfie changes.
+
+    See https://core.telegram.org/bots/api#passportelementerrorselfie
+    """
+
+    source: Literal["selfie"] = "selfie"
+
+    type: str
+    """The section of the user's Telegram Passport which has the issue, one
+    of “passport”, “driver_license”, “identity_card”,
+    “internal_passport”
+    """
+
+    file_hash: str
+    """Base64-encoded hash of the file with the selfie"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorFile(BaseModel):
+    """Represents an issue with a document scan. The error is considered
+    resolved when the file with the document scan changes.
+
+    See https://core.telegram.org/bots/api#passportelementerrorfile
+    """
+
+    source: Literal["file"] = "file"
+
+    type: str
+    """The section of the user's Telegram Passport which has the issue, one
+    of “utility_bill”, “bank_statement”, “rental_agreement”,
+    “passport_registration”, “temporary_registration”
+    """
+
+    file_hash: str
+    """Base64-encoded file hash"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorFiles(BaseModel):
+    """Represents an issue with a list of scans. The error is considered
+    resolved when the list of files containing the scans changes.
+
+    See https://core.telegram.org/bots/api#passportelementerrorfiles
+    """
+
+    source: Literal["files"] = "files"
+
+    type: str
+    """The section of the user's Telegram Passport which has the issue, one
+    of “utility_bill”, “bank_statement”, “rental_agreement”,
+    “passport_registration”, “temporary_registration”
+    """
+
+    file_hashes: list[str]
+    """List of base64-encoded file hashes"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorTranslationFile(BaseModel):
+    """Represents an issue with one of the files that constitute the
+    translation of a document. The error is considered resolved when the
+    file changes.
+
+    See
+    https://core.telegram.org/bots/api#passportelementerrortranslationfile
+    """
+
+    source: Literal["translation_file"] = "translation_file"
+
+    type: str
+    """Type of element of the user's Telegram Passport which has the issue,
+    one of “passport”, “driver_license”, “identity_card”,
+    “internal_passport”, “utility_bill”, “bank_statement”,
+    “rental_agreement”, “passport_registration”,
+    “temporary_registration”
+    """
+
+    file_hash: str
+    """Base64-encoded file hash"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorTranslationFiles(BaseModel):
+    """Represents an issue with the translated version of a document. The
+    error is considered resolved when a file with the document
+    translation change.
+
+    See
+    https://core.telegram.org/bots/api#passportelementerrortranslationfiles
+    """
+
+    source: Literal["translation_files"] = "translation_files"
+
+    type: str
+    """Type of element of the user's Telegram Passport which has the issue,
+    one of “passport”, “driver_license”, “identity_card”,
+    “internal_passport”, “utility_bill”, “bank_statement”,
+    “rental_agreement”, “passport_registration”,
+    “temporary_registration”
+    """
+
+    file_hashes: list[str]
+    """List of base64-encoded file hashes"""
+
+    message: str
+    """Error message"""
+
+
+class PassportElementErrorUnspecified(BaseModel):
+    """Represents an issue in an unspecified place. The error is considered
+    resolved when new data is added.
+
+    See
+    https://core.telegram.org/bots/api#passportelementerrorunspecified
+    """
+
+    source: Literal["unspecified"] = "unspecified"
+
+    type: str
+    """Type of element of the user's Telegram Passport which has the issue"""
+
+    element_hash: str
+    """Base64-encoded element hash"""
+
+    message: str
+    """Error message"""
 # TODO: sendgame (method)
 
 

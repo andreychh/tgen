@@ -35,6 +35,40 @@ class {{.Name}}(BaseModel):
 {{- end}}
 
 {{- /*
+	discriminated_object writes an object one fixed value tells apart from the
+	others its union stands for. The value is declared as a field admitting that
+	value alone and defaulting to it, which is what the Go target cannot do: a Go
+	struct field holds no constant, so the value is written there as the object
+	marshals itself.
+
+	Declaring it answers for both directions at once — pydantic reads the field
+	to pick the variant on the way in and dumps it on the way out — and it is
+	also the only way. A discriminated union refuses to build over a variant that
+	leaves the key off, whichever way the variant travels.
+
+	The field stands ahead of the rest because it is what names the variant, and
+	its default does not push the required fields after it: pydantic orders by
+	declaration and not by whether a default stands there.
+*/}}
+{{- define "discriminated_object"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.DiscriminatedObject*/}}
+{{- if .Aliased}}
+{{- assert .Direction.Inbound (printf "%s holds an aliased field and no longer travels inbound" .Name)}}
+{{- end}}
+
+class {{.Name}}(BaseModel):
+    {{.Doc}}
+{{- with .Discriminator}}
+
+    {{.Name}}: {{.Annotation}} = {{.Assignment}}
+{{- end}}
+{{- range .Fields}}
+
+    {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
+    {{.Doc}}
+{{- end}}
+{{- end}}
+
+{{- /*
 	alias writes a name tgen gives a type the documentation leaves unnamed. It is
 	a class over the type rather than an assignment to it, because the Go target
 	declares a type of its own here and the two targets have to name the same

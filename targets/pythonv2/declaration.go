@@ -31,7 +31,7 @@ func NewDeclaration(record ir.Definition) Declaration {
 	case ir.Object:
 		return NewObject(record)
 	case ir.DiscriminatedObject:
-		return NewStub(record.Ref, "discriminated object")
+		return NewDiscriminatedObject(record)
 	case ir.Union:
 		return NewUnion(record)
 	case ir.DiscriminatedUnion:
