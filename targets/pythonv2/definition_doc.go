@@ -27,10 +27,12 @@ func NewDefinitionDoc(ref model.Reference, passage prose.Passage, introduced boo
 }
 
 // Passage returns the prose describing the definition, closed by the URL of the
-// section unless tgen introduced it, which the page never named and so gave no
-// section to address. What indentation the prose is written at belongs to
-// [Docstring], since it follows from where the declaration stands and not from
-// what the documentation says.
+// section the definition stands at. A definition tgen introduced is closed by
+// nothing, the page having named it nowhere and so left no section to address.
+//
+// What indentation the prose is written at belongs to [Docstring], since it
+// follows from where the declaration stands and not from what the documentation
+// says.
 func (d DefinitionDoc) Passage() prose.Passage {
 	if d.introduced {
 		return d.passage

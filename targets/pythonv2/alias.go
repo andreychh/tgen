@@ -34,7 +34,7 @@ func (a Alias) Template() string {
 	return "alias"
 }
 
-// Name returns the Python class the alias declares.
+// Name implements [Declaration].
 func (a Alias) Name() string {
 	return NewClassName(a.inner.Name).Value()
 }

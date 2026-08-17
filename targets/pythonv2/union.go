@@ -27,8 +27,8 @@ func NewUnion(u ir.Union) Union {
 	return Union{inner: u}
 }
 
-// Doc returns the docstring of the declaration, closing with a link back to the
-// section the union was read from.
+// Doc returns the docstring of the declaration, closed by a link to the section
+// the union was read from where the page gave it one.
 func (u Union) Doc() string {
 	doc := NewDefinitionDoc(u.inner.Ref, u.inner.Description, u.inner.Introduced)
 	return NewStatementDocstring(doc.Passage()).Value()
@@ -44,7 +44,7 @@ func (u Union) Template() string {
 	return "union"
 }
 
-// Name returns the Python name the union declares.
+// Name implements [Declaration].
 func (u Union) Name() string {
 	return NewClassName(u.inner.Name).Value()
 }
@@ -73,8 +73,8 @@ func NewDiscriminatedUnion(u ir.DiscriminatedUnion) DiscriminatedUnion {
 	return DiscriminatedUnion{inner: u}
 }
 
-// Doc returns the docstring of the declaration, closing with a link back to the
-// section the union was read from.
+// Doc returns the docstring of the declaration, closed by a link to the section
+// the union was read from where the page gave it one.
 func (u DiscriminatedUnion) Doc() string {
 	doc := NewDefinitionDoc(u.inner.Ref, u.inner.Description, u.inner.Introduced)
 	return NewStatementDocstring(doc.Passage()).Value()
@@ -90,7 +90,7 @@ func (u DiscriminatedUnion) Template() string {
 	return "discriminated_union"
 }
 
-// Name returns the Python name the union declares.
+// Name implements [Declaration].
 func (u DiscriminatedUnion) Name() string {
 	return NewClassName(u.inner.Name).Value()
 }

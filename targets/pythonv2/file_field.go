@@ -10,9 +10,10 @@ import (
 
 // filed represents what every field reaching a file holds whatever hands its
 // file over: the attribute the model is read off by, and the key the value
-// travels under. The two part ways for one field of the documented API and are
-// kept apart for every one of them, since the dump is told what to leave out by
-// attribute and told back what to write by key.
+// travels under. No file the documented API names spells the two differently,
+// and they are held apart regardless, since the dump is told what to leave out
+// by attribute and told back what to write by key — a file field whose key
+// Python reserves would part them with nothing here to change.
 type filed struct {
 	inner ir.FileField
 }

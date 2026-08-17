@@ -18,8 +18,8 @@ func NewObject(o ir.Object) Object {
 	return Object{inner: o}
 }
 
-// Doc returns the docstring of the declaration, closing with a link back to the
-// section the object was read from.
+// Doc returns the docstring of the declaration, closed by a link to the section
+// the object was read from where the page gave it one.
 func (o Object) Doc() string {
 	doc := NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced)
 	return NewClassDocstring(doc.Passage()).Value()
@@ -35,7 +35,7 @@ func (o Object) Template() string {
 	return "object"
 }
 
-// Name returns the Python class the object declares.
+// Name implements [Declaration].
 func (o Object) Name() string {
 	return NewClassName(o.inner.Name).Value()
 }
@@ -46,8 +46,8 @@ func (o Object) Fields() []Field {
 	return slices.NewMapped(o.inner.Fields, NewField)
 }
 
-// Files returns the fields the object hands a file over for, empty when it holds
-// none and so becomes JSON by a plain dump.
+// Files returns the fields the object hands a file over for, empty when the
+// object holds none.
 func (o Object) Files() []Attached {
 	return slices.NewMapped(o.inner.Files, NewAttached)
 }

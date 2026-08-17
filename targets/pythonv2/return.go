@@ -90,7 +90,9 @@ func NewResult(r ir.Result) Result {
 	return Result{inner: r}
 }
 
-// Return returns the [Return] variant rendering the result.
+// Return returns the [Return] variant rendering the result. It panics on a
+// result of a kind the target renders nothing for, the documentation drawing one
+// distinction here and this reading both sides of it.
 func (r Result) Return() Return {
 	switch inner := r.inner.(type) {
 	case ir.Confirmation:

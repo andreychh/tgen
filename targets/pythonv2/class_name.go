@@ -10,6 +10,12 @@ import (
 	"github.com/iancoleman/strcase"
 )
 
+// acronyms holds the initialisms a capitalization leaves half-spelled, each
+// mapped to the spelling both targets give it. It is keyed by what capitalizing
+// a documentation name produces rather than by what the page writes, since that
+// is the form the replacement meets, and an entry added here has to be spelled
+// the same way.
+//
 //nolint:gochecknoglobals // immutable lookup table, not mutable global state
 var acronyms = map[string]string{
 	"Id":  "ID",

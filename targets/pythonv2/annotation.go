@@ -52,7 +52,8 @@ func (a Annotation) Value() string {
 }
 
 // name returns the Python name of the atom the type holds, without the lists
-// enclosing it.
+// enclosing it. It panics on an atom the target writes no name for, a type
+// bound to nothing being a fault of the pipeline rather than of the page.
 func (a Annotation) name() string {
 	switch atom := a.typ.Atom().(type) {
 	case typebound.Primitive:
@@ -68,6 +69,7 @@ func (a Annotation) name() string {
 }
 
 // builtin returns the Python type a built-in of the documentation renders as.
+// It panics on a kind no Python type is written for.
 func builtin(kind primitive.Kind) string {
 	switch kind {
 	case primitive.Integer:

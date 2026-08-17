@@ -20,8 +20,8 @@ func NewMethod(m ir.Method) Method {
 	return Method{inner: m}
 }
 
-// Doc returns the docstring of the declaration, closing with a link back to the
-// section the method was read from.
+// Doc returns the docstring of the declaration, closed by a link to the section
+// the method was read from where the page gave it one.
 func (m Method) Doc() string {
 	doc := NewDefinitionDoc(m.inner.Ref, m.inner.Description, m.inner.Introduced)
 	return NewClassDocstring(doc.Passage()).Value()
@@ -37,9 +37,9 @@ func (m Method) Template() string {
 	return "method"
 }
 
-// Name returns the Python class the method declares: the documented name
-// suffixed with Method, which keeps the model holding a request apart from the
-// object the request answers with.
+// Name implements [Declaration]. The documented name is suffixed with Method,
+// which keeps the model holding a request apart from the object the request
+// answers with.
 func (m Method) Name() string {
 	return NewClassName(m.inner.Name).Value() + "Method"
 }

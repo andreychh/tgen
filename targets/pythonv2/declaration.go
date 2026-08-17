@@ -33,7 +33,8 @@ type Declaration interface {
 }
 
 // NewDeclaration creates the declaration one record of the pipeline's exit is
-// rendered as.
+// rendered as. It panics on a record of a kind the target renders nothing for,
+// every kind the pipeline can hand over being spelled here.
 func NewDeclaration(record ir.Definition) Declaration {
 	switch record := record.(type) {
 	case ir.Object:

@@ -68,7 +68,8 @@ func (d Docstring) Value() string {
 	return d.quote(lines)
 }
 
-// block returns the lines one block occupies.
+// block returns the lines one block occupies, none at all for a kind no
+// docstring form is written for.
 func (d Docstring) block(block prose.Block) []string {
 	switch block := block.(type) {
 	case prose.Paragraph:

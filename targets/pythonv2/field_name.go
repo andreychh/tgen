@@ -38,10 +38,10 @@ func NewFieldName(k model.Key) FieldName {
 	return FieldName{key: k}
 }
 
-// Value returns the key as it is written, since the documentation already
-// spells a key in the lowercase words Python declares a field by, and followed
-// by an underscore where the key is a word Python reserves. The key itself
-// survives as the alias [Field.Assignment] writes.
+// Value returns the key as the documentation writes it, followed by an
+// underscore where the key is a word Python reserves. Nothing else is done to
+// it: a key is already spelled in the lowercase words Python declares a field
+// by. The key itself survives as the alias [Field.Assignment] writes.
 func (n FieldName) Value() string {
 	if keywords[n.key] {
 		return string(n.key) + "_"

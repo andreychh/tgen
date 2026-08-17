@@ -29,8 +29,8 @@ func NewDiscriminatedObject(o ir.DiscriminatedObject) DiscriminatedObject {
 	return DiscriminatedObject{inner: o}
 }
 
-// Doc returns the docstring of the declaration, closing with a link back to the
-// section the object was read from.
+// Doc returns the docstring of the declaration, closed by a link to the section
+// the object was read from where the page gave it one.
 func (o DiscriminatedObject) Doc() string {
 	doc := NewDefinitionDoc(o.inner.Ref, o.inner.Description, o.inner.Introduced)
 	return NewClassDocstring(doc.Passage()).Value()
@@ -46,7 +46,7 @@ func (o DiscriminatedObject) Template() string {
 	return "discriminated_object"
 }
 
-// Name returns the Python class the object declares.
+// Name implements [Declaration].
 func (o DiscriminatedObject) Name() string {
 	return NewClassName(o.inner.Name).Value()
 }
@@ -63,8 +63,8 @@ func (o DiscriminatedObject) Fields() []Field {
 	return slices.NewMapped(o.inner.Fields, NewField)
 }
 
-// Files returns the fields the object hands a file over for, empty when it holds
-// none and so becomes JSON by a plain dump.
+// Files returns the fields the object hands a file over for, empty when the
+// object holds none.
 func (o DiscriminatedObject) Files() []Attached {
 	return slices.NewMapped(o.inner.Files, NewAttached)
 }
