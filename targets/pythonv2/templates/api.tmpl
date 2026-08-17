@@ -1,0 +1,43 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	api writes everything the documentation page dictates, in the order the page
+	dictates it. The page numbers its headings in a single run and mixes types
+	with the methods that use them — Sticker beside sendSticker — so one sequence
+	is what keeps the generated file readable the way the page is. What the page
+	says nothing about is written in client.py, which changes when tgen changes
+	rather than when Telegram does.
+
+	Every declaration is rendered through the shape its kind shares, unless the
+	templates hold a block written by hand for it. Such a block claims one
+	declaration by the reference it is addressed by — manual_<ref> — and takes
+	the rendering of that declaration over, for the shapes spell what the
+	documentation says and some of what Python says is not said there. The block
+	stands where the declaration stands, so what is written by hand keeps the
+	order of the page like everything else.
+*/}}
+{{- define "api"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Generation*/ -}}
+{{template "header" .}}
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import IO, Annotated, Any, Literal, Protocol, TypeVar
+
+import httpx
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    SkipValidation,
+    TypeAdapter,
+)
+
+{{template "client" .}}
+{{- range .Spec.Definitions}}
+{{render (override .Ref .Template) .}}
+{{- end}}
+{{end}}

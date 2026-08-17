@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Andrey Chernykh
+# SPDX-License-Identifier: MIT
+
+[project]
+name = "stand"
+version = "0.0.0"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28",
+    "pydantic>=2.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15",
+]

@@ -1,0 +1,64 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	init writes what makes the directory a package: the name every declaration of
+	api.py is reached by, and the statement of which of them are the package's own.
+	It stands as a file of its own rather than being api.py renamed to __init__.py,
+	which would spare it entirely. A package whose whole content is its __init__ has
+	to be taken apart before it can gain a second module, and this one is expected
+	to — the legacy target already ships an asyncio subpackage beside its modules,
+	and the flag choosing between a blocking and an awaiting client is written down
+	as the next thing to build.
+
+	The names are listed and not starred. A star would lift whatever api.py holds at
+	module level, and what it holds includes the dozen-odd names it imported in
+	order to declare anything at all: a package exporting pydantic's Field under its
+	own name is a package whose user can import the wrong Field and be told nothing.
+	The Go target needs no such statement, an identifier there being exported by how
+	it is spelled and an import never being re-exported at all. Python's underscore
+	answers only the first half of that, which is why the second half is written.
+
+	The surface is stated twice — bound by the import, declared by __all__ — because
+	the two are read by different things. The import is what puts a name in the
+	package; __all__ is what a star import takes and, more to the point, what a type
+	checker reads to decide that a name reached through this module was meant to be.
+	Without it a bot checked strictly is told the package exports nothing.
+
+	The transport comes first and in the order api.py declares it, the documented
+	declarations after and in the order the page numbers them. Neither list is
+	sorted: a name moves here only when it moves there.
+*/}}
+{{- define "init"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Generation*/ -}}
+{{template "header" .}}
+
+from .api import (
+    TELEGRAM_API,
+    Call,
+    Connection,
+    Destination,
+    Error,
+    FakeConnection,
+    HTTPConnection,
+    Payload,
+    Response,
+{{- range .Spec.Definitions}}
+    {{.Name}},
+{{- end}}
+)
+
+__all__ = [
+    "TELEGRAM_API",
+    "Call",
+    "Connection",
+    "Destination",
+    "Error",
+    "FakeConnection",
+    "HTTPConnection",
+    "Payload",
+    "Response",
+{{- range .Spec.Definitions}}
+    "{{.Name}}",
+{{- end}}
+]
+{{end}}

@@ -1,0 +1,103 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	The blocks below are the declarations Python spells in a way the documentation
+	does not describe. Each claims one definition by the reference it is addressed
+	by, and is rendered in that definition's place, so nothing here escapes the
+	order of the page or the pass that walks it.
+
+	A block writes by hand only what has to be written by hand: it renders the
+	shape its kind shares for everything the documentation does say, and adds its
+	own beside it. Spelling a declaration out in full here would freeze what the
+	specification still owns, and the next release would drift past it unnoticed.
+
+	Neither block pins anything, where every block of the Go target pins the way
+	its definition travels. A pin earns its place by catching what a release moves
+	and nobody notices, which is why the ones in the Go target hold facts the
+	documentation decides: how many variants a union stands for, which way a thing
+	travels. Nothing either block below leans on is decided that way. The two
+	methods each adds go uncalled by a package that sends no file whichever way the
+	union travels, and the fields they spell out by hand are fields tgen hands them
+	— a fact whose only author is the person who would already be editing this file
+	to change it. A pin claiming that someone must read the block again, over
+	nothing, is what makes the next pin worth less than it says.
+
+	There are two blocks and not three: the union a file travels as needs nothing
+	written for it. The Go target declares an interface there, because the two ways
+	of handing a file over have to be named somewhere a method can call them
+	through; Python resolves a call on a union by looking at every variant, so
+	naming FileID and Upload is naming everything the union can answer.
+*/}}
+
+{{- /*
+	manual_fileid adds to the file id alias the two ways a file travels, which is
+	what makes it an InputFile: a file Telegram already holds is named, never
+	uploaded, so it stays in the body wherever it sits and the sink goes untouched
+	either way.
+*/}}
+{{- define "manual_fileid"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Alias*/}}
+{{- template "alias" .}}
+
+    def _place(self, sink: _FileSink, data: dict[str, Any], key: str) -> None:
+        data[key] = self.root
+
+    def _attach(self, sink: _FileSink) -> str:
+        return self.root
+{{- end}}
+
+{{- /*
+	manual_upload spells the upload object out, fields and all: what it holds is a
+	stream of bytes, which the specification never names and no two targets spell
+	alike.
+
+	Two settings carry the stream, and neither is a concession to which way the
+	object travels. arbitrary_types_allowed is what lets pydantic build a schema for
+	typing.IO[bytes] at all, there being none it knows. SkipValidation is what keeps
+	the check that schema would otherwise run from running: IO[bytes] is not a
+	class, an instance check against one cannot succeed, and the reader a caller
+	opened itself would be refused by it. So the stream goes unchecked because
+	nothing can check it, and the sending of a file needs it unchecked to work at
+	all. What that costs is a reader taken on trust, which is the bargain every
+	arbitrary type strikes and not a loan against the direction.
+
+	Its two ways of travelling are the ones the union exists for. Placed, the bytes
+	go to the part the parameter's own key names and the body is left without that
+	key at all — writing one would put a second value under it, which the receiver
+	reads as the file id the upload was sent instead of. That is why placing is
+	handed the body rather than asked for a value: it has none to give. Attached,
+	the bytes go to a part the sink names, and the reference to that part is a value,
+	so it is answered with.
+
+	What is pinned is the one thing this block is blind to. It writes its two
+	fields out by hand and never reads the ones the specification gives the object,
+	which is sound only while there are none — and there are none because the
+	pipeline says so, not because a page does. A field arriving here would be a
+	field silently dropped, and the count is what turns it into a stopped
+	generation instead.
+*/}}
+{{- define "manual_upload"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Object*/}}
+
+class {{.Name}}(BaseModel):
+    {{.Doc}}
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    reader: SkipValidation[IO[bytes]]
+    """The stream the bytes are read from, taken unchecked: IO[bytes] is not a
+    class, so the instance check arbitrary_types_allowed would otherwise run
+    against it cannot succeed, and would refuse every reader a caller opens.
+    """
+
+    name: str = ""
+    """The name the file is sent under, defaulting to file when left unset."""
+
+    def _place(self, sink: _FileSink, data: dict[str, Any], key: str) -> None:
+        sink.file(key, self._name(), self.reader)
+
+    def _attach(self, sink: _FileSink) -> str:
+        return f"attach://{sink.reserve(self._name(), self.reader)}"
+
+    def _name(self) -> str:
+        return self.name or "file"
+{{- end}}

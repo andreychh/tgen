@@ -1,0 +1,86 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	The four templates below write how one field hands its file over. Each writes
+	one statement, into a body that has already dumped the model with that field
+	left out — leaving it out is what these statements put back.
+
+	Two of them turn on where the field sits, since only a parameter owns a key of
+	the request to name a part after. The other two do not: a field holding a file
+	inside rewrites itself into JSON wherever it sits, so a method and an object
+	hand it over the same way, which is why neither reads its receiver or its
+	target off the field. Both are the same in either body — self and data — and a
+	name that never varies is written rather than asked for.
+
+	Placing and attaching are not shaped alike, and that is the one difference here
+	worth reading twice. Attaching always yields a reference, so the field answers
+	with one and the statement writes it down under the key. Placing sometimes
+	yields nothing at all — an upload leaves the body without its key, since a
+	value there would be read as the file id the upload was sent instead of — so
+	the field is handed the data and puts into it whatever it has, which spares
+	every optional file a second test of a value that may not exist.
+
+	The Go target returns from both, and not because it weighed the same choice:
+	its body is a struct assembled out of shadowed fields, and a shadow has to be
+	assigned something. A dict has no such demand, so the demand is not answered
+	where it is not made.
+*/}}
+
+{{- /*
+	file_place hands over a parameter that is the file itself. The bytes travel in
+	a part named by the parameter's own key, so the file writes into the sink,
+	into the data, or into both, and this statement asks which nowhere: place is
+	the question "put yourself under this key", and a file id and an upload answer
+	it differently by being what they are.
+*/}}
+{{- define "file_place"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Placed*/}}
+{{- if .Optional}}
+        if self.{{.Name}} is not None:
+            self.{{.Name}}._place(sink, data, "{{.Key}}")
+{{- else}}
+        self.{{.Name}}._place(sink, data, "{{.Key}}")
+{{- end}}
+{{- end}}
+
+{{- /*
+	file_attach hands over a field that is the file itself. It owns no key of the
+	request, so the bytes travel in a part the sink names and the reference to it is
+	what takes the field's place. It names no key on the way in for the same reason:
+	the part is one nothing else addresses, and the sink invents what to call it.
+*/}}
+{{- define "file_attach"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Attached*/}}
+{{- if .Optional}}
+        if self.{{.Name}} is not None:
+            data["{{.Key}}"] = self.{{.Name}}._attach(sink)
+{{- else}}
+        data["{{.Key}}"] = self.{{.Name}}._attach(sink)
+{{- end}}
+{{- end}}
+
+{{- /*
+	file_resolve hands over a field holding a file somewhere inside. It owns no
+	part of the form, so it answers what JSON it becomes once its own files are
+	handed over, and that answer takes its place in the data.
+*/}}
+{{- define "file_resolve"}}
+{{- if .Optional}}
+        if self.{{.Name}} is not None:
+            data["{{.Key}}"] = self.{{.Name}}._resolve(sink)
+{{- else}}
+        data["{{.Key}}"] = self.{{.Name}}._resolve(sink)
+{{- end}}
+{{- end}}
+
+{{- /*
+	file_resolve_array does the same for a sequence, each element of which holds a
+	file of its own and answers for itself.
+*/}}
+{{- define "file_resolve_array"}}
+{{- if .Optional}}
+        if self.{{.Name}} is not None:
+            data["{{.Key}}"] = [el._resolve(sink) for el in self.{{.Name}}]
+{{- else}}
+        data["{{.Key}}"] = [el._resolve(sink) for el in self.{{.Name}}]
+{{- end}}
+{{- end}}

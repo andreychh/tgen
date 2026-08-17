@@ -1,0 +1,40 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	resolve_object writes how an object reaching a file answers what JSON it
+	becomes. It cannot be dumped plainly: a file has to leave the body for a part
+	of its own, so the dump is told to leave every such field out and each one is
+	put back as whatever points at its part.
+
+	It is one template and not two, where the Go target needs a second for an
+	object a union tells apart. There the discriminator is written as the object
+	marshals itself, and the rewrite strips that marshaller away, so the value has
+	to be written again by hand. Here the discriminator is a declared field, so the
+	dump writes it like any other.
+
+	It is a shape, not an entity: any view offering Name and Files renders through
+	it.
+*/}}
+{{- define "resolve_object"}}
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self{{range .Files}}, "{{.Name}}"{{end}})
+{{- range .Files}}
+{{- render .Template .}}
+{{- end}}
+        return data
+{{- end}}
+
+{{- /*
+	resolve_dump writes the same answer for an object a union reaching a file
+	admits but which holds no file of its own. It has nothing to hand over, so
+	what it becomes is what the dump says, and the sink goes untouched.
+
+	An object can be admitted by two such unions at once, which is why the answer
+	is written here, once, where the object is declared rather than where a union
+	lists it.
+*/}}
+{{- define "resolve_dump"}}
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+{{- end}}

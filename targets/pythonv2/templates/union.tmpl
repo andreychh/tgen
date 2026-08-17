@@ -1,0 +1,50 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	Both templates below declare a union with the type statement of the language
+	rather than an assignment, because that statement is evaluated only when
+	something reads it. A union stands where the page puts it and its variants
+	stand where the page puts them, which is often further down; a statement
+	evaluated where it is written would have to name them as strings, and one
+	evaluated on demand names them as they are.
+
+	One variant per line, however short the union. A union told apart by a key
+	spells six of them and RichText spells twenty-seven, so a single line would
+	run past any width worth reading; and a variant added upstream is then one
+	line added to the file rather than one line rewritten, which is what keeps
+	the diff of a generated file worth reading.
+*/}}
+
+{{- /*
+	union writes a union nothing tells the variants of apart. Where the Go target
+	declares an interface and leaves the decoder to a block written by hand,
+	pydantic is handed the alternatives and tells them apart by the shape of what
+	arrives — so the alternatives are the whole declaration.
+*/}}
+{{- define "union"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Union*/}}
+
+type {{.Name}} = (
+{{- range $i, $variant := .Variants}}
+    {{if $i}}| {{end}}{{$variant}}
+{{- end}}
+)
+{{.Doc}}
+{{- end}}
+
+{{- /*
+	discriminated_union writes a union one key tells every variant of apart. The
+	values that key holds are not written here: each variant declares its own as
+	the annotation of the discriminating field, so naming the key is all pydantic
+	needs to read it off the payload and pick.
+*/}}
+{{- define "discriminated_union"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.DiscriminatedUnion*/}}
+
+type {{.Name}} = Annotated[
+{{- range $i, $variant := .Variants}}
+    {{if $i}}| {{end}}{{$variant}}
+{{- end}},
+    Field(discriminator={{.Key}}),
+]
+{{.Doc}}
+{{- end}}

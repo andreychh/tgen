@@ -1,0 +1,40 @@
+{{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
+{{/*SPDX-License-Identifier: MIT*/}}
+
+{{- /*
+	The templates below write the body of the payload method, one per way a
+	method assembles its request. Each renders against the whole method rather
+	than against the payload alone, since what a body needs is spread over both.
+*/}}
+
+{{- define "payload_empty"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        return _EmptyPayload()
+{{- end}}
+
+{{- /*
+	payload_json dumps the model whole. What that dump leaves out and what it
+	names its keys is one decision for the whole package, so it is stated once in
+	_dump rather than at every method that reaches for it.
+*/}}
+{{- define "payload_json"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        return _JSONPayload(_dump(self))
+{{- end}}
+
+{{- /*
+	payload_form writes the body of a method reaching a file. The dump is told to
+	leave every such parameter out, each one hands its file to the sink and puts
+	back whatever points at it, and the parts the sink collected travel beside the
+	body it leaves.
+
+	A sink that collected nothing is not an error and not a case handled here: an
+	optional file the caller left unset, or one named by an id it already has,
+	leaves the body a plain one, and the payload sends it as JSON.
+*/}}
+{{- define "payload_form"}}{{/*gotype: github.com/andreychh/tgen/targets/pythonv2.Method*/}}
+        sink = _FileSink()
+        data = _dump(self{{range .Payload.Files}}, "{{.Name}}"{{end}})
+{{- range .Payload.Files}}
+{{- render .Template .}}
+{{- end}}
+        return _FormPayload(data, sink.files)
+{{- end}}
