@@ -23,9 +23,7 @@ type Declaration interface {
 }
 
 // NewDeclaration creates the declaration one record of the pipeline's exit is
-// rendered as. A kind the target has yet to spell is rendered as a [Stub], so
-// the sequence a file walks is the whole page from the first run and a kind
-// that lands is a diff of the output rather than the first output there is.
+// rendered as.
 func NewDeclaration(record ir.Definition) Declaration {
 	switch record := record.(type) {
 	case ir.Object:
@@ -39,9 +37,6 @@ func NewDeclaration(record ir.Definition) Declaration {
 	case ir.Alias:
 		return NewAlias(record)
 	case ir.Method:
-		if len(record.Files) > 0 {
-			return NewStub(record.Ref, "method reaching a file")
-		}
 		return NewMethod(record)
 	}
 	panic(fmt.Sprintf("pythonv2: unknown definition %T", record))

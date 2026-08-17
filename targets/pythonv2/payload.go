@@ -46,3 +46,28 @@ func (JSON) Template() string {
 }
 
 func (JSON) isPayload() {}
+
+// Form represents the request of a method reaching a file. A file cannot travel
+// inside JSON, so every file the parameters reach is collected into a part of
+// its own and the body is rewritten to point at those parts.
+type Form struct {
+	files []Placed
+}
+
+// NewForm creates a Form from the parameters reaching a file.
+func NewForm(files []Placed) Form {
+	return Form{files: files}
+}
+
+// Template implements [Payload].
+func (Form) Template() string {
+	return "payload_form"
+}
+
+// Files returns the parameters that hand a file over, in the order the
+// documentation listed them.
+func (f Form) Files() []Placed {
+	return f.files
+}
+
+func (Form) isPayload() {}

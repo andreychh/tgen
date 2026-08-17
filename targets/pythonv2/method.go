@@ -61,10 +61,14 @@ func (m Method) Return() Return {
 }
 
 // Payload returns the request slot of the method: nothing to send when it takes
-// no parameter, and the dumped model otherwise.
+// no parameter, a multipart body when a parameter reaches a file, and the dumped
+// model otherwise.
 func (m Method) Payload() Payload {
 	if len(m.inner.Params) == 0 {
 		return NewEmpty()
+	}
+	if len(m.inner.Files) > 0 {
+		return NewForm(slices.NewMapped(m.inner.Files, NewPlaced))
 	}
 	return NewJSON()
 }

@@ -11,7 +11,14 @@ from dataclasses import dataclass
 from typing import IO, Annotated, Any, Literal, Protocol, TypeVar
 
 import httpx
-from pydantic import BaseModel, Field, RootModel, TypeAdapter
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    SkipValidation,
+    TypeAdapter,
+)
 
 
 T = TypeVar("T")
@@ -109,6 +116,21 @@ class HTTPConnection:
         request = payload.request("POST", self._destination.url(method))
         envelope = _Envelope.model_validate(self._client.send(request).json())
         return adapter.validate_python(envelope.result())
+
+
+def _dump(model: BaseModel, *exclude: str) -> dict[str, Any]:
+    """Returns the body a model is sent as, leaving out the named fields.
+
+    An optional field nobody filled in is left out rather than sent as null,
+    which is what the API reads as "leave this alone", and every key is the one
+    the documentation names rather than the name a field carrying a reserved key
+    had to declare. A field reaching a file is named here to be left out: a file
+    cannot travel inside a body, so whatever points at it is put back by the
+    caller once the file has been handed over.
+    """
+    return model.model_dump(
+        mode="json", exclude_none=True, by_alias=True, exclude=set(exclude)
+    )
 
 
 class _EmptyPayload:
@@ -427,9 +449,7 @@ class GetUpdatesMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[Update]:
         return conn.do(
@@ -437,7 +457,95 @@ class GetUpdatesMethod(BaseModel):
             self._payload(),
             TypeAdapter(list[Update]),
         )
-# TODO: setwebhook (method reaching a file)
+
+
+class SetWebhookMethod(BaseModel):
+    """Use this method to specify a URL and receive incoming updates via an
+    outgoing webhook. Whenever there is an update for the bot, we will
+    send an HTTPS POST request to the specified URL, containing a
+    JSON-serialized Update. In case of an unsuccessful request (a
+    request with response HTTP status code different from 2XY), we will
+    repeat the request and give up after a reasonable amount of
+    attempts. Returns True on success.
+
+    If you'd like to make sure that the webhook was set by you, you can
+    specify secret data in the parameter secret_token. If specified, the
+    request will contain a header “X-Telegram-Bot-Api-Secret-Token” with
+    the secret token as content.
+
+    Notes
+    1. You will not be able to receive updates using getUpdates for as
+    long as an outgoing webhook is set up.
+    2. To use a self-signed certificate, you need to upload your public
+    key certificate using certificate parameter. Please upload as
+    InputFile, sending a String will not work.
+    3. Ports currently supported for webhooks: 443, 80, 88, 8443.
+
+    If you're having any trouble setting up webhooks, please check out
+    this amazing guide to webhooks.
+
+    See https://core.telegram.org/bots/api#setwebhook
+    """
+
+    url: str
+    """HTTPS URL to send updates to. Use an empty string to remove webhook
+    integration.
+    """
+
+    certificate: InputFile | None = None
+    """Upload your public key certificate so that the root certificate in
+    use can be checked. See our self-signed guide for details.
+    """
+
+    ip_address: str | None = None
+    """The fixed IP address which will be used to send webhook requests
+    instead of the IP address resolved through DNS
+    """
+
+    max_connections: int | None = None
+    """The maximum allowed number of simultaneous HTTPS connections to the
+    webhook for update delivery, 1-100. Defaults to 40. Use lower values
+    to limit the load on your bot's server, and higher values to
+    increase your bot's throughput.
+    """
+
+    allowed_updates: list[str] | None = None
+    """A JSON-serialized list of the update types you want your bot to
+    receive. For example, specify ["message", "edited_channel_post",
+    "callback_query"] to only receive updates of these types. See Update
+    for a complete list of available update types. Specify an empty list
+    to receive all update types except chat_member, message_reaction,
+    and message_reaction_count (default). If not specified, the previous
+    setting will be used.
+    Please note that this parameter doesn't affect updates created
+    before the call to the setWebhook, so unwanted updates may be
+    received for a short period of time.
+    """
+
+    drop_pending_updates: bool | None = None
+    """Pass True to drop all pending updates"""
+
+    secret_token: str | None = None
+    """A secret token to be sent in a header
+    “X-Telegram-Bot-Api-Secret-Token” in every webhook request, 1-256
+    characters. Only characters A-Z, a-z, 0-9, _ and - are allowed. The
+    header is useful to ensure that the request comes from a webhook set
+    by you.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "certificate")
+        if self.certificate is not None:
+            self.certificate._place(sink, data, "certificate")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setWebhook",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class DeleteWebhookMethod(BaseModel):
@@ -451,9 +559,7 @@ class DeleteWebhookMethod(BaseModel):
     """Pass True to drop all pending updates"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -2396,6 +2502,12 @@ class InputPollOption(BaseModel):
 
     media: InputPollOptionMedia | None = None
     """Media added to the poll option"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media")
+        if self.media is not None:
+            data["media"] = self.media._resolve(sink)
+        return data
 
 
 class PollAnswer(BaseModel):
@@ -6556,6 +6668,13 @@ class InputMediaAnimation(BaseModel):
     animation
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "thumbnail")
+        data["media"] = self.media._attach(sink)
+        if self.thumbnail is not None:
+            data["thumbnail"] = self.thumbnail._attach(sink)
+        return data
+
 
 class InputMediaAudio(BaseModel):
     """Represents an audio file to be treated as music to be sent.
@@ -6609,6 +6728,13 @@ class InputMediaAudio(BaseModel):
     title: str | None = None
     """Title of the audio"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "thumbnail")
+        data["media"] = self.media._attach(sink)
+        if self.thumbnail is not None:
+            data["thumbnail"] = self.thumbnail._attach(sink)
+        return data
+
 
 class InputMediaDocument(BaseModel):
     """Represents a general file to be sent.
@@ -6659,6 +6785,13 @@ class InputMediaDocument(BaseModel):
     sent as part of an album.
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "thumbnail")
+        data["media"] = self.media._attach(sink)
+        if self.thumbnail is not None:
+            data["thumbnail"] = self.thumbnail._attach(sink)
+        return data
+
 
 class InputMediaLink(BaseModel):
     """Represents an HTTP link to be sent.
@@ -6670,6 +6803,9 @@ class InputMediaLink(BaseModel):
 
     url: str
     """HTTP URL of the link"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InputMediaLivePhoto(BaseModel):
@@ -6721,6 +6857,12 @@ class InputMediaLivePhoto(BaseModel):
     animation
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "photo")
+        data["media"] = self.media._attach(sink)
+        data["photo"] = self.photo._attach(sink)
+        return data
+
 
 class InputMediaLocation(BaseModel):
     """Represents a location to be sent.
@@ -6740,6 +6882,9 @@ class InputMediaLocation(BaseModel):
     """The radius of uncertainty for the location, measured in meters;
     0-1500
     """
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InputMediaPhoto(BaseModel):
@@ -6779,6 +6924,11 @@ class InputMediaPhoto(BaseModel):
     has_spoiler: bool | None = None
     """Pass True if the photo needs to be covered with a spoiler animation"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media")
+        data["media"] = self.media._attach(sink)
+        return data
+
 
 class InputMediaSticker(BaseModel):
     """Represents a sticker file to be sent.
@@ -6799,6 +6949,11 @@ class InputMediaSticker(BaseModel):
 
     emoji: str | None = None
     """Emoji associated with the sticker; only for just uploaded stickers"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media")
+        data["media"] = self.media._attach(sink)
+        return data
 
 
 class InputMediaVenue(BaseModel):
@@ -6835,6 +6990,9 @@ class InputMediaVenue(BaseModel):
 
     google_place_type: str | None = None
     """Google Places type of the venue. (See supported types.)"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InputMediaVideo(BaseModel):
@@ -6910,6 +7068,15 @@ class InputMediaVideo(BaseModel):
     has_spoiler: bool | None = None
     """Pass True if the video needs to be covered with a spoiler animation"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "thumbnail", "cover")
+        data["media"] = self.media._attach(sink)
+        if self.thumbnail is not None:
+            data["thumbnail"] = self.thumbnail._attach(sink)
+        if self.cover is not None:
+            data["cover"] = self.cover._attach(sink)
+        return data
+
 
 class InputMediaVoiceNote(BaseModel):
     """Represents a voice message file to be sent.
@@ -6944,6 +7111,11 @@ class InputMediaVoiceNote(BaseModel):
 
     duration: int | None = None
     """Duration of the voice message in seconds"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media")
+        data["media"] = self.media._attach(sink)
+        return data
 
 
 type InputPaidMedia = Annotated[
@@ -6985,6 +7157,12 @@ class InputPaidMediaLivePhoto(BaseModel):
     unsupported.
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "photo")
+        data["media"] = self.media._attach(sink)
+        data["photo"] = self.photo._attach(sink)
+        return data
+
 
 class InputPaidMediaPhoto(BaseModel):
     """The paid media to send is a photo.
@@ -7001,6 +7179,11 @@ class InputPaidMediaPhoto(BaseModel):
     upload a new one using multipart/form-data under <file_attach_name>
     name. More information on Sending Files »
     """
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media")
+        data["media"] = self.media._attach(sink)
+        return data
 
 
 class InputPaidMediaVideo(BaseModel):
@@ -7055,6 +7238,15 @@ class InputPaidMediaVideo(BaseModel):
     supports_streaming: bool | None = None
     """Pass True if the uploaded video is suitable for streaming"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media", "thumbnail", "cover")
+        data["media"] = self.media._attach(sink)
+        if self.thumbnail is not None:
+            data["thumbnail"] = self.thumbnail._attach(sink)
+        if self.cover is not None:
+            data["cover"] = self.cover._attach(sink)
+        return data
+
 
 type InputProfilePhoto = Annotated[
     InputProfilePhotoStatic
@@ -7084,6 +7276,11 @@ class InputProfilePhotoStatic(BaseModel):
     Sending Files »
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "photo")
+        data["photo"] = self.photo._attach(sink)
+        return data
+
 
 class InputProfilePhotoAnimated(BaseModel):
     """An animated profile photo in the MPEG4 format.
@@ -7105,6 +7302,11 @@ class InputProfilePhotoAnimated(BaseModel):
     """Timestamp in seconds of the frame that will be used as the static
     profile photo. Defaults to 0.0.
     """
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "animation")
+        data["animation"] = self.animation._attach(sink)
+        return data
 
 
 type InputStoryContent = Annotated[
@@ -7136,6 +7338,11 @@ class InputStoryContentPhoto(BaseModel):
     Sending Files »
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "photo")
+        data["photo"] = self.photo._attach(sink)
+        return data
+
 
 class InputStoryContentVideo(BaseModel):
     """Describes a video to post as a story.
@@ -7165,6 +7372,11 @@ class InputStoryContentVideo(BaseModel):
 
     is_animation: bool | None = None
     """Pass True if the video has no sound"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "video")
+        data["video"] = self.video._attach(sink)
+        return data
 
 
 class GetMeMethod(BaseModel):
@@ -7325,9 +7537,7 @@ class SendMessageMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -7395,9 +7605,7 @@ class ForwardMessageMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -7457,9 +7665,7 @@ class ForwardMessagesMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[MessageID]:
         return conn.do(
@@ -7565,9 +7771,7 @@ class CopyMessageMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MessageID:
         return conn.do(
@@ -7633,9 +7837,7 @@ class CopyMessagesMethod(BaseModel):
     """Pass True to copy the messages without their captions"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[MessageID]:
         return conn.do(
@@ -7643,16 +7845,1239 @@ class CopyMessagesMethod(BaseModel):
             self._payload(),
             TypeAdapter(list[MessageID]),
         )
-# TODO: sendphoto (method reaching a file)
-# TODO: sendlivephoto (method reaching a file)
-# TODO: sendaudio (method reaching a file)
-# TODO: senddocument (method reaching a file)
-# TODO: sendvideo (method reaching a file)
-# TODO: sendanimation (method reaching a file)
-# TODO: sendvoice (method reaching a file)
-# TODO: sendvideonote (method reaching a file)
-# TODO: sendpaidmedia (method reaching a file)
-# TODO: sendmediagroup (method reaching a file)
+
+
+class SendPhotoMethod(BaseModel):
+    """Use this method to send photos. On success, the sent Message is
+    returned.
+
+    See https://core.telegram.org/bots/api#sendphoto
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    photo: InputFile
+    """Photo to send. Pass a file_id as String to send a photo that exists
+    on the Telegram servers (recommended), pass an HTTP URL as a String
+    for Telegram to get a photo from the Internet, or upload a new photo
+    using multipart/form-data. The photo must be at most 10 MB in size.
+    The photo's width and height must not exceed 10000 in total. Width
+    and height ratio must be at most 20. More information on Sending
+    Files »
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    caption: str | None = None
+    """Photo caption (may also be used when resending photos by file_id),
+    0-1024 characters after entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the photo caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the photo needs to be covered with a spoiler animation"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "photo")
+        self.photo._place(sink, data, "photo")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendPhoto",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendLivePhotoMethod(BaseModel):
+    """Use this method to send live photos. On success, the sent Message is
+    returned.
+
+    See https://core.telegram.org/bots/api#sendlivephoto
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel (in the format @channelusername)
+    """
+
+    live_photo: InputFile
+    """Live photo video to send. The video must be no longer than 10
+    seconds and must not exceed 10 MB in size. Pass a file_id as String
+    to send a video that exists on the Telegram servers (recommended) or
+    upload a new video using multipart/form-data. More information on
+    Sending Files ». Sending live photos by a URL is currently
+    unsupported.
+    """
+
+    photo: InputFile
+    """The static photo to send. Pass a file_id as String to send a photo
+    that exists on the Telegram servers (recommended) or upload a new
+    video using multipart/form-data. More information on Sending Files
+    ». Sending live photos by a URL is currently unsupported.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    caption: str | None = None
+    """Video caption (may also be used when resending videos by file_id),
+    0-1024 characters after entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the video caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the video needs to be covered with a spoiler animation"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "live_photo", "photo")
+        self.live_photo._place(sink, data, "live_photo")
+        self.photo._place(sink, data, "photo")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendLivePhoto",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendAudioMethod(BaseModel):
+    """Use this method to send audio files, if you want Telegram clients to
+    display them in the music player. Your audio must be in the .MP3 or
+    .M4A format. On success, the sent Message is returned. Bots can
+    currently send audio files of up to 50 MB in size, this limit may be
+    changed in the future.
+
+    For sending voice messages, use the sendVoice method instead.
+
+    See https://core.telegram.org/bots/api#sendaudio
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    audio: InputFile
+    """Audio file to send. Pass a file_id as String to send an audio file
+    that exists on the Telegram servers (recommended), pass an HTTP URL
+    as a String for Telegram to get an audio file from the Internet, or
+    upload a new one using multipart/form-data. More information on
+    Sending Files »
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    caption: str | None = None
+    """Audio caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the audio caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    duration: int | None = None
+    """Duration of the audio in seconds"""
+
+    performer: str | None = None
+    """Performer"""
+
+    title: str | None = None
+    """Track name"""
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "audio", "thumbnail")
+        self.audio._place(sink, data, "audio")
+        if self.thumbnail is not None:
+            self.thumbnail._place(sink, data, "thumbnail")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendAudio",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendDocumentMethod(BaseModel):
+    """Use this method to send general files. On success, the sent Message
+    is returned. Bots can currently send files of any type of up to 50
+    MB in size, this limit may be changed in the future.
+
+    See https://core.telegram.org/bots/api#senddocument
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    document: InputFile
+    """File to send. Pass a file_id as String to send a file that exists on
+    the Telegram servers (recommended), pass an HTTP URL as a String for
+    Telegram to get a file from the Internet, or upload a new one using
+    multipart/form-data. More information on Sending Files »
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    caption: str | None = None
+    """Document caption (may also be used when resending documents by
+    file_id), 0-1024 characters after entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the document caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    disable_content_type_detection: bool | None = None
+    """Disables automatic server-side content type detection for files
+    uploaded using multipart/form-data
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "document", "thumbnail")
+        self.document._place(sink, data, "document")
+        if self.thumbnail is not None:
+            self.thumbnail._place(sink, data, "thumbnail")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendDocument",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendVideoMethod(BaseModel):
+    """Use this method to send video files, Telegram clients support MPEG4
+    videos (other formats may be sent as Document). On success, the sent
+    Message is returned. Bots can currently send video files of up to 50
+    MB in size, this limit may be changed in the future.
+
+    See https://core.telegram.org/bots/api#sendvideo
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    video: InputFile
+    """Video to send. Pass a file_id as String to send a video that exists
+    on the Telegram servers (recommended), pass an HTTP URL as a String
+    for Telegram to get a video from the Internet, or upload a new video
+    using multipart/form-data. More information on Sending Files »
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    duration: int | None = None
+    """Duration of sent video in seconds"""
+
+    width: int | None = None
+    """Video width"""
+
+    height: int | None = None
+    """Video height"""
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    cover: InputFile | None = None
+    """Cover for the video in the message. Pass a file_id to send a file
+    that exists on the Telegram servers (recommended), pass an HTTP URL
+    for Telegram to get a file from the Internet, or pass
+    “attach://<file_attach_name>” to upload a new one using
+    multipart/form-data under <file_attach_name> name. More information
+    on Sending Files »
+    """
+
+    start_timestamp: int | None = None
+    """Start timestamp for the video in the message"""
+
+    caption: str | None = None
+    """Video caption (may also be used when resending videos by file_id),
+    0-1024 characters after entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the video caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the video needs to be covered with a spoiler animation"""
+
+    supports_streaming: bool | None = None
+    """Pass True if the uploaded video is suitable for streaming"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "video", "thumbnail", "cover")
+        self.video._place(sink, data, "video")
+        if self.thumbnail is not None:
+            self.thumbnail._place(sink, data, "thumbnail")
+        if self.cover is not None:
+            self.cover._place(sink, data, "cover")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendVideo",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendAnimationMethod(BaseModel):
+    """Use this method to send animation files (GIF or H.264/MPEG-4 AVC
+    video without sound). On success, the sent Message is returned. Bots
+    can currently send animation files of up to 50 MB in size, this
+    limit may be changed in the future.
+
+    See https://core.telegram.org/bots/api#sendanimation
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    animation: InputFile
+    """Animation to send. Pass a file_id as String to send an animation
+    that exists on the Telegram servers (recommended), pass an HTTP URL
+    as a String for Telegram to get an animation from the Internet, or
+    upload a new animation using multipart/form-data. More information
+    on Sending Files »
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    duration: int | None = None
+    """Duration of sent animation in seconds"""
+
+    width: int | None = None
+    """Animation width"""
+
+    height: int | None = None
+    """Animation height"""
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    caption: str | None = None
+    """Animation caption (may also be used when resending animation by
+    file_id), 0-1024 characters after entities parsing
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the animation caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    has_spoiler: bool | None = None
+    """Pass True if the animation needs to be covered with a spoiler
+    animation
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "animation", "thumbnail")
+        self.animation._place(sink, data, "animation")
+        if self.thumbnail is not None:
+            self.thumbnail._place(sink, data, "thumbnail")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendAnimation",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendVoiceMethod(BaseModel):
+    """Use this method to send audio files, if you want Telegram clients to
+    display the file as a playable voice message. For this to work, your
+    audio must be in an .OGG file encoded with OPUS, or in .MP3 format,
+    or in .M4A format (other formats may be sent as Audio or Document).
+    On success, the sent Message is returned. Bots can currently send
+    voice messages of up to 50 MB in size, this limit may be changed in
+    the future.
+
+    See https://core.telegram.org/bots/api#sendvoice
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    voice: InputFile
+    """Audio file to send. Pass a file_id as String to send a file that
+    exists on the Telegram servers (recommended), pass an HTTP URL as a
+    String for Telegram to get a file from the Internet, or upload a new
+    one using multipart/form-data. More information on Sending Files »
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    caption: str | None = None
+    """Voice message caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the voice message caption. See
+    formatting options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    duration: int | None = None
+    """Duration of the voice message in seconds"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "voice")
+        self.voice._place(sink, data, "voice")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendVoice",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendVideoNoteMethod(BaseModel):
+    """As of v.4.0, Telegram clients support rounded square MPEG4 videos of
+    up to 1 minute long. Use this method to send video messages. On
+    success, the sent Message is returned.
+
+    See https://core.telegram.org/bots/api#sendvideonote
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    video_note: InputFile
+    """Video note to send. Pass a file_id as String to send a video note
+    that exists on the Telegram servers (recommended) or upload a new
+    video using multipart/form-data. More information on Sending Files
+    ». Sending video notes by a URL is currently unsupported.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    duration: int | None = None
+    """Duration of sent video in seconds"""
+
+    length: int | None = None
+    """Video width and height, i.e. diameter of the video message"""
+
+    thumbnail: InputFile | None = None
+    """Thumbnail of the file sent; can be ignored if thumbnail generation
+    for the file is supported server-side. The thumbnail should be in
+    JPEG format and less than 200 kB in size. A thumbnail's width and
+    height should not exceed 320. Ignored if the file is not uploaded
+    using multipart/form-data. Thumbnails can't be reused and can be
+    only uploaded as a new file, so you can pass
+    “attach://<file_attach_name>” if the thumbnail was uploaded using
+    multipart/form-data under <file_attach_name>. More information on
+    Sending Files »
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "video_note", "thumbnail")
+        self.video_note._place(sink, data, "video_note")
+        if self.thumbnail is not None:
+            self.thumbnail._place(sink, data, "thumbnail")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendVideoNote",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendPaidMediaMethod(BaseModel):
+    """Use this method to send paid media. On success, the sent Message is
+    returned.
+
+    See https://core.telegram.org/bots/api#sendpaidmedia
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username. If the chat is a
+    channel, all Telegram Star proceeds from this media will be credited
+    to the chat's balance. Otherwise, they will be credited to the bot's
+    balance.
+    """
+
+    star_count: int
+    """The number of Telegram Stars that must be paid to buy access to the
+    media; 1-25000
+    """
+
+    media: list[InputPaidMedia]
+    """A JSON-serialized Array describing the media to be sent; up to 10
+    items
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    payload: str | None = None
+    """Bot-defined paid media payload, 0-128 bytes. This will not be
+    displayed to the user, use it for your internal processes.
+    """
+
+    caption: str | None = None
+    """Media caption, 0-1024 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the media caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    show_caption_above_media: bool | None = None
+    """Pass True if the caption must be shown above the message media"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "media")
+        data["media"] = [el._resolve(sink) for el in self.media]
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendPaidMedia",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendMediaGroupMethod(BaseModel):
+    """Use this method to send a group of photos, live photos, videos,
+    documents or audios as an album. Documents and audio files can be
+    only grouped in an album with messages of the same type. On success,
+    an Array of Message objects that were sent is returned.
+
+    See https://core.telegram.org/bots/api#sendmediagroup
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    media: list[InputMediaGroup]
+    """A JSON-serialized Array describing messages to be sent, must include
+    2-10 items
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the messages will
+    be sent; required if the messages are sent to a direct messages chat
+    """
+
+    disable_notification: bool | None = None
+    """Sends messages silently. Users will receive a notification with no
+    sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent messages from forwarding and
+    saving
+    """
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "media")
+        data["media"] = [el._resolve(sink) for el in self.media]
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> list[Message]:
+        return conn.do(
+            "sendMediaGroup",
+            self._payload(),
+            TypeAdapter(list[Message]),
+        )
 
 
 class SendLocationMethod(BaseModel):
@@ -7760,9 +9185,7 @@ class SendLocationMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -7875,9 +9298,7 @@ class SendVenueMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -7977,9 +9398,7 @@ class SendContactMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -7987,7 +9406,191 @@ class SendContactMethod(BaseModel):
             self._payload(),
             TypeAdapter(Message),
         )
-# TODO: sendpoll (method reaching a file)
+
+
+class SendPollMethod(BaseModel):
+    """Use this method to send a native poll. On success, the sent Message
+    is returned.
+
+    See https://core.telegram.org/bots/api#sendpoll
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username. Polls can't be sent
+    to channel direct messages chats.
+    """
+
+    question: str
+    """Poll question, 1-300 characters"""
+
+    options: list[InputPollOption]
+    """A JSON-serialized list of 1-12 answer options"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    question_parse_mode: str | None = None
+    """Mode for parsing entities in the question. See formatting options
+    for more details. Currently, only custom emoji entities are allowed.
+    """
+
+    question_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the poll
+    question. It can be specified instead of question_parse_mode.
+    """
+
+    is_anonymous: bool | None = None
+    """True, if the poll needs to be anonymous, defaults to True"""
+
+    type: str | None = None
+    """Poll type, “quiz” or “regular”, defaults to “regular”"""
+
+    allows_multiple_answers: bool | None = None
+    """Pass True if the poll allows multiple answers, defaults to False"""
+
+    allows_revoting: bool | None = None
+    """Pass True if the poll allows to change chosen answer options,
+    defaults to False for quizzes and to True for regular polls
+    """
+
+    shuffle_options: bool | None = None
+    """Pass True if the poll options must be shown in random order"""
+
+    allow_adding_options: bool | None = None
+    """Pass True if answer options can be added to the poll after creation;
+    not supported for anonymous polls and quizzes
+    """
+
+    hide_results_until_closes: bool | None = None
+    """Pass True if poll results must be shown only after the poll closes"""
+
+    members_only: bool | None = None
+    """Pass True if voting is limited to users who have been members of the
+    chat where the poll is being sent for more than 24 hours; for
+    channel chats only
+    """
+
+    country_codes: list[str] | None = None
+    """A JSON-serialized list of 0-12 two-letter ISO 3166-1 alpha-2 country
+    codes indicating the countries from which users can vote in the
+    poll; for channel chats only. Use “FT” as a country code to allow
+    users with anonymous numbers to vote. If omitted or empty, then
+    users from any country can participate in the poll.
+    """
+
+    correct_option_ids: list[int] | None = None
+    """A JSON-serialized list of monotonically increasing 0-based
+    identifiers of the correct answer options, required for polls in
+    quiz mode
+    """
+
+    explanation: str | None = None
+    """Text that is shown when a user chooses an incorrect answer or taps
+    on the lamp icon in a quiz-style poll, 0-200 characters with at most
+    2 line feeds after entities parsing
+    """
+
+    explanation_parse_mode: str | None = None
+    """Mode for parsing entities in the explanation. See formatting options
+    for more details.
+    """
+
+    explanation_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the poll
+    explanation. It can be specified instead of explanation_parse_mode.
+    """
+
+    explanation_media: InputPollMedia | None = None
+    """Media added to the quiz explanation"""
+
+    open_period: int | None = None
+    """Amount of time in seconds the poll will be active after creation,
+    5-2628000. Can't be used together with close_date.
+    """
+
+    close_date: int | None = None
+    """Point in time (Unix timestamp) when the poll will be automatically
+    closed. Must be at least 5 and no more than 2628000 seconds in the
+    future. Can't be used together with open_period.
+    """
+
+    is_closed: bool | None = None
+    """Pass True if the poll needs to be immediately closed. This can be
+    useful for poll preview.
+    """
+
+    description: str | None = None
+    """Description of the poll to be sent, 0-1024 characters after entities
+    parsing
+    """
+
+    description_parse_mode: str | None = None
+    """Mode for parsing entities in the poll description. See formatting
+    options for more details.
+    """
+
+    description_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the poll
+    description, which can be specified instead of
+    description_parse_mode
+    """
+
+    media: InputPollMedia | None = None
+    """Media added to the poll description"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "options", "explanation_media", "media")
+        data["options"] = [el._resolve(sink) for el in self.options]
+        if self.explanation_media is not None:
+            data["explanation_media"] = self.explanation_media._resolve(sink)
+        if self.media is not None:
+            data["media"] = self.media._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendPoll",
+            self._payload(),
+            TypeAdapter(Message),
+        )
 
 
 class SendChecklistMethod(BaseModel):
@@ -8028,9 +9631,7 @@ class SendChecklistMethod(BaseModel):
     """A JSON-serialized object for an inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -8111,9 +9712,7 @@ class SendDiceMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -8160,9 +9759,7 @@ class SendMessageDraftMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8217,9 +9814,7 @@ class SendChatActionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8262,9 +9857,7 @@ class SetMessageReactionMethod(BaseModel):
     """Pass True to set the reaction with a big animation"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8295,9 +9888,7 @@ class GetUserProfilePhotosMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> UserProfilePhotos:
         return conn.do(
@@ -8328,9 +9919,7 @@ class GetUserProfileAudiosMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> UserProfileAudios:
         return conn.do(
@@ -8360,9 +9949,7 @@ class SetUserEmojiStatusMethod(BaseModel):
     """Expiration date of the emoji status, if any"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8393,9 +9980,7 @@ class GetFileMethod(BaseModel):
     """File identifier to get information about"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> File:
         return conn.do(
@@ -8439,9 +10024,7 @@ class BanChatMemberMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8476,9 +10059,7 @@ class UnbanChatMemberMethod(BaseModel):
     """Do nothing if the user is not banned"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8525,9 +10106,7 @@ class RestrictChatMemberMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8639,9 +10218,7 @@ class PromoteChatMemberMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8673,9 +10250,7 @@ class SetChatAdministratorCustomTitleMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8706,9 +10281,7 @@ class SetChatMemberTagMethod(BaseModel):
     """New tag for the member; 0-16 characters, emoji are not allowed"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8738,9 +10311,7 @@ class BanChatSenderChatMethod(BaseModel):
     """Unique identifier of the target sender chat"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8768,9 +10339,7 @@ class UnbanChatSenderChatMethod(BaseModel):
     """Unique identifier of the target sender chat"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8808,9 +10377,7 @@ class SetChatPermissionsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -8843,9 +10410,7 @@ class ExportChatInviteLinkMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> str:
         return conn.do(
@@ -8887,9 +10452,7 @@ class CreateChatInviteLinkMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatInviteLink:
         return conn.do(
@@ -8933,9 +10496,7 @@ class EditChatInviteLinkMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatInviteLink:
         return conn.do(
@@ -8977,9 +10538,7 @@ class CreateChatSubscriptionInviteLinkMethod(BaseModel):
     """Invite link name; 0-32 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatInviteLink:
         return conn.do(
@@ -9010,9 +10569,7 @@ class EditChatSubscriptionInviteLinkMethod(BaseModel):
     """Invite link name; 0-32 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatInviteLink:
         return conn.do(
@@ -9041,9 +10598,7 @@ class RevokeChatInviteLinkMethod(BaseModel):
     """The invite link to revoke"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatInviteLink:
         return conn.do(
@@ -9070,9 +10625,7 @@ class ApproveChatJoinRequestMethod(BaseModel):
     """Unique identifier of the target user"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9099,9 +10652,7 @@ class DeclineChatJoinRequestMethod(BaseModel):
     """Unique identifier of the target user"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9128,9 +10679,7 @@ class AnswerChatJoinRequestQueryMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9158,9 +10707,7 @@ class SendChatJoinRequestWebAppMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9168,7 +10715,37 @@ class SendChatJoinRequestWebAppMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: setchatphoto (method reaching a file)
+
+
+class SetChatPhotoMethod(BaseModel):
+    """Use this method to set a new profile photo for the chat. Photos
+    can't be changed for private chats. The bot must be an administrator
+    in the chat for this to work and must have the appropriate
+    administrator rights. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setchatphoto
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    channel in the format @username
+    """
+
+    photo: InputFile
+    """New chat photo, uploaded using multipart/form-data"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "photo")
+        self.photo._place(sink, data, "photo")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setChatPhoto",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class DeleteChatPhotoMethod(BaseModel):
@@ -9186,9 +10763,7 @@ class DeleteChatPhotoMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9216,9 +10791,7 @@ class SetChatTitleMethod(BaseModel):
     """New chat title, 1-128 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9246,9 +10819,7 @@ class SetChatDescriptionMethod(BaseModel):
     """New chat description, 0-255 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9289,9 +10860,7 @@ class PinChatMessageMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9329,9 +10898,7 @@ class UnpinChatMessageMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9358,9 +10925,7 @@ class UnpinAllChatMessagesMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9385,9 +10950,7 @@ class LeaveChatMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9410,9 +10973,7 @@ class GetChatMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatFullInfo:
         return conn.do(
@@ -9441,9 +11002,7 @@ class GetChatAdministratorsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[ChatMember]:
         return conn.do(
@@ -9466,9 +11025,7 @@ class GetChatMemberCountMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> int:
         return conn.do(
@@ -9495,9 +11052,7 @@ class GetChatMemberMethod(BaseModel):
     """Unique identifier of the target user"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatMember:
         return conn.do(
@@ -9522,9 +11077,7 @@ class GetUserPersonalChatMessagesMethod(BaseModel):
     """The maximum number of messages to return; 1-20"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[Message]:
         return conn.do(
@@ -9553,9 +11106,7 @@ class SetChatStickerSetMethod(BaseModel):
     """Name of the sticker set to be set as the group sticker set"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9581,9 +11132,7 @@ class DeleteChatStickerSetMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9643,9 +11192,7 @@ class CreateForumTopicMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ForumTopic:
         return conn.do(
@@ -9687,9 +11234,7 @@ class EditForumTopicMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9717,9 +11262,7 @@ class CloseForumTopicMethod(BaseModel):
     """Unique identifier for the target message thread of the forum topic"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9747,9 +11290,7 @@ class ReopenForumTopicMethod(BaseModel):
     """Unique identifier for the target message thread of the forum topic"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9778,9 +11319,7 @@ class DeleteForumTopicMethod(BaseModel):
     """Unique identifier for the target message thread of the forum topic"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9809,9 +11348,7 @@ class UnpinAllForumTopicMessagesMethod(BaseModel):
     """Unique identifier for the target message thread of the forum topic"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9839,9 +11376,7 @@ class EditGeneralForumTopicMethod(BaseModel):
     """New topic name, 1-128 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9866,9 +11401,7 @@ class CloseGeneralForumTopicMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9894,9 +11427,7 @@ class ReopenGeneralForumTopicMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9922,9 +11453,7 @@ class HideGeneralForumTopicMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9949,9 +11478,7 @@ class UnhideGeneralForumTopicMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -9977,9 +11504,7 @@ class UnpinAllGeneralForumTopicMessagesMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10033,9 +11558,7 @@ class AnswerCallbackQueryMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10043,7 +11566,33 @@ class AnswerCallbackQueryMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: answerguestquery (method reaching a file)
+
+
+class AnswerGuestQueryMethod(BaseModel):
+    """Use this method to reply to a received guest message. On success, a
+    SentGuestMessage object is returned.
+
+    See https://core.telegram.org/bots/api#answerguestquery
+    """
+
+    guest_query_id: str
+    """Unique identifier for the query to be answered"""
+
+    result: InlineQueryResult
+    """A JSON-serialized object describing the message to be sent"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "result")
+        data["result"] = self.result._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> SentGuestMessage:
+        return conn.do(
+            "answerGuestQuery",
+            self._payload(),
+            TypeAdapter(SentGuestMessage),
+        )
 
 
 class GetUserChatBoostsMethod(BaseModel):
@@ -10063,9 +11612,7 @@ class GetUserChatBoostsMethod(BaseModel):
     """Unique identifier of the target user"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> UserChatBoosts:
         return conn.do(
@@ -10087,9 +11634,7 @@ class GetBusinessConnectionMethod(BaseModel):
     """Unique identifier of the business connection"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> BusinessConnection:
         return conn.do(
@@ -10110,9 +11655,7 @@ class GetManagedBotTokenMethod(BaseModel):
     """User identifier of the managed bot whose token will be returned"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> str:
         return conn.do(
@@ -10133,9 +11676,7 @@ class ReplaceManagedBotTokenMethod(BaseModel):
     """User identifier of the managed bot whose token will be replaced"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> str:
         return conn.do(
@@ -10158,9 +11699,7 @@ class GetManagedBotAccessSettingsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> BotAccessSettings:
         return conn.do(
@@ -10194,9 +11733,7 @@ class SetManagedBotAccessSettingsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10230,9 +11767,7 @@ class SetMyCommandsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10262,9 +11797,7 @@ class DeleteMyCommandsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10291,9 +11824,7 @@ class GetMyCommandsMethod(BaseModel):
     """A two-letter ISO 639-1 language code or an empty string"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[BotCommand]:
         return conn.do(
@@ -10320,9 +11851,7 @@ class SetMyNameMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10343,9 +11872,7 @@ class GetMyNameMethod(BaseModel):
     """A two-letter ISO 639-1 language code or an empty string"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> BotName:
         return conn.do(
@@ -10374,9 +11901,7 @@ class SetMyDescriptionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10397,9 +11922,7 @@ class GetMyDescriptionMethod(BaseModel):
     """A two-letter ISO 639-1 language code or an empty string"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> BotDescription:
         return conn.do(
@@ -10430,9 +11953,7 @@ class SetMyShortDescriptionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10453,9 +11974,7 @@ class GetMyShortDescriptionMethod(BaseModel):
     """A two-letter ISO 639-1 language code or an empty string"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> BotShortDescription:
         return conn.do(
@@ -10463,7 +11982,29 @@ class GetMyShortDescriptionMethod(BaseModel):
             self._payload(),
             TypeAdapter(BotShortDescription),
         )
-# TODO: setmyprofilephoto (method reaching a file)
+
+
+class SetMyProfilePhotoMethod(BaseModel):
+    """Changes the profile photo of the bot. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setmyprofilephoto
+    """
+
+    photo: InputProfilePhoto
+    """The new profile photo to set"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "photo")
+        data["photo"] = self.photo._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setMyProfilePhoto",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class RemoveMyProfilePhotoMethod(BaseModel):
@@ -10502,9 +12043,7 @@ class SetChatMenuButtonMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10528,9 +12067,7 @@ class GetChatMenuButtonMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MenuButton:
         return conn.do(
@@ -10563,9 +12100,7 @@ class SetMyDefaultAdministratorRightsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10590,9 +12125,7 @@ class GetMyDefaultAdministratorRightsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> ChatAdministratorRights:
         return conn.do(
@@ -10665,9 +12198,7 @@ class SendGiftMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10720,9 +12251,7 @@ class GiftPremiumSubscriptionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10749,9 +12278,7 @@ class VerifyUserMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10781,9 +12308,7 @@ class VerifyChatMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10804,9 +12329,7 @@ class RemoveUserVerificationMethod(BaseModel):
     """Unique identifier of the target user"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10830,9 +12353,7 @@ class RemoveChatVerificationMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10864,9 +12385,7 @@ class ReadBusinessMessageMethod(BaseModel):
     """Unique identifier of the message to mark as read"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10897,9 +12416,7 @@ class DeleteBusinessMessagesMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10931,9 +12448,7 @@ class SetBusinessAccountNameMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10959,9 +12474,7 @@ class SetBusinessAccountUsernameMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10985,9 +12498,7 @@ class SetBusinessAccountBioMethod(BaseModel):
     """The new value of the bio for the business account; 0-140 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -10995,7 +12506,41 @@ class SetBusinessAccountBioMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: setbusinessaccountprofilephoto (method reaching a file)
+
+
+class SetBusinessAccountProfilePhotoMethod(BaseModel):
+    """Changes the profile photo of a managed business account. Requires
+    the can_edit_profile_photo business bot right. Returns True on
+    success.
+
+    See
+    https://core.telegram.org/bots/api#setbusinessaccountprofilephoto
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    photo: InputProfilePhoto
+    """The new profile photo to set"""
+
+    is_public: bool | None = None
+    """Pass True to set the public photo, which will be visible even if the
+    main photo is hidden by the business account's privacy settings. An
+    account can have only one public photo.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "photo")
+        data["photo"] = self.photo._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setBusinessAccountProfilePhoto",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class RemoveBusinessAccountProfilePhotoMethod(BaseModel):
@@ -11018,9 +12563,7 @@ class RemoveBusinessAccountProfilePhotoMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11051,9 +12594,7 @@ class SetBusinessAccountGiftSettingsMethod(BaseModel):
     """Types of gifts accepted by the business account"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11075,9 +12616,7 @@ class GetBusinessAccountStarBalanceMethod(BaseModel):
     """Unique identifier of the business connection"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> StarAmount:
         return conn.do(
@@ -11102,9 +12641,7 @@ class TransferBusinessAccountStarsMethod(BaseModel):
     """Number of Telegram Stars to transfer; 1-10000"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11172,9 +12709,7 @@ class GetBusinessAccountGiftsMethod(BaseModel):
     """The maximum number of gifts to be returned; 1-100. Defaults to 100."""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> OwnedGifts:
         return conn.do(
@@ -11231,9 +12766,7 @@ class GetUserGiftsMethod(BaseModel):
     """The maximum number of gifts to be returned; 1-100. Defaults to 100."""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> OwnedGifts:
         return conn.do(
@@ -11303,9 +12836,7 @@ class GetChatGiftsMethod(BaseModel):
     """The maximum number of gifts to be returned; 1-100. Defaults to 100."""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> OwnedGifts:
         return conn.do(
@@ -11332,9 +12863,7 @@ class ConvertGiftToStarsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11374,9 +12903,7 @@ class UpgradeGiftMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11413,9 +12940,7 @@ class TransferGiftMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11423,7 +12948,62 @@ class TransferGiftMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: poststory (method reaching a file)
+
+
+class PostStoryMethod(BaseModel):
+    """Posts a story on behalf of a managed business account. Requires the
+    can_manage_stories business bot right. Returns Story on success.
+
+    See https://core.telegram.org/bots/api#poststory
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    content: InputStoryContent
+    """Content of the story"""
+
+    active_period: int
+    """Period after which the story is moved to the archive, in seconds;
+    must be one of 6 * 3600, 12 * 3600, 86400, or 2 * 86400
+    """
+
+    caption: str | None = None
+    """Caption of the story, 0-2048 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the story caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    areas: list[StoryArea] | None = None
+    """A JSON-serialized list of clickable areas to be shown on the story"""
+
+    post_to_chat_page: bool | None = None
+    """Pass True to keep the story accessible after it expires"""
+
+    protect_content: bool | None = None
+    """Pass True if the content of the story must be protected from
+    forwarding and screenshotting
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "content")
+        data["content"] = self.content._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Story:
+        return conn.do(
+            "postStory",
+            self._payload(),
+            TypeAdapter(Story),
+        )
 
 
 class RepostStoryMethod(BaseModel):
@@ -11461,9 +13041,7 @@ class RepostStoryMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Story:
         return conn.do(
@@ -11471,7 +13049,53 @@ class RepostStoryMethod(BaseModel):
             self._payload(),
             TypeAdapter(Story),
         )
-# TODO: editstory (method reaching a file)
+
+
+class EditStoryMethod(BaseModel):
+    """Edits a story previously posted by the bot on behalf of a managed
+    business account. Requires the can_manage_stories business bot
+    right. Returns Story on success.
+
+    See https://core.telegram.org/bots/api#editstory
+    """
+
+    business_connection_id: str
+    """Unique identifier of the business connection"""
+
+    story_id: int
+    """Unique identifier of the story to edit"""
+
+    content: InputStoryContent
+    """Content of the story"""
+
+    caption: str | None = None
+    """Caption of the story, 0-2048 characters after entities parsing"""
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the story caption. See formatting
+    options for more details.
+    """
+
+    caption_entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in the
+    caption, which can be specified instead of parse_mode
+    """
+
+    areas: list[StoryArea] | None = None
+    """A JSON-serialized list of clickable areas to be shown on the story"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "content")
+        data["content"] = self.content._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Story:
+        return conn.do(
+            "editStory",
+            self._payload(),
+            TypeAdapter(Story),
+        )
 
 
 class DeleteStoryMethod(BaseModel):
@@ -11489,9 +13113,7 @@ class DeleteStoryMethod(BaseModel):
     """Unique identifier of the story to delete"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11499,8 +13121,76 @@ class DeleteStoryMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: answerwebappquery (method reaching a file)
-# TODO: savepreparedinlinemessage (method reaching a file)
+
+
+class AnswerWebAppQueryMethod(BaseModel):
+    """Use this method to set the result of an interaction with a Web App
+    and send a corresponding message on behalf of the user to the chat
+    from which the query originated. On success, a SentWebAppMessage
+    object is returned.
+
+    See https://core.telegram.org/bots/api#answerwebappquery
+    """
+
+    web_app_query_id: str
+    """Unique identifier for the query to be answered"""
+
+    result: InlineQueryResult
+    """A JSON-serialized object describing the message to be sent"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "result")
+        data["result"] = self.result._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> SentWebAppMessage:
+        return conn.do(
+            "answerWebAppQuery",
+            self._payload(),
+            TypeAdapter(SentWebAppMessage),
+        )
+
+
+class SavePreparedInlineMessageMethod(BaseModel):
+    """Stores a message that can be sent by a user of a Mini App. Returns a
+    PreparedInlineMessage object.
+
+    See https://core.telegram.org/bots/api#savepreparedinlinemessage
+    """
+
+    user_id: int
+    """Unique identifier of the target user that can use the prepared
+    message
+    """
+
+    result: InlineQueryResult
+    """A JSON-serialized object describing the message to be sent"""
+
+    allow_user_chats: bool | None = None
+    """Pass True if the message can be sent to private chats with users"""
+
+    allow_bot_chats: bool | None = None
+    """Pass True if the message can be sent to private chats with bots"""
+
+    allow_group_chats: bool | None = None
+    """Pass True if the message can be sent to group and supergroup chats"""
+
+    allow_channel_chats: bool | None = None
+    """Pass True if the message can be sent to channel chats"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "result")
+        data["result"] = self.result._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> PreparedInlineMessage:
+        return conn.do(
+            "savePreparedInlineMessage",
+            self._payload(),
+            TypeAdapter(PreparedInlineMessage),
+        )
 
 
 class SavePreparedKeyboardButtonMethod(BaseModel):
@@ -11520,9 +13210,7 @@ class SavePreparedKeyboardButtonMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> PreparedKeyboardButton:
         return conn.do(
@@ -11530,7 +13218,79 @@ class SavePreparedKeyboardButtonMethod(BaseModel):
             self._payload(),
             TypeAdapter(PreparedKeyboardButton),
         )
-# TODO: editmessagetext (method reaching a file)
+
+
+class EditMessageTextMethod(BaseModel):
+    """Use this method to edit text, rich and game messages. On success, if
+    the edited message is not an inline message, the edited Message is
+    returned, otherwise True is returned. Note that business messages
+    that were not sent by the bot and do not contain an inline keyboard
+    can only be edited within 48 hours from the time they were sent.
+
+    See https://core.telegram.org/bots/api#editmessagetext
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    chat_id: ChatID | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat or username of the target bot, supergroup or
+    channel in the format @username.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    message to edit.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    text: str | None = None
+    """New text of the message, 1-4096 characters after entity parsing;
+    required if rich_message isn't specified
+    """
+
+    parse_mode: str | None = None
+    """Mode for parsing entities in the message text. See formatting
+    options for more details.
+    """
+
+    entities: list[MessageEntity] | None = None
+    """A JSON-serialized list of special entities that appear in message
+    text, which can be specified instead of parse_mode
+    """
+
+    link_preview_options: LinkPreviewOptions | None = None
+    """Link preview generation options for the message"""
+
+    rich_message: InputRichMessage | None = None
+    """New rich content of the message; required if text isn't specified.
+    Direct upload of new files isn't supported when an inline message is
+    edited.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "rich_message")
+        if self.rich_message is not None:
+            data["rich_message"] = self.rich_message._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "editMessageText",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
 
 
 class EditMessageCaptionMethod(BaseModel):
@@ -11586,9 +13346,7 @@ class EditMessageCaptionMethod(BaseModel):
     """A JSON-serialized object for an inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MaybeMessage:
         return conn.do(
@@ -11596,7 +13354,64 @@ class EditMessageCaptionMethod(BaseModel):
             self._payload(),
             TypeAdapter(MaybeMessage),
         )
-# TODO: editmessagemedia (method reaching a file)
+
+
+class EditMessageMediaMethod(BaseModel):
+    """Use this method to edit animation, audio, document, live photo,
+    photo, or video messages, or to replace a text or a rich message
+    with a media. If a message is part of a message album, then it can
+    be edited only to an audio for audio albums, only to a document for
+    document albums and to a photo, a live photo, or a video otherwise.
+    When an inline message is edited, a new file can't be uploaded; use
+    a previously uploaded file via its file_id or specify a URL. On
+    success, if the edited message is not an inline message, the edited
+    Message is returned, otherwise True is returned. Note that business
+    messages that were not sent by the bot and do not contain an inline
+    keyboard can only be edited within 48 hours from the time they were
+    sent.
+
+    See https://core.telegram.org/bots/api#editmessagemedia
+    """
+
+    media: InputMedia
+    """A JSON-serialized object for the new media content of the message"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message to be edited was sent
+    """
+
+    chat_id: ChatID | None = None
+    """Required if inline_message_id is not specified. Unique identifier
+    for the target chat or username of the target bot, supergroup or
+    channel in the format @username.
+    """
+
+    message_id: int | None = None
+    """Required if inline_message_id is not specified. Identifier of the
+    message to edit.
+    """
+
+    inline_message_id: str | None = None
+    """Required if chat_id and message_id are not specified. Identifier of
+    the inline message.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for a new inline keyboard"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "media")
+        data["media"] = self.media._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> MaybeMessage:
+        return conn.do(
+            "editMessageMedia",
+            self._payload(),
+            TypeAdapter(MaybeMessage),
+        )
 
 
 class EditMessageLiveLocationMethod(BaseModel):
@@ -11664,9 +13479,7 @@ class EditMessageLiveLocationMethod(BaseModel):
     """A JSON-serialized object for a new inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MaybeMessage:
         return conn.do(
@@ -11709,9 +13522,7 @@ class StopMessageLiveLocationMethod(BaseModel):
     """A JSON-serialized object for a new inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MaybeMessage:
         return conn.do(
@@ -11748,9 +13559,7 @@ class EditMessageChecklistMethod(BaseModel):
     """A JSON-serialized object for the new inline keyboard for the message"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -11796,9 +13605,7 @@ class EditMessageReplyMarkupMethod(BaseModel):
     """A JSON-serialized object for an inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MaybeMessage:
         return conn.do(
@@ -11832,9 +13639,7 @@ class StopPollMethod(BaseModel):
     """A JSON-serialized object for a new message inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Poll:
         return conn.do(
@@ -11883,9 +13688,7 @@ class EditEphemeralMessageTextMethod(BaseModel):
     """A JSON-serialized object for an inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11893,7 +13696,48 @@ class EditEphemeralMessageTextMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: editephemeralmessagemedia (method reaching a file)
+
+
+class EditEphemeralMessageMediaMethod(BaseModel):
+    """Use this method to edit the media of an ephemeral message. Note that
+    it is not guaranteed that the user will receive the message edit
+    event, especially if they are offline. On success, True is returned.
+
+    See https://core.telegram.org/bots/api#editephemeralmessagemedia
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target
+    supergroup in the format @username
+    """
+
+    receiver_user_id: int
+    """Identifier of the user who received the message"""
+
+    ephemeral_message_id: int
+    """Identifier of the ephemeral message to edit"""
+
+    media: InputMedia
+    """A JSON-serialized object for the new media content of the message. A
+    new file can't be uploaded; use a previously uploaded file via its
+    file_id or specify a URL.
+    """
+
+    reply_markup: InlineKeyboardMarkup | None = None
+    """A JSON-serialized object for an inline keyboard"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "media")
+        data["media"] = self.media._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "editEphemeralMessageMedia",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class EditEphemeralMessageCaptionMethod(BaseModel):
@@ -11933,9 +13777,7 @@ class EditEphemeralMessageCaptionMethod(BaseModel):
     """A JSON-serialized object for an inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -11970,9 +13812,7 @@ class EditEphemeralMessageReplyMarkupMethod(BaseModel):
     """A JSON-serialized object for an inline keyboard"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12004,9 +13844,7 @@ class ApproveSuggestedPostMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12035,9 +13873,7 @@ class DeclineSuggestedPostMethod(BaseModel):
     """Comment for the creator of the suggested post; 0-128 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12082,9 +13918,7 @@ class DeleteMessageMethod(BaseModel):
     """Identifier of the message to delete"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12113,9 +13947,7 @@ class DeleteMessagesMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12145,9 +13977,7 @@ class DeleteEphemeralMessageMethod(BaseModel):
     """Identifier of the ephemeral message to delete"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12184,9 +14014,7 @@ class DeleteMessageReactionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12221,9 +14049,7 @@ class DeleteAllMessageReactionsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12382,7 +14208,112 @@ class InputSticker(BaseModel):
     """List of 0-20 search keywords for the sticker with total length of up
     to 64 characters. For “regular” and “custom_emoji” stickers only.
     """
-# TODO: sendsticker (method reaching a file)
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "sticker")
+        data["sticker"] = self.sticker._attach(sink)
+        return data
+
+
+class SendStickerMethod(BaseModel):
+    """Use this method to send static .WEBP, animated .TGS, or video .WEBM
+    stickers. On success, the sent Message is returned.
+
+    See https://core.telegram.org/bots/api#sendsticker
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    sticker: InputFile
+    """Sticker to send. Pass a file_id as String to send a file that exists
+    on the Telegram servers (recommended), pass an HTTP URL as a String
+    for Telegram to get a .WEBP sticker from the Internet, or upload a
+    new .WEBP, .TGS, or .WEBM sticker using multipart/form-data. More
+    information on Sending Files ». Video and animated stickers can't be
+    sent via an HTTP URL.
+    """
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    receiver_user_id: int | None = None
+    """For outgoing ephemeral messages, unique identifier of the user who
+    will receive the message; for group and supergroup chats only. It is
+    not guaranteed that the user will receive the message, especially if
+    they are offline. See ephemeral message sending for more details.
+    """
+
+    callback_query_id: str | None = None
+    """For outgoing ephemeral messages, identifier of the callback query
+    which triggered the message if any
+    """
+
+    emoji: str | None = None
+    """Emoji associated with the sticker; only for just uploaded stickers"""
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "sticker")
+        self.sticker._place(sink, data, "sticker")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendSticker",
+            self._payload(),
+            TypeAdapter(Message),
+        )
 
 
 class GetStickerSetMethod(BaseModel):
@@ -12396,9 +14327,7 @@ class GetStickerSetMethod(BaseModel):
     """Name of the sticker set"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> StickerSet:
         return conn.do(
@@ -12421,9 +14350,7 @@ class GetCustomEmojiStickersMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[Sticker]:
         return conn.do(
@@ -12431,9 +14358,128 @@ class GetCustomEmojiStickersMethod(BaseModel):
             self._payload(),
             TypeAdapter(list[Sticker]),
         )
-# TODO: uploadstickerfile (method reaching a file)
-# TODO: createnewstickerset (method reaching a file)
-# TODO: addstickertoset (method reaching a file)
+
+
+class UploadStickerFileMethod(BaseModel):
+    """Use this method to upload a file with a sticker for later use in the
+    createNewStickerSet, addStickerToSet, or replaceStickerInSet methods
+    (the file can be used multiple times). Returns the uploaded File on
+    success.
+
+    See https://core.telegram.org/bots/api#uploadstickerfile
+    """
+
+    user_id: int
+    """User identifier of sticker file owner"""
+
+    sticker: InputFile
+    """A file with the sticker in .WEBP, .PNG, .TGS, or .WEBM format. See
+    https://core.telegram.org/stickers for technical requirements. More
+    information on Sending Files »
+    """
+
+    sticker_format: str
+    """Format of the sticker, must be one of “static”, “animated”, “video”"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "sticker")
+        self.sticker._place(sink, data, "sticker")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> File:
+        return conn.do(
+            "uploadStickerFile",
+            self._payload(),
+            TypeAdapter(File),
+        )
+
+
+class CreateNewStickerSetMethod(BaseModel):
+    """Use this method to create a new sticker set owned by a user. The bot
+    will be able to edit the sticker set thus created. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#createnewstickerset
+    """
+
+    user_id: int
+    """User identifier of created sticker set owner"""
+
+    name: str
+    """Short name of sticker set, to be used in t.me/addstickers/ URLs
+    (e.g., animals). Can contain only English letters, digits and
+    underscores. Must begin with a letter, can't contain consecutive
+    underscores and must end in "_by_<bot_username>". <bot_username> is
+    case insensitive. 1-64 characters.
+    """
+
+    title: str
+    """Sticker set title, 1-64 characters"""
+
+    stickers: list[InputSticker]
+    """A JSON-serialized list of 1-50 initial stickers to be added to the
+    sticker set
+    """
+
+    sticker_type: str | None = None
+    """Type of stickers in the set, pass “regular”, “mask”, or
+    “custom_emoji”. By default, a regular sticker set is created.
+    """
+
+    needs_repainting: bool | None = None
+    """Pass True if stickers in the sticker set must be repainted to the
+    color of text when used in messages, the accent color if used as
+    emoji status, white on chat photos, or another appropriate color
+    based on context; for custom emoji sticker sets only
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "stickers")
+        data["stickers"] = [el._resolve(sink) for el in self.stickers]
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "createNewStickerSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
+
+
+class AddStickerToSetMethod(BaseModel):
+    """Use this method to add a new sticker to a set created by the bot.
+    Emoji sticker sets can have up to 200 stickers. Other sticker sets
+    can have up to 120 stickers. Returns True on success.
+
+    See https://core.telegram.org/bots/api#addstickertoset
+    """
+
+    user_id: int
+    """User identifier of sticker set owner"""
+
+    name: str
+    """Sticker set name"""
+
+    sticker: InputSticker
+    """A JSON-serialized object with information about the added sticker.
+    If exactly the same sticker had already been added to the set, then
+    the set isn't changed.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "sticker")
+        data["sticker"] = self.sticker._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "addStickerToSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class SetStickerPositionInSetMethod(BaseModel):
@@ -12450,9 +14496,7 @@ class SetStickerPositionInSetMethod(BaseModel):
     """New sticker position in the set, zero-based"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12473,9 +14517,7 @@ class DeleteStickerFromSetMethod(BaseModel):
     """File identifier of the sticker"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12483,7 +14525,44 @@ class DeleteStickerFromSetMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: replacestickerinset (method reaching a file)
+
+
+class ReplaceStickerInSetMethod(BaseModel):
+    """Use this method to replace an existing sticker in a sticker set with
+    a new one. The method is equivalent to calling deleteStickerFromSet,
+    then addStickerToSet, then setStickerPositionInSet. Returns True on
+    success.
+
+    See https://core.telegram.org/bots/api#replacestickerinset
+    """
+
+    user_id: int
+    """User identifier of the sticker set owner"""
+
+    name: str
+    """Sticker set name"""
+
+    old_sticker: str
+    """File identifier of the replaced sticker"""
+
+    sticker: InputSticker
+    """A JSON-serialized object with information about the added sticker.
+    If exactly the same sticker had already been added to the set, then
+    the set remains unchanged.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "sticker")
+        data["sticker"] = self.sticker._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "replaceStickerInSet",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class SetStickerEmojiListMethod(BaseModel):
@@ -12501,9 +14580,7 @@ class SetStickerEmojiListMethod(BaseModel):
     """A JSON-serialized list of 1-20 emoji associated with the sticker"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12530,9 +14607,7 @@ class SetStickerKeywordsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12559,9 +14634,7 @@ class SetStickerMaskPositionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12585,9 +14658,7 @@ class SetStickerSetTitleMethod(BaseModel):
     """Sticker set title, 1-64 characters"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12595,7 +14666,57 @@ class SetStickerSetTitleMethod(BaseModel):
             self._payload(),
             TypeAdapter(bool),
         )
-# TODO: setstickersetthumbnail (method reaching a file)
+
+
+class SetStickerSetThumbnailMethod(BaseModel):
+    """Use this method to set the thumbnail of a regular or mask sticker
+    set. The format of the thumbnail file must match the format of the
+    stickers in the set. Returns True on success.
+
+    See https://core.telegram.org/bots/api#setstickersetthumbnail
+    """
+
+    name: str
+    """Sticker set name"""
+
+    user_id: int
+    """User identifier of the sticker set owner"""
+
+    format: str
+    """Format of the thumbnail, must be one of “static” for a .WEBP or .PNG
+    image, “animated” for a .TGS animation, or “video” for a .WEBM video
+    """
+
+    thumbnail: InputFile | None = None
+    """A .WEBP or .PNG image with the thumbnail, must be up to 128
+    kilobytes in size and have a width and height of exactly 100px, or a
+    .TGS animation with a thumbnail up to 32 kilobytes in size (see
+    https://core.telegram.org/stickers#animation-requirements for
+    animated sticker technical requirements), or a .WEBM video with the
+    thumbnail up to 32 kilobytes in size; see
+    https://core.telegram.org/stickers#video-requirements for video
+    sticker technical requirements. Pass a file_id as a String to send a
+    file that already exists on the Telegram servers, pass an HTTP URL
+    as a String for Telegram to get a file from the Internet, or upload
+    a new one using multipart/form-data. More information on Sending
+    Files ». Animated and video sticker set thumbnails can't be uploaded
+    via HTTP URL. If omitted, then the thumbnail is dropped and the
+    first sticker is used as the thumbnail.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "thumbnail")
+        if self.thumbnail is not None:
+            self.thumbnail._place(sink, data, "thumbnail")
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "setStickerSetThumbnail",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class SetCustomEmojiStickerSetThumbnailMethod(BaseModel):
@@ -12616,9 +14737,7 @@ class SetCustomEmojiStickerSetThumbnailMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12639,9 +14758,7 @@ class DeleteStickerSetMethod(BaseModel):
     """Sticker set name"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -12700,6 +14817,14 @@ class InputRichMessage(BaseModel):
     phone numbers) in the text
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "blocks", "media")
+        if self.blocks is not None:
+            data["blocks"] = [el._resolve(sink) for el in self.blocks]
+        if self.media is not None:
+            data["media"] = [el._resolve(sink) for el in self.media]
+        return data
+
 
 class InputRichMessageMedia(BaseModel):
     """Describes a media element embedded in an outgoing rich message.
@@ -12717,8 +14842,134 @@ class InputRichMessageMedia(BaseModel):
     """The media to be sent. Everything except the media itself and its
     properties is ignored.
     """
-# TODO: sendrichmessage (method reaching a file)
-# TODO: sendrichmessagedraft (method reaching a file)
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "media")
+        data["media"] = self.media._resolve(sink)
+        return data
+
+
+class SendRichMessageMethod(BaseModel):
+    """Use this method to send rich messages. If the message contains a
+    block with a media element, then the bot must have the right to send
+    the media to the chat. On success, the sent Message is returned.
+
+    See https://core.telegram.org/bots/api#sendrichmessage
+    """
+
+    chat_id: ChatID
+    """Unique identifier for the target chat or username of the target bot,
+    supergroup or channel in the format @username
+    """
+
+    rich_message: InputRichMessage
+    """The message to be sent"""
+
+    business_connection_id: str | None = None
+    """Unique identifier of the business connection on behalf of which the
+    message will be sent. Bot can send rich messages on behalf of a
+    business account only if the corresponding user can send rich
+    messages.
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread (topic) of a forum;
+    for forum supergroups and private chats of bots with forum topic
+    mode enabled only
+    """
+
+    direct_messages_topic_id: int | None = None
+    """Identifier of the direct messages topic to which the message will be
+    sent; required if the message is sent to a direct messages chat
+    """
+
+    disable_notification: bool | None = None
+    """Sends the message silently. Users will receive a notification with
+    no sound.
+    """
+
+    protect_content: bool | None = None
+    """Protects the contents of the sent message from forwarding and saving"""
+
+    allow_paid_broadcast: bool | None = None
+    """Pass True to allow up to 1000 messages per second, ignoring
+    broadcasting limits for a fee of 0.1 Telegram Stars per message. The
+    relevant Stars will be withdrawn from the bot's balance.
+    """
+
+    message_effect_id: str | None = None
+    """Unique identifier of the message effect to be added to the message;
+    for private chats only
+    """
+
+    suggested_post_parameters: SuggestedPostParameters | None = None
+    """A JSON-serialized object containing the parameters of the suggested
+    post to send; for direct messages chats only. If the message is sent
+    as a reply to another suggested post, then that suggested post is
+    automatically declined.
+    """
+
+    reply_parameters: ReplyParameters | None = None
+    """Description of the message to reply to"""
+
+    reply_markup: ReplyMarkup | None = None
+    """Additional interface options. A JSON-serialized object for an inline
+    keyboard, custom reply keyboard, instructions to remove a reply
+    keyboard or to force a reply from the user.
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "rich_message")
+        data["rich_message"] = self.rich_message._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> Message:
+        return conn.do(
+            "sendRichMessage",
+            self._payload(),
+            TypeAdapter(Message),
+        )
+
+
+class SendRichMessageDraftMethod(BaseModel):
+    """Use this method to stream a partial rich message to a user while the
+    message is being generated. Note that the streamed draft is
+    ephemeral and acts as a temporary 30-second preview - once the
+    output is finalized, you must call sendRichMessage with the complete
+    message to persist it in the user's chat. Returns True on success.
+
+    See https://core.telegram.org/bots/api#sendrichmessagedraft
+    """
+
+    chat_id: int
+    """Unique identifier for the target private chat"""
+
+    draft_id: int
+    """Unique identifier of the message draft; must be non-zero. Changes to
+    drafts with the same identifier are animated.
+    """
+
+    rich_message: InputRichMessage
+    """The partial message to be streamed. Direct upload of new files isn't
+    supported.
+    """
+
+    message_thread_id: int | None = None
+    """Unique identifier for the target message thread"""
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "rich_message")
+        data["rich_message"] = self.rich_message._resolve(sink)
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "sendRichMessageDraft",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 type RichText = (
@@ -13571,6 +15822,11 @@ class InputRichBlockListItem(BaseModel):
     numbers
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "blocks")
+        data["blocks"] = [el._resolve(sink) for el in self.blocks]
+        return data
+
 
 type InputRichBlock = Annotated[
     InputRichBlockParagraph
@@ -13614,6 +15870,9 @@ class InputRichBlockParagraph(BaseModel):
     text: RichText
     """Text of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockSectionHeading(BaseModel):
     """A section heading, corresponding to the HTML tags <h1>, <h2>, <h3>,
@@ -13632,6 +15891,9 @@ class InputRichBlockSectionHeading(BaseModel):
     smallest
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockPreformatted(BaseModel):
     """A preformatted text block, corresponding to the nested HTML tags
@@ -13648,6 +15910,9 @@ class InputRichBlockPreformatted(BaseModel):
     language: str | None = None
     """The programming language of the text"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockFooter(BaseModel):
     """A footer, corresponding to the HTML tag <footer>.
@@ -13660,6 +15925,9 @@ class InputRichBlockFooter(BaseModel):
     text: RichText
     """Text of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockDivider(BaseModel):
     """A divider, corresponding to the HTML tag <hr/>.
@@ -13668,6 +15936,9 @@ class InputRichBlockDivider(BaseModel):
     """
 
     type: Literal["divider"] = "divider"
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InputRichBlockMathematicalExpression(BaseModel):
@@ -13683,6 +15954,9 @@ class InputRichBlockMathematicalExpression(BaseModel):
     expression: str
     """The mathematical expression in LaTeX format"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockAnchor(BaseModel):
     """A block with an anchor, corresponding to the HTML tag <a> with the
@@ -13696,6 +15970,9 @@ class InputRichBlockAnchor(BaseModel):
     name: str
     """The name of the anchor"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockList(BaseModel):
     """A list of blocks, corresponding to the HTML tag <ul> or <ol> with
@@ -13708,6 +15985,11 @@ class InputRichBlockList(BaseModel):
 
     items: list[InputRichBlockListItem]
     """Items of the list"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "items")
+        data["items"] = [el._resolve(sink) for el in self.items]
+        return data
 
 
 class InputRichBlockBlockQuotation(BaseModel):
@@ -13723,6 +16005,11 @@ class InputRichBlockBlockQuotation(BaseModel):
 
     credit: RichText | None = None
     """Credit of the block"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "blocks")
+        data["blocks"] = [el._resolve(sink) for el in self.blocks]
+        return data
 
 
 class InputRichBlockPullQuotation(BaseModel):
@@ -13740,6 +16027,9 @@ class InputRichBlockPullQuotation(BaseModel):
     credit: RichText | None = None
     """Credit of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockCollage(BaseModel):
     """A collage, corresponding to the custom HTML tag <tg-collage>.
@@ -13755,6 +16045,11 @@ class InputRichBlockCollage(BaseModel):
     caption: RichBlockCaption | None = None
     """Caption of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "blocks")
+        data["blocks"] = [el._resolve(sink) for el in self.blocks]
+        return data
+
 
 class InputRichBlockSlideshow(BaseModel):
     """A slideshow, corresponding to the custom HTML tag <tg-slideshow>.
@@ -13769,6 +16064,11 @@ class InputRichBlockSlideshow(BaseModel):
 
     caption: RichBlockCaption | None = None
     """Caption of the block"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "blocks")
+        data["blocks"] = [el._resolve(sink) for el in self.blocks]
+        return data
 
 
 class InputRichBlockTable(BaseModel):
@@ -13791,6 +16091,9 @@ class InputRichBlockTable(BaseModel):
     caption: RichText | None = None
     """Caption of the table"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockDetails(BaseModel):
     """An expandable block for details disclosure, corresponding to the
@@ -13809,6 +16112,11 @@ class InputRichBlockDetails(BaseModel):
 
     is_open: bool | None = None
     """Pass True if the content of the block is visible by default"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "blocks")
+        data["blocks"] = [el._resolve(sink) for el in self.blocks]
+        return data
 
 
 class InputRichBlockMap(BaseModel):
@@ -13836,6 +16144,9 @@ class InputRichBlockMap(BaseModel):
     caption: RichBlockCaption | None = None
     """Caption of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichBlockAnimation(BaseModel):
     """A block with an animation, corresponding to the HTML tag <video>.
@@ -13850,6 +16161,11 @@ class InputRichBlockAnimation(BaseModel):
 
     caption: RichBlockCaption | None = None
     """Caption of the block"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "animation")
+        data["animation"] = self.animation._resolve(sink)
+        return data
 
 
 class InputRichBlockAudio(BaseModel):
@@ -13866,6 +16182,11 @@ class InputRichBlockAudio(BaseModel):
     caption: RichBlockCaption | None = None
     """Caption of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "audio")
+        data["audio"] = self.audio._resolve(sink)
+        return data
+
 
 class InputRichBlockPhoto(BaseModel):
     """A block with a photo, corresponding to the HTML tag <img>.
@@ -13880,6 +16201,11 @@ class InputRichBlockPhoto(BaseModel):
 
     caption: RichBlockCaption | None = None
     """Caption of the block"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "photo")
+        data["photo"] = self.photo._resolve(sink)
+        return data
 
 
 class InputRichBlockVideo(BaseModel):
@@ -13896,6 +16222,11 @@ class InputRichBlockVideo(BaseModel):
     caption: RichBlockCaption | None = None
     """Caption of the block"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "video")
+        data["video"] = self.video._resolve(sink)
+        return data
+
 
 class InputRichBlockVoiceNote(BaseModel):
     """A block with a voice note, corresponding to the HTML tag <audio>.
@@ -13910,6 +16241,11 @@ class InputRichBlockVoiceNote(BaseModel):
 
     caption: RichBlockCaption | None = None
     """Caption of the block"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "voice_note")
+        data["voice_note"] = self.voice_note._resolve(sink)
+        return data
 
 
 class InputRichBlockThinking(BaseModel):
@@ -13928,6 +16264,9 @@ class InputRichBlockThinking(BaseModel):
     """Text of the block. See https://t.me/addemoji/AIActions for examples
     of custom emoji that are recommended for usage in the block.
     """
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InlineQuery(BaseModel):
@@ -13960,7 +16299,57 @@ class InlineQuery(BaseModel):
 
     location: Location | None = None
     """Sender location, only for bots that request user location"""
-# TODO: answerinlinequery (method reaching a file)
+
+
+class AnswerInlineQueryMethod(BaseModel):
+    """Use this method to send answers to an inline query. On success, True
+    is returned.
+    No more than 50 results per query are allowed.
+
+    See https://core.telegram.org/bots/api#answerinlinequery
+    """
+
+    inline_query_id: str
+    """Unique identifier for the answered query"""
+
+    results: list[InlineQueryResult]
+    """A JSON-serialized Array of results for the inline query"""
+
+    cache_time: int | None = None
+    """The maximum amount of time in seconds that the result of the inline
+    query may be cached on the server. Defaults to 300.
+    """
+
+    is_personal: bool | None = None
+    """Pass True if results may be cached on the server side only for the
+    user that sent the query. By default, results may be returned to any
+    user who sends the same query.
+    """
+
+    next_offset: str | None = None
+    """Pass the offset that a client should send in the next query with the
+    same text to receive more results. Pass an empty string if there are
+    no more results or if you don't support pagination. Offset length
+    can't exceed 64 bytes.
+    """
+
+    button: InlineQueryResultsButton | None = None
+    """A JSON-serialized object describing a button to be shown above
+    inline query results
+    """
+
+    def _payload(self) -> Payload:
+        sink = _FileSink()
+        data = _dump(self, "results")
+        data["results"] = [el._resolve(sink) for el in self.results]
+        return _FormPayload(data, sink.files)
+
+    def call(self, conn: Connection) -> None:
+        conn.do(
+            "answerInlineQuery",
+            self._payload(),
+            TypeAdapter(bool),
+        )
 
 
 class InlineQueryResultsButton(BaseModel):
@@ -14063,6 +16452,11 @@ class InlineQueryResultArticle(BaseModel):
     thumbnail_height: int | None = None
     """Thumbnail height"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultPhoto(BaseModel):
     """Represents a link to a photo. By default, this photo will be sent by
@@ -14121,6 +16515,12 @@ class InlineQueryResultPhoto(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the photo"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultGif(BaseModel):
@@ -14186,6 +16586,12 @@ class InlineQueryResultGif(BaseModel):
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the GIF animation"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultMpeg4Gif(BaseModel):
     """Represents a link to a video animation (H.264/MPEG-4 AVC video
@@ -14250,6 +16656,12 @@ class InlineQueryResultMpeg4Gif(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the video animation"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultVideo(BaseModel):
@@ -14324,6 +16736,12 @@ class InlineQueryResultVideo(BaseModel):
     as a result (e.g., a YouTube video).
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultAudio(BaseModel):
     """Represents a link to an MP3 audio file. By default, this audio file
@@ -14370,6 +16788,12 @@ class InlineQueryResultAudio(BaseModel):
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the audio"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultVoice(BaseModel):
     """Represents a link to a voice recording in an .OGG container encoded
@@ -14412,6 +16836,12 @@ class InlineQueryResultVoice(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the voice recording"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultDocument(BaseModel):
@@ -14472,6 +16902,12 @@ class InlineQueryResultDocument(BaseModel):
 
     thumbnail_height: int | None = None
     """Thumbnail height"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultLocation(BaseModel):
@@ -14534,6 +16970,12 @@ class InlineQueryResultLocation(BaseModel):
     thumbnail_height: int | None = None
     """Thumbnail height"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultVenue(BaseModel):
     """Represents a venue. By default, the venue will be sent by the user.
@@ -14590,6 +17032,12 @@ class InlineQueryResultVenue(BaseModel):
     thumbnail_height: int | None = None
     """Thumbnail height"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultContact(BaseModel):
     """Represents a contact with a phone number. By default, this contact
@@ -14634,6 +17082,12 @@ class InlineQueryResultContact(BaseModel):
     thumbnail_height: int | None = None
     """Thumbnail height"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultGame(BaseModel):
     """Represents a Game.
@@ -14651,6 +17105,9 @@ class InlineQueryResultGame(BaseModel):
 
     reply_markup: InlineKeyboardMarkup | None = None
     """Inline keyboard attached to the message"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InlineQueryResultCachedPhoto(BaseModel):
@@ -14700,6 +17157,12 @@ class InlineQueryResultCachedPhoto(BaseModel):
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the photo"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultCachedGif(BaseModel):
     """Represents a link to an animated GIF file stored on the Telegram
@@ -14745,6 +17208,12 @@ class InlineQueryResultCachedGif(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the GIF animation"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultCachedMpeg4Gif(BaseModel):
@@ -14793,6 +17262,12 @@ class InlineQueryResultCachedMpeg4Gif(BaseModel):
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the video animation"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultCachedSticker(BaseModel):
     """Represents a link to a sticker stored on the Telegram servers. By
@@ -14817,6 +17292,12 @@ class InlineQueryResultCachedSticker(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the sticker"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultCachedDocument(BaseModel):
@@ -14863,6 +17344,12 @@ class InlineQueryResultCachedDocument(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the file"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 class InlineQueryResultCachedVideo(BaseModel):
@@ -14912,6 +17399,12 @@ class InlineQueryResultCachedVideo(BaseModel):
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the video"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultCachedVoice(BaseModel):
     """Represents a link to a voice message stored on the Telegram servers.
@@ -14952,6 +17445,12 @@ class InlineQueryResultCachedVoice(BaseModel):
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the voice message"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
+
 
 class InlineQueryResultCachedAudio(BaseModel):
     """Represents a link to an MP3 audio file stored on the Telegram
@@ -14988,6 +17487,12 @@ class InlineQueryResultCachedAudio(BaseModel):
 
     input_message_content: InputMessageContent | None = None
     """Content of the message to be sent instead of the audio"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "input_message_content")
+        if self.input_message_content is not None:
+            data["input_message_content"] = self.input_message_content._resolve(sink)
+        return data
 
 
 type InputMessageContent = (
@@ -15029,6 +17534,9 @@ class InputTextMessageContent(BaseModel):
     link_preview_options: LinkPreviewOptions | None = None
     """Link preview generation options for the message"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputRichMessageContent(BaseModel):
     """Represents the content of a rich message to be sent as the result of
@@ -15039,6 +17547,11 @@ class InputRichMessageContent(BaseModel):
 
     rich_message: InputRichMessage
     """The message to be sent"""
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        data = _dump(self, "rich_message")
+        data["rich_message"] = self.rich_message._resolve(sink)
+        return data
 
 
 class InputLocationMessageContent(BaseModel):
@@ -15076,6 +17589,9 @@ class InputLocationMessageContent(BaseModel):
     100000 if specified.
     """
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputVenueMessageContent(BaseModel):
     """Represents the content of a venue message to be sent as the result
@@ -15111,6 +17627,9 @@ class InputVenueMessageContent(BaseModel):
     google_place_type: str | None = None
     """Google Places type of the venue. (See supported types.)"""
 
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
+
 
 class InputContactMessageContent(BaseModel):
     """Represents the content of a contact message to be sent as the result
@@ -15132,6 +17651,9 @@ class InputContactMessageContent(BaseModel):
     """Additional data about the contact in the form of a vCard, 0-2048
     bytes
     """
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class InputInvoiceMessageContent(BaseModel):
@@ -15239,6 +17761,9 @@ class InputInvoiceMessageContent(BaseModel):
     """Pass True if the final price depends on the shipping method. Ignored
     for payments in Telegram Stars.
     """
+
+    def _resolve(self, sink: _FileSink) -> dict[str, Any]:
+        return _dump(self)
 
 
 class ChosenInlineResult(BaseModel):
@@ -15438,9 +17963,7 @@ class SendInvoiceMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -15572,9 +18095,7 @@ class CreateInvoiceLinkMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> str:
         return conn.do(
@@ -15615,9 +18136,7 @@ class AnswerShippingQueryMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -15657,9 +18176,7 @@ class AnswerPreCheckoutQueryMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -15703,9 +18220,7 @@ class GetStarTransactionsMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> StarTransactions:
         return conn.do(
@@ -15729,9 +18244,7 @@ class RefundStarPaymentMethod(BaseModel):
     """Telegram payment identifier"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -15762,9 +18275,7 @@ class EditUserStarSubscriptionMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -16475,9 +18986,7 @@ class SetPassportDataErrorsMethod(BaseModel):
     """A JSON-serialized Array describing the errors"""
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> None:
         conn.do(
@@ -16776,9 +19285,7 @@ class SendGameMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> Message:
         return conn.do(
@@ -16872,9 +19379,7 @@ class SetGameScoreMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> MaybeMessage:
         return conn.do(
@@ -16916,9 +19421,7 @@ class GetGameHighScoresMethod(BaseModel):
     """
 
     def _payload(self) -> Payload:
-        return _JSONPayload(
-            self.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+        return _JSONPayload(_dump(self))
 
     def call(self, conn: Connection) -> list[GameHighScore]:
         return conn.do(
@@ -17000,11 +19503,37 @@ type InputFile = (
 class FileID(RootModel[str]):
     """FileID represents a Telegram file identifier."""
 
+    def _place(self, sink: _FileSink, data: dict[str, Any], key: str) -> None:
+        data[key] = self.root
+
+    def _attach(self, sink: _FileSink) -> str:
+        return self.root
+
 
 class Upload(BaseModel):
     """Upload represents a file sent with the request, carrying the bytes
     to send and the name to send them under.
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    reader: SkipValidation[IO[bytes]]
+    """The stream the bytes are read from, taken unchecked: IO[bytes] is not a
+    class, so the instance check arbitrary_types_allowed would otherwise run
+    against it cannot succeed, and would refuse every reader a caller opens.
+    """
+
+    name: str = ""
+    """The name the file is sent under, defaulting to file when left unset."""
+
+    def _place(self, sink: _FileSink, data: dict[str, Any], key: str) -> None:
+        sink.file(key, self._name(), self.reader)
+
+    def _attach(self, sink: _FileSink) -> str:
+        return f"attach://{sink.reserve(self._name(), self.reader)}"
+
+    def _name(self) -> str:
+        return self.name or "file"
 
 
 type MaybeMessage = (

@@ -113,6 +113,21 @@ class HTTPConnection:
         return adapter.validate_python(envelope.result())
 
 
+def _dump(model: BaseModel, *exclude: str) -> dict[str, Any]:
+    """Returns the body a model is sent as, leaving out the named fields.
+
+    An optional field nobody filled in is left out rather than sent as null,
+    which is what the API reads as "leave this alone", and every key is the one
+    the documentation names rather than the name a field carrying a reserved key
+    had to declare. A field reaching a file is named here to be left out: a file
+    cannot travel inside a body, so whatever points at it is put back by the
+    caller once the file has been handed over.
+    """
+    return model.model_dump(
+        mode="json", exclude_none=True, by_alias=True, exclude=set(exclude)
+    )
+
+
 class _EmptyPayload:
     """The request of a method taking no parameter: no body at all."""
 

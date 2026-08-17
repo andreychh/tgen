@@ -27,7 +27,14 @@ from dataclasses import dataclass
 from typing import IO, Annotated, Any, Literal, Protocol, TypeVar
 
 import httpx
-from pydantic import BaseModel, Field, RootModel, TypeAdapter
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    SkipValidation,
+    TypeAdapter,
+)
 
 {{template "client" .}}
 {{- range .Spec.Definitions}}

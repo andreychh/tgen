@@ -46,6 +46,19 @@ func (o Object) Fields() []Field {
 	return slices.NewMapped(o.inner.Fields, NewField)
 }
 
+// Files returns the fields the object hands a file over for, empty when it holds
+// none and so becomes JSON by a plain dump.
+func (o Object) Files() []Attached {
+	return slices.NewMapped(o.inner.Files, NewAttached)
+}
+
+// Rewrites reports whether the object has to answer for rewriting itself into
+// JSON because a union reaching a file admits it. An object holding a file of
+// its own rewrites itself anyway; this is what obliges the ones holding none.
+func (o Object) Rewrites() bool {
+	return o.inner.Rewrites
+}
+
 // Direction returns which way the object travels, which is what decides whether
 // the key a field is aliased by is the name a response is read by.
 func (o Object) Direction() Direction {

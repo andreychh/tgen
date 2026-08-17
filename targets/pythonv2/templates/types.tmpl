@@ -32,6 +32,11 @@ class {{.Name}}(BaseModel):
     {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
     {{.Doc}}
 {{- end}}
+{{- if .Files}}
+{{template "resolve_object" .}}
+{{- else if .Rewrites}}
+{{template "resolve_dump" .}}
+{{- end}}
 {{- end}}
 
 {{- /*
@@ -65,6 +70,11 @@ class {{.Name}}(BaseModel):
 
     {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
     {{.Doc}}
+{{- end}}
+{{- if .Files}}
+{{template "resolve_object" .}}
+{{- else if .Rewrites}}
+{{template "resolve_dump" .}}
 {{- end}}
 {{- end}}
 
