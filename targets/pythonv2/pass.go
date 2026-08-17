@@ -25,14 +25,16 @@ func NewPass(gen Generation) Pass {
 	return Pass{gen: gen}
 }
 
-// Artifacts returns the files the target writes, each bound to the template
-// rendering it. It fails when a template is malformed.
+// Artifacts returns the files the target writes: the declarations the page
+// dictates, and the package surface lifting them into the one name a bot
+// imports. It fails when a template is malformed.
 func (p Pass) Artifacts() (output.Artifacts, error) {
 	tmpl, err := output.NewMold(templates, template.FuncMap{}).Template()
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
 	return output.Artifacts{
-		"api.py": output.NewTemplateView(tmpl, "api", p.gen),
+		"api.py":      output.NewTemplateView(tmpl, "api", p.gen),
+		"__init__.py": output.NewTemplateView(tmpl, "init", p.gen),
 	}, nil
 }
