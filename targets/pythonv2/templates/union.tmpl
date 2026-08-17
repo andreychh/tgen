@@ -29,9 +29,7 @@ type {{.Name}} = (
     {{if $i}}| {{end}}{{$variant}}
 {{- end}}
 )
-{{- with .Doc}}
-{{.}}
-{{- end}}
+{{.Doc}}
 {{- end}}
 
 {{- /*
@@ -48,7 +46,5 @@ type {{.Name}} = Annotated[
 {{- end}},
     Field(discriminator={{.Key}}),
 ]
-{{- with .Doc}}
-{{.}}
-{{- end}}
+{{.Doc}}
 {{- end}}
