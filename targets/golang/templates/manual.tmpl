@@ -198,12 +198,12 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 	variants a key tells apart.
 
 	That last switch is written out here, variant by variant, and it is the one
-	thing in this file a specification could describe: twenty-five variants marked
+	thing in this file a specification could describe: twenty-six variants marked
 	under one key with values of their own, which is the shape a discriminated
 	union has. It is written by hand because the union is not one. A Union record
 	says nothing tells its variants apart and a DiscriminatedUnion says one key
 	tells every variant apart; the two partition the unions the page names, and
-	this union falls between them — twenty-five marked variants and two that are
+	this union falls between them — twenty-six marked variants and two that are
 	not objects at all. Naming that third case is a change to the model, not to a
 	template, and it is not made here.
 
@@ -221,7 +221,7 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 */}}
 {{- define "manual_richtext"}}{{/*gotype: github.com/andreychh/tgen/targets/golang.Union*/}}
 {{- assert .Direction.Bidirectional "RichText no longer travels both ways"}}
-{{- assert (eq (len .Variants) 27) "RichText no longer stands for 27 variants"}}
+{{- assert (eq (len .Variants) 28) "RichText no longer stands for 28 variants"}}
 {{- template "union" .}}
 
 func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
@@ -380,6 +380,12 @@ func unmarshal{{.Name}}(data []byte) ({{.Name}}, error) {
 		return variant, nil
 	case "bot_command":
 		var variant RichTextBotCommand
+		if err := json.Unmarshal(data, &variant); err != nil {
+			return nil, err
+		}
+		return variant, nil
+	case "button":
+		var variant RichTextButton
 		if err := json.Unmarshal(data, &variant); err != nil {
 			return nil, err
 		}
