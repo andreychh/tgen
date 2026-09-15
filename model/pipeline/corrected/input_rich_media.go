@@ -74,13 +74,14 @@ func (r InputRichMedia) definitions(base Definitions) (Definitions, error) {
 	return out, nil
 }
 
-// variants returns base listing InputRichMedia's five variants, each already
+// variants returns base listing InputRichMedia's six variants, each already
 // a documented object. It fails when the union already lists one of them.
 func (r InputRichMedia) variants(base parsed.Variants) (parsed.Variants, error) {
 	out := NewVariantTable(base, inputRichMediaRef)
 	err := out.Insert(
 		inputMediaAnimationRef,
 		inputMediaAudioRef,
+		inputMediaDocumentRef,
 		inputMediaPhotoRef,
 		inputMediaVideoRef,
 		inputMediaVoiceNoteRef,
@@ -92,7 +93,7 @@ func (r InputRichMedia) variants(base parsed.Variants) (parsed.Variants, error) 
 }
 
 // inputRichMediaMapping is a [pipeline.Mapping] that redirects a field
-// typed as the five-variant input rich media union to InputRichMedia; every
+// typed as the six-variant input rich media union to InputRichMedia; every
 // other field rides through unchanged.
 type inputRichMediaMapping struct{}
 
@@ -101,6 +102,7 @@ func (inputRichMediaMapping) Apply(field typed.Field) (typed.Field, error) {
 	if !field.Type.Equals(typeexpr.NewUnion(
 		typeexpr.NewNamed(inputMediaAnimationRef),
 		typeexpr.NewNamed(inputMediaAudioRef),
+		typeexpr.NewNamed(inputMediaDocumentRef),
 		typeexpr.NewNamed(inputMediaPhotoRef),
 		typeexpr.NewNamed(inputMediaVideoRef),
 		typeexpr.NewNamed(inputMediaVoiceNoteRef),
