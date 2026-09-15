@@ -172,7 +172,7 @@ func main() {
 	}
 
 	// ReactionTypeEmoji satisfies ReactionType — Type: "emoji" is set automatically.
-	_, err = api.SetMessageReactionMethod{
+	err = api.SetMessageReactionMethod{
 		ChatID:    api.ID(msg.Chat.ID),
 		MessageID: msg.MessageID,
 		Reaction:  []api.ReactionType{api.ReactionTypeEmoji{Emoji: "🎉"}},
@@ -185,9 +185,10 @@ func main() {
 
 #### Testing
 
-`FakeConnection` lets you test bot logic without a network connection. `NewSeqCallQueue` scripts
-a sequence of canned responses — each call to `Do` consumes the next one in order and panics if
-the method doesn't match. After the test, `queue.Calls()` returns what was actually sent.
+`FakeConnection` lets you test bot logic without a network connection. It replays a fixed sequence
+of `Call`s, each pairing the method it expects with the `Response` it answers — `Ok` to decode a
+value, `Err` to return an error. A call too many, or a call to a method the next `Call` does not
+name, panics.
 
 ```go
 // BroadcastMessage sends text to every chat, returning the IDs of chats where the bot is banned.
@@ -203,20 +204,18 @@ func BroadcastMessage(ctx context.Context, conn api.Connection, chats []api.ID, 
 }
 
 func TestBroadcastMessage_SkipsBannedChats(t *testing.T) {
-	queue := api.NewSeqCallQueue(
-		api.NewCall(api.MethodSendMessage, api.Ok(api.Message{MessageID: 1})),
+	conn := api.NewFakeConnection(
+		api.NewCall("sendMessage", api.Ok(api.Message{MessageID: 1})),
 		api.NewCall(
-			api.MethodSendMessage,
-			api.Err(&api.Error{Code: 403, Description: "bot was kicked from the group chat"}), 
-        ),
-		api.NewCall(api.MethodSendMessage, api.Ok(api.Message{MessageID: 3})),
+			"sendMessage",
+			api.Err(&api.Error{Code: 403, Description: "bot was kicked from the group chat"}),
+		),
+		api.NewCall("sendMessage", api.Ok(api.Message{MessageID: 3})),
 	)
-	conn := api.NewFakeConnection(queue)
 
 	banned := BroadcastMessage(context.Background(), conn, []api.ID{100, 200, 300}, "Hello!")
 
 	assert.Equal(t, []api.ID{200}, banned, "BroadcastMessage must collect banned chat IDs")
-	assert.Len(t, queue.Calls(), 3, "BroadcastMessage must attempt all chats")
 }
 ```
 
@@ -228,8 +227,9 @@ All union types are sealed interfaces annotated with `//sumtype:decl`. Use [go-c
 ### Python
 
 Each Telegram Bot API method is a pydantic model you instantiate with parameters and call directly
-on a `Connection` to get a typed response. You can replace `HTTPConnection` with any implementation
-to add retries, proxy requests, or inject `FakeConnection` in tests.
+on a `Connection` to get a typed response. The client is synchronous. You can replace
+`HTTPConnection` with any implementation to add retries, proxy requests, or inject `FakeConnection`
+in tests.
 
 **Dependencies:** `pip install pydantic httpx`
 
@@ -311,26 +311,12 @@ if __name__ == "__main__":
     main()
 ```
 
-#### Async client
-
-An async equivalent is available in the `api.asyncio` subpackage. Swap `api.HTTPConnection` for
-`api.asyncio.HTTPConnection` (backed by `httpx.AsyncClient`) and `await` each `.call()`.
-
-```python
-from api.asyncio import HTTPConnection
-
-
-async def main():
-    conn = HTTPConnection(httpx.AsyncClient(timeout=30), TOKEN)
-    bot = await GetMeMethod().call(conn)
-    ...
-```
-
 #### Testing
 
-`FakeConnection` lets you test bot logic without a network connection. `SeqCallQueue` scripts
-a sequence of canned responses — each call to `do` consumes the next one in order and raises
-if the method doesn't match. After the test, `queue.calls()` returns what was actually sent.
+`FakeConnection` lets you test bot logic without a network connection. It replays a fixed sequence
+of `Call`s, each pairing the method it expects with the `Response` it answers — a `Response` being
+either a result to decode or an `Error` to raise. A call too many, or a call to a method the next
+`Call` does not name, raises `RuntimeError`.
 
 ```python
 def broadcast_message(conn: Connection, chats: list[ID], text: str) -> list[ID]:
@@ -345,18 +331,20 @@ def broadcast_message(conn: Connection, chats: list[ID], text: str) -> list[ID]:
     return banned
 
 
+def sent(chat_id: int) -> Message:
+    return Message(message_id=1, date=0, chat=Chat(id=chat_id, type="private"))
+
+
 def test_broadcast_skips_banned_chats():
-    queue = SeqCallQueue(
-        Call(Method.SendMessage, Message(message_id=1)),
-        Call(Method.SendMessage, Error(403, "bot was kicked from the group chat")),
-        Call(Method.SendMessage, Message(message_id=3)),
+    conn = FakeConnection(
+        Call("sendMessage", sent(100)),
+        Call("sendMessage", Error(403, "bot was kicked from the group chat")),
+        Call("sendMessage", sent(300)),
     )
-    conn = FakeConnection(queue)
 
     banned = broadcast_message(conn, [ID(100), ID(200), ID(300)], "Hello!")
 
     assert banned == [ID(200)], "broadcast_message must collect banned chat IDs"
-    assert len(queue.calls()) == 3, "broadcast_message must attempt all chats"
 ```
 
 ## Contributing

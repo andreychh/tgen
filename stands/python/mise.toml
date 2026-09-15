@@ -16,6 +16,6 @@ depends = ["setup"]
 run = "uv run mypy api/"
 
 [tasks.test]
-description = "Run behavioral tests for the generated stand"
+description = "Run tests for the generated Python stand"
 depends = ["setup"]
 run = "uv run pytest"

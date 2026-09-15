@@ -1,29 +1,30 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "method_fields"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
-{{- range .Fields | fields}} {{/*gotype: github.com/andreychh/tgen/targets/python.Field*/}}
-    {{.Name}}: {{.Annotation}}
+{{- /*
+	method writes one API method: the model holding its parameters, the payload
+	method assembling the request on its own, and the call joining that payload
+	to the connection. The two are parted rather than written as one body, so
+	that what a method puts on the wire can be read — and tested — without a
+	connection to hand it to.
+
+	The parameters are declared the way an object's fields are, since the
+	documentation describes them the same way and the pipeline merges the two
+	into one table long before a target sees them.
+*/}}
+{{- define "method"}}{{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
+
+class {{.Name}}(BaseModel):
+    {{.Doc}}
+{{- range .Fields}}
+
+    {{.Name}}: {{.Annotation}}{{with .Assignment}} = {{.}}{{end}}
     {{.Doc}}
 {{- end}}
-{{- end}}
 
-{{- define "method"}} {{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
-{{- $name := .Name}}
-{{- $ret := .ReturnType.Value}}
-class {{$name}}Method(BaseModel):
-    {{.Doc}}
-{{template "method_fields" .}}
+    def _payload(self) -> Payload:
+{{- render .Payload.Template .}}
 
-    def call(self, conn: Connection) -> {{$ret}}:
-        payload = _MultipartPayload()
-{{- range .Fields | fields}}
-{{- if .Optional}}
-        if self.{{.Name}} is not None:
-            {{.Part}}._write(payload, "{{.Key}}")
-{{- else}}
-        {{.Part}}._write(payload, "{{.Key}}")
-{{- end}}
-{{- end}}
-        return conn.do(Method.{{$name}}, payload, TypeAdapter({{$ret}}))
+    def call(self, conn: Connection) -> {{.Return.Signature}}:
+{{- render .Return.Template .}}
 {{- end}}

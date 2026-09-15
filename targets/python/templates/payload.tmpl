@@ -1,114 +1,40 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{define "payload"}} {{/*gotype: github.com/andreychh/tgen/targets/python.GenerationContext*/}}
-{{- template "header" .}}
+{{- /*
+	The templates below write the body of the payload method, one per way a
+	method assembles its request. Each renders against the whole method rather
+	than against the payload alone, since what a body needs is spread over both.
+*/}}
 
-import json
-from collections.abc import Sequence
-from typing import IO, Any, Protocol
+{{- define "payload_empty"}}{{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
+        return _EmptyPayload()
+{{- end}}
 
-import httpx
-from pydantic import TypeAdapter
+{{- /*
+	payload_json dumps the model whole. What that dump leaves out and what it
+	names its keys is one decision for the whole package, so it is stated once in
+	_dump rather than at every method that reaches for it.
+*/}}
+{{- define "payload_json"}}{{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
+        return _JSONPayload(_dump(self))
+{{- end}}
 
+{{- /*
+	payload_form writes the body of a method reaching a file. The dump is told to
+	leave every such parameter out, each one hands its file to the sink and puts
+	back whatever points at it, and the parts the sink collected travel beside the
+	body it leaves.
 
-class _MultipartPayload:
-    """Accumulates form fields and file parts, then builds the HTTP request body."""
-
-    def __init__(self) -> None:
-        self._data: dict[str, str] = {}
-        self._files: dict[str, tuple[str, IO[bytes]]] = {}
-        self._counter: int = 0
-
-    def text(self, key: str, value: str) -> None:
-        self._data[key] = value
-
-    def file(self, key: str, name: str, reader: IO[bytes]) -> None:
-        self._files[key] = (name, reader)
-
-    def _attach_key(self) -> str:
-        key = f"attachment_{self._counter}"
-        self._counter += 1
-        return key
-
-    def request(self, method: str, url: str) -> httpx.Request:
-        if not self._data and not self._files:
-            return httpx.Request(method, url)
-        return httpx.Request(method, url, data=self._data, files=self._files)
-
-
-class _Part(Protocol):
-    """Writes a value into a multipart form at the given key."""
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None: ...
-
-
-class _StrPart:
-    """Writes a string value as a plain-text form field."""
-
-    def __init__(self, value: str) -> None:
-        self._value = value
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None:
-        payload.text(key, self._value)
-
-
-class _IntPart:
-    """Writes an int value as a decimal plain-text form field."""
-
-    def __init__(self, value: int) -> None:
-        self._value = value
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None:
-        payload.text(key, str(self._value))
-
-
-class _FloatPart:
-    """Writes a float value as a decimal plain-text form field."""
-
-    def __init__(self, value: float) -> None:
-        self._value = value
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None:
-        payload.text(key, str(self._value))
-
-
-class _BoolPart:
-    """Writes a bool value as a plain-text form field."""
-
-    def __init__(self, value: bool) -> None:
-        self._value = value
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None:
-        payload.text(key, "true" if self._value else "false")
-
-
-class _PrimitiveListPart:
-    """Writes a list of primitive values as a JSON-encoded plain-text form field,
-    without file resolution."""
-
-    def __init__(self, value: Any) -> None:
-        self._value = value
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None:
-        payload.text(key, TypeAdapter(type(self._value)).dump_json(self._value).decode())
-
-
-class _FormJSON(Protocol):
-    """Serializes a value to JSON, registering any file uploads in the payload
-    as side effects."""
-
-    def _form_json(self, payload: _MultipartPayload) -> str: ...
-
-
-class _ObjectListPart:
-    """Writes a list of _FormJSON values as a JSON-encoded plain-text form field,
-    resolving file attachments in each element."""
-
-    def __init__(self, value: Sequence[_FormJSON]) -> None:
-        self._value = value
-
-    def _write(self, payload: _MultipartPayload, key: str) -> None:
-        items = [json.loads(item._form_json(payload)) for item in self._value]
-        payload.text(key, json.dumps(items))
-{{- end }}
+	A sink that collected nothing is not an error and not a case handled here: an
+	optional file the caller left unset, or one named by an id it already has,
+	leaves the body a plain one, and the payload sends it as JSON.
+*/}}
+{{- define "payload_form"}}{{/*gotype: github.com/andreychh/tgen/targets/python.Method*/}}
+        sink = _FileSink()
+        data = _dump(self{{range .Payload.Files}}, "{{.Name}}"{{end}})
+{{- range .Payload.Files}}
+{{- render .Template .}}
+{{- end}}
+        return _FormPayload(data, sink.files)
+{{- end}}
