@@ -13,9 +13,4 @@ dependencies = [
 [dependency-groups]
 dev = [
     "mypy>=1.15",
-    "pytest>=8.0",
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = [".", "tests"]

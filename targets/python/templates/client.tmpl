@@ -1,138 +1,254 @@
 {{/*SPDX-FileCopyrightText: 2026 Andrey Chernykh*/}}
 {{/*SPDX-License-Identifier: MIT*/}}
 
-{{- define "client"}} {{/*gotype: github.com/andreychh/tgen/targets/python.GenerationContext*/}}
-{{- template "header" .}}
+{{- /*
+	client writes what the documentation page says nothing about: how a request
+	reaches Telegram and how a response comes back. It changes when tgen changes
+	rather than when the API does, which is why it is one block and not scattered
+	through the file — a Bot API release rewrites the declarations under it and
+	leaves these lines untouched.
 
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar
-
-import httpx
-from pydantic import BaseModel, TypeAdapter
-
-from .method import Method
-from .types import ResponseParameters
-
+	The Go target puts the same thing in a file of its own. Python cannot: the
+	envelope names ResponseParameters, which the page documents and the pipeline
+	seeds by hand for exactly this reason, and a module of its own would have to
+	import the module that imports it. Written above the declarations in one
+	file, the name is simply resolved when the first response is decoded rather
+	than when the class is declared.
+*/}}
+{{- define "client"}}{{/*gotype: github.com/andreychh/tgen/targets/python.Generation*/}}
 T = TypeVar("T")
+
+TELEGRAM_API = "https://api.telegram.org"
+"""The public Telegram Bot API base URL."""
 
 
 class Payload(Protocol):
-    """Carries the accumulated fields of an API method call and produces an HTTP
-    request from them."""
+    """Carries a method call's fields and produces the HTTP request sending
+    them."""
 
     def request(self, method: str, url: str) -> httpx.Request: ...
 
 
 class Connection(Protocol):
-    """Executes Telegram Bot API methods over a transport."""
+    """Executes a method and validates what comes back into the adapter's
+    type."""
 
-    def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
-
-
-class _Envelope(BaseModel):
-    """The Telegram Bot API JSON response wrapper."""
-
-    ok: bool
-    result: Any = None
-    error_code: int = 0
-    description: str = "<no description>"
-    parameters: ResponseParameters | None = None
+    def do(self, method: str, payload: Payload, adapter: TypeAdapter[T]) -> T: ...
 
 
 class Error(Exception):
-    """A failure response from the Telegram Bot API."""
+    """A failure the Telegram Bot API reported."""
 
-    def __init__(self, code: int, description: str, parameters: ResponseParameters | None = None) -> None:
-        super().__init__(description)
+    def __init__(
+        self,
+        code: int,
+        description: str,
+        parameters: ResponseParameters | None = None,
+    ) -> None:
+        super().__init__(f"telegram {code}: {description}")
         self.code = code
         self.description = description
         self.parameters = parameters
 
 
+class _Envelope(BaseModel):
+    """The JSON object every response arrives in: exactly one side of it is
+    meaningful — the result when ok, the error fields otherwise."""
+
+    ok: bool
+    result_: Any = Field(default=None, alias="result")
+    error_code: int = 0
+    description: str = "<no description>"
+    parameters: ResponseParameters | None = None
+
+    def result(self) -> Any:
+        """Returns the raw result, raising Error when the envelope reports a
+        failure."""
+        if not self.ok:
+            raise Error(self.error_code, self.description, self.parameters)
+        return self.result_
+
+
+class Destination:
+    """Where a bot's requests go: a base host, the token parameterizing the
+    path, and whether to address the test environment, whose path carries an
+    extra segment after the token. Turns a method name into that method's
+    URL."""
+
+    def __init__(self, base: str, token: str, *, test: bool = False) -> None:
+        self._base = base
+        self._token = token
+        self._test = test
+
+    def url(self, method: str) -> str:
+        """Returns the request URL for method."""
+        if self._test:
+            return f"{self._base}/bot{self._token}/test/{method}"
+        return f"{self._base}/bot{self._token}/{method}"
+
+
 class HTTPConnection:
-    """Implements Connection over HTTP using the Telegram Bot API endpoint."""
+    """The production Connection: builds the request from the payload, sends it
+    to the bot's destination, and splits the envelope into a validated result or
+    an Error."""
 
     def __init__(self, client: httpx.Client, token: str) -> None:
         self._client = client
-        self._token = token
+        self._destination = Destination(TELEGRAM_API, token)
 
-    def do(self, method: Method, payload: Payload, adapter: TypeAdapter[T]) -> T:
-        """Sends a POST to the Telegram API and decodes the result.
+    @classmethod
+    def to(cls, client: httpx.Client, destination: Destination) -> HTTPConnection:
+        """Creates an HTTPConnection addressing an explicit Destination, for a
+        self-hosted server or the test environment."""
+        self = object.__new__(cls)
+        self._client = client
+        self._destination = destination
+        return self
 
-        Raises Error if the API reports a failure.
-        """
-        req = payload.request("POST", f"https://api.telegram.org/bot{self._token}/{method.value}")
-        resp = self._client.send(req)
-        env = _Envelope.model_validate(resp.json())
-        if not env.ok:
-            raise Error(env.error_code, env.description, env.parameters)
-        return adapter.validate_python(env.result)
+    def do(self, method: str, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        """Executes method and returns what it answered with, raising Error when
+        the API reports a failure."""
+        request = payload.request("POST", self._destination.url(method))
+        envelope = _Envelope.model_validate(self._client.send(request).json())
+        return adapter.validate_python(envelope.result())
 
 
-type Response = Any | Exception
-"""The outcome of a FakeConnection call: a value or an exception."""
+def _dump(model: BaseModel, *exclude: str) -> dict[str, Any]:
+    """Returns the body a model is sent as, leaving out the named fields.
+
+    An optional field nobody filled in is left out rather than sent as null,
+    which is what the API reads as "leave this alone", and every key is the one
+    the documentation names rather than the name a field carrying a reserved key
+    had to declare. A field reaching a file is named here to be left out: a file
+    cannot travel inside a body, so whatever points at it is put back by the
+    caller once the file has been handed over.
+    """
+    return model.model_dump(
+        mode="json", exclude_none=True, by_alias=True, exclude=set(exclude)
+    )
+
+
+class _EmptyPayload:
+    """The request of a method taking no parameter: no body at all."""
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        return httpx.Request(method, url)
+
+
+class _JSONPayload:
+    """The request of a method reaching no file: its fields are the JSON
+    body."""
+
+    def __init__(self, body: dict[str, Any]) -> None:
+        self._body = body
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        return httpx.Request(method, url, json=self._body)
+
+
+class _FileSink:
+    """Collects the binary parts as the file-typed fields resolve themselves.
+    Mutating is its nature: place and attach write their files into it. It
+    offers two ways in — file, under a key the caller names, and reserve, under
+    a key it generates and hands back."""
+
+    def __init__(self) -> None:
+        self.files: dict[str, tuple[str, IO[bytes]]] = {}
+        self._counter = 0
+
+    def file(self, key: str, name: str, reader: IO[bytes]) -> None:
+        """Writes a file under the key a parameter of the request names."""
+        self.files[key] = (name, reader)
+
+    def reserve(self, name: str, reader: IO[bytes]) -> str:
+        """Writes a file under a key it generates and hands back, for a file no
+        parameter of the request names."""
+        key = f"attachment_{self._counter}"
+        self._counter += 1
+        self.file(key, name, reader)
+        return key
+
+
+class _FormPayload:
+    """The request of a method reaching a file: the fields it sends beside the
+    parts collected from them. A file cannot travel inside JSON, so a field that
+    is not one is written as its own form field and a composite one as JSON
+    text."""
+
+    def __init__(
+        self,
+        body: dict[str, Any],
+        files: dict[str, tuple[str, IO[bytes]]],
+    ) -> None:
+        self._body = body
+        self._files = files
+
+    def request(self, method: str, url: str) -> httpx.Request:
+        if not self._files:
+            return _JSONPayload(self._body).request(method, url)
+        data: dict[str, str] = {}
+        for key, value in self._body.items():
+            if isinstance(value, bool):
+                data[key] = "true" if value else "false"
+            elif isinstance(value, (dict, list)):
+                data[key] = json.dumps(value)
+            else:
+                data[key] = str(value)
+        return httpx.Request(method, url, data=data, files=self._files)
+
+
+type Response = Any
+"""The canned outcome of a FakeConnection call: a value, or an exception to
+raise instead of answering."""
 
 
 @dataclass
 class Call:
-    """Pairs a Method with its canned Response for use in FakeConnection."""
+    """Pairs the method a test expects with the Response it answers."""
 
-    method: Method
+    method: str
     response: Response
 
 
-class CallQueue(Protocol):
-    """Yields canned calls for FakeConnection."""
-
-    def next(self) -> Call: ...
-
-
-class SeqCallQueue:
-    """Implements CallQueue as a strict sequential list of Calls."""
+class _CallQueue:
+    """The moving cursor over a fixed sequence of Calls. Advancing is its
+    nature, which is what leaves FakeConnection itself holding nothing that
+    changes."""
 
     def __init__(self, *calls: Call) -> None:
         self._calls = list(calls)
         self._index = 0
 
-    def next(self) -> Call:
-        """Returns the next Call in the sequence, or raises RuntimeError if exhausted."""
+    def next(self) -> Call | None:
+        """Returns the next Call, or None once the queue is spent."""
         if self._index >= len(self._calls):
-            raise RuntimeError("queue exhausted")
+            return None
         call = self._calls[self._index]
         self._index += 1
         return call
 
-    def calls(self) -> list[Call]:
-        """Returns the calls consumed so far."""
-        return self._calls[: self._index]
-
 
 class FakeConnection:
-    """Implements Connection with canned responses for use in tests.
+    """The network-free Connection: replays a fixed sequence of Calls and
+    verifies the method of each. Misuse — a call too many, or a call to the
+    wrong method — raises RuntimeError, so a wrong test fails loudly instead of
+    passing quietly. It mirrors the decoding of HTTPConnection, dumping the
+    canned value and validating it into the adapter, so a union is told apart
+    the same way whichever connection answers."""
 
-    Misconfiguration raises RuntimeError rather than silently passing.
-    """
+    def __init__(self, *calls: Call) -> None:
+        self._queue = _CallQueue(*calls)
 
-    def __init__(self, queue: CallQueue) -> None:
-        self._queue = queue
-
-    def do(self, method: Method, _: Payload, adapter: TypeAdapter[T]) -> T:
-        """Draws the next Call from the queue and returns its canned response.
-
-        Raises RuntimeError if the queue is exhausted or the method does not match.
-        """
-        try:
-            call = self._queue.next()
-        except RuntimeError as e:
-            raise RuntimeError(f"FakeConnection: call to {method!r}: {e}") from e
+    def do(self, method: str, payload: Payload, adapter: TypeAdapter[T]) -> T:
+        """Answers the next canned Response, raising RuntimeError when the call
+        is one the queue does not expect."""
+        call = self._queue.next()
+        if call is None:
+            raise RuntimeError(f"FakeConnection: unexpected call to {method!r}")
         if call.method != method:
             raise RuntimeError(f"FakeConnection: expected {call.method!r}, got {method!r}")
-        match call.response:
-            case Exception() as exc:
-                raise exc
-            case value:
-                raw = TypeAdapter(type(value)).dump_python(value, mode="json")
-                return adapter.validate_python(raw)
+        if isinstance(call.response, Exception):
+            raise call.response
+        raw = TypeAdapter(type(call.response)).dump_python(call.response, mode="json")
+        return adapter.validate_python(raw)
 {{- end}}

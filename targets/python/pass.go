@@ -6,53 +6,35 @@ package python
 import (
 	"embed"
 	"fmt"
-	"slices"
 	"text/template"
 
-	"github.com/andreychh/tgen/meta"
-	"github.com/andreychh/tgen/model/ir"
 	"github.com/andreychh/tgen/output"
-	"github.com/andreychh/tgen/targets"
 )
 
 //go:embed templates/*.tmpl
 var templates embed.FS
 
-// Pass assembles the output artifacts for the Python code generation target.
+// Pass is the Python generation stage: it renders the records of the
+// pipeline's exit into the files of a Python package.
 type Pass struct {
-	context GenerationContext
+	gen Generation
 }
 
-// NewPass creates a Pass for the given specification and snapshot.
-func NewPass(s ir.Specification, snapshot meta.Snapshot) Pass {
-	return Pass{context: NewGenerationContext(
-		NewSpecification(s),
-		targets.NewSnapshot(snapshot),
-	)}
+// NewPass creates a Pass rendering the given generation.
+func NewPass(gen Generation) Pass {
+	return Pass{gen: gen}
 }
 
-// Artifacts produces the output artifacts for the Python code generation target.
+// Artifacts returns the files the target writes: the declarations the page
+// dictates, and the package surface lifting them into the one name a bot
+// imports. It fails when a template is malformed.
 func (p Pass) Artifacts() (output.Artifacts, error) {
-	mold := output.NewMold(templates, template.FuncMap{
-		"objects":               slices.Collect[Object],
-		"discriminated_objects": slices.Collect[DiscriminatedObject],
-		"discriminated_unions":  slices.Collect[DiscriminatedUnion],
-		"methods":               slices.Collect[Method],
-		"fields":                slices.Collect[Field],
-	})
-	tmpl, err := mold.Template()
+	tmpl, err := output.NewMold(templates, template.FuncMap{}).Template()
 	if err != nil {
 		return nil, fmt.Errorf("preparing template: %w", err)
 	}
 	return output.Artifacts{
-		"__init__.py":         output.NewTemplateView(tmpl, "init", p.context),
-		"types.py":            output.NewTemplateView(tmpl, "types", p.context),
-		"method.py":           output.NewTemplateView(tmpl, "method_enum", p.context),
-		"methods.py":          output.NewTemplateView(tmpl, "methods", p.context),
-		"client.py":           output.NewTemplateView(tmpl, "client", p.context),
-		"payload.py":          output.NewTemplateView(tmpl, "payload", p.context),
-		"asyncio/__init__.py": output.NewTemplateView(tmpl, "asyncio_init", p.context),
-		"asyncio/methods.py":  output.NewTemplateView(tmpl, "async_methods", p.context),
-		"asyncio/client.py":   output.NewTemplateView(tmpl, "async_client", p.context),
+		"api.py":      output.NewTemplateView(tmpl, "api", p.gen),
+		"__init__.py": output.NewTemplateView(tmpl, "init", p.gen),
 	}, nil
 }

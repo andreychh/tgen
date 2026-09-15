@@ -144,21 +144,18 @@ tasks:
     deps:
       - stands:generate:go
       - stands:generate:python
-      - stands:generate:pythonv2
 
   stands:test:
     desc: Generate and verify all stands
     deps:
       - stands:test:go
       - stands:test:python
-      - stands:test:pythonv2
 
   stands:ci:
     desc: Full CI scenario for all stands (generate, diff, check)
     deps:
       - stands:ci:go
       - stands:ci:python
-      - stands:ci:pythonv2
 
   stands:generate:go:
     desc: Generate Go client code into stands/go/api
@@ -169,11 +166,6 @@ tasks:
     desc: Generate Python client code into stands/python/api
     cmds:
       - go run . python -o stands/python/api
-
-  stands:generate:pythonv2:
-    desc: Generate Python client code into stands/pythonv2/api
-    cmds:
-      - go run . pythonv2 -o stands/pythonv2/api
 
   stands:test:go:
     desc: Generate and verify Go stand
@@ -186,12 +178,6 @@ tasks:
     cmds:
       - task: stands:generate:python
       - task: stands:check:python
-
-  stands:test:pythonv2:
-    desc: Generate and verify nanopass Python stand
-    cmds:
-      - task: stands:generate:pythonv2
-      - task: stands:check:pythonv2
 
   stands:ci:go:
     desc: Full CI scenario for Go stand (generate, diff, check)
@@ -206,13 +192,6 @@ tasks:
       - task: stands:generate:python
       - task: stands:diff:python
       - task: stands:check:python
-
-  stands:ci:pythonv2:
-    desc: Full CI scenario for nanopass Python stand (generate, diff, check)
-    cmds:
-      - task: stands:generate:pythonv2
-      - task: stands:diff:pythonv2
-      - task: stands:check:pythonv2
 
   stands:diff:go:
     internal: true
@@ -232,15 +211,6 @@ tasks:
           exit 1
         fi
 
-  stands:diff:pythonv2:
-    internal: true
-    cmds:
-      - |
-        if ! git diff --exit-code stands/pythonv2/api/; then
-          echo "stands/pythonv2/api/ is out of sync — run 'task stands:generate:pythonv2' and commit the result"
-          exit 1
-        fi
-
   stands:check:go:
     desc: Verify the generated Go code compiles and tests pass
     dir: stands/go
@@ -252,14 +222,6 @@ tasks:
   stands:check:python:
     desc: Verify the generated Python code passes type checking
     dir: stands/python
-    cmds:
-      - mise trust --quiet
-      - mise run check
-      - mise run test
-
-  stands:check:pythonv2:
-    desc: Verify the generated nanopass Python code passes type checking
-    dir: stands/pythonv2
     cmds:
       - mise trust --quiet
       - mise run check
