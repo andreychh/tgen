@@ -15,7 +15,7 @@ legacy_version_file = false
 "github:go-task/task" = "3.52.0"
 "github:rhysd/actionlint" = "1.7.12"
 "github:tamasfe/taplo" = "0.10.0"
-"go:golang.org/x/vuln/cmd/govulncheck" = "1.1.4"
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.8.0"
 "npm:markdownlint-cli2" = "0.23.1"
 "npm:renovate" = { version = "44.14.3", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
 "pipx:reuse" = "6.2.0"
