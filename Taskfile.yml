@@ -220,11 +220,12 @@ tasks:
       - mise run test
 
   stands:check:python:
-    desc: Verify the generated Python code passes type checking
+    desc: Verify the generated Python code type-checks and tests pass
     dir: stands/python
     cmds:
       - mise trust --quiet
       - mise run check
+      - mise run test
 
   # --- Release ---
 
