@@ -36,7 +36,7 @@ linters:
     - errname  # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.
     - errorlint  # Find code that can cause problems with the error wrapping scheme introduced in Go 1.13.
     - exhaustive  # Check exhaustiveness of enum switch statements.
-    - exhaustruct  # Checks if all structure fields are initialized.
+    - exhaustruct_v5  # Checks if all structure fields are initialized.
     - exptostd  # Detects functions from golang.org/x/exp/ that can be replaced by std functions.
     - fatcontext  # Detects nested contexts in loops and function literals.
     - forbidigo  # Forbids identifiers.
@@ -153,15 +153,15 @@ linters:
           deny:
             - pkg: "github.com/andreychh/tgen/targets"
               desc: "model layer must not depend on targets layer"
-    exhaustruct:
-      exclude:
+    exhaustruct_v5:
+      ignore-patterns:
         - '^github\.com/spf13/cobra\..*$'
   exclusions:
     rules:
       - path: _test\.go
         linters:
           - dupl
-          - exhaustruct
+          - exhaustruct_v5
           - funlen
           - godoclint
           - gosec

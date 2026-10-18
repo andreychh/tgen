@@ -84,7 +84,7 @@ type Plain struct {
 
 // NewPlain creates a Plain from a response type.
 func NewPlain(typ Type) Plain {
-	return Plain{typed: typed{typ: typ}}
+	return Plain{typ: typ}
 }
 
 // Template implements [Return].
@@ -102,7 +102,7 @@ type Dispatched struct {
 
 // NewDispatched creates a Dispatched from a response type.
 func NewDispatched(typ Type) Dispatched {
-	return Dispatched{typed: typed{typ: typ}}
+	return Dispatched{typ: typ}
 }
 
 // Template implements [Return].
@@ -120,7 +120,7 @@ type DispatchedArray struct {
 
 // NewDispatchedArray creates a DispatchedArray from a response type.
 func NewDispatchedArray(typ Type) DispatchedArray {
-	return DispatchedArray{typed: typed{typ: typ}}
+	return DispatchedArray{typ: typ}
 }
 
 // Template implements [Return].
