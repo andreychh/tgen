@@ -61,7 +61,7 @@ type Placed struct {
 
 // NewPlaced creates a Placed from the record of a parameter reaching a file.
 func NewPlaced(f ir.FileField) Placed {
-	return Placed{filed: filed{inner: f}}
+	return Placed{inner: f}
 }
 
 // Template returns the name of the template handing the file over.
@@ -81,7 +81,7 @@ type Attached struct {
 
 // NewAttached creates an Attached from the record of a field reaching a file.
 func NewAttached(f ir.FileField) Attached {
-	return Attached{filed: filed{inner: f}}
+	return Attached{inner: f}
 }
 
 // Template returns the name of the template handing the file over.
