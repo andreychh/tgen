@@ -106,6 +106,7 @@ tasks:
           (.runs[].tool.driver.rules[]?
             | select(.properties? and .properties.tags?)
           ).properties.tags |= unique
+          | (.runs[].results[]? | select(.stacks?)).stacks |= unique
         ' > govulncheck.sarif
 
   # --- Test ---
