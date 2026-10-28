@@ -10,19 +10,19 @@ legacy_version_file = false
 "go" = "1.27.3"
 "github:caarlos0/svu" = "3.4.1"
 "github:crate-ci/typos" = "1.51.1"
-"github:golangci/golangci-lint" = "2.14.0"
+"github:golangci/golangci-lint" = "2.15.0"
 "github:goreleaser/goreleaser" = "2.18.3"
 "github:go-task/task" = "3.54.0"
 "github:rhysd/actionlint" = "1.7.12"
 "github:tamasfe/taplo" = "0.10.0"
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.9.0"
-"npm:markdownlint-cli2" = "0.23.3"
-"npm:renovate" = { version = "44.151.2", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
+"npm:markdownlint-cli2" = "0.24.0"
+"npm:renovate" = { version = "44.175.2", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
 "pipx:reuse" = "6.2.0"
 "pipx:yamllint" = "1.38.0"
 
 # indirect
-"node" = "24.21.0"
+"node" = "24.22.1"
 "github:koalaman/shellcheck" = "0.11.0"
 
 [env]
