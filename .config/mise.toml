@@ -8,17 +8,17 @@ legacy_version_file = false
 
 [tools]
 "go" = "1.27.3"
-"github:caarlos0/svu" = "3.4.1"
-"github:crate-ci/typos" = "1.51.1"
+"github:caarlos0/svu" = "3.4.4"
+"github:crate-ci/typos" = "1.52.0"
 "github:golangci/golangci-lint" = "2.15.0"
-"github:goreleaser/goreleaser" = "2.19.0"
+"github:goreleaser/goreleaser" = "2.20.0"
 "github:go-task/task" = "3.54.0"
 "github:rhysd/actionlint" = "1.7.12"
 "github:tamasfe/taplo" = "0.10.0"
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.9.0"
 "npm:markdownlint-cli2" = "0.24.0"
-"npm:renovate" = { version = "44.191.0", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
-"pipx:reuse" = "6.2.0"
+"npm:renovate" = { version = "44.222.0", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
+"pipx:reuse" = "6.3.0"
 "pipx:yamllint" = "1.38.0"
 
 # indirect
